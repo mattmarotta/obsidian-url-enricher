@@ -1,94 +1,80 @@
-# Obsidian Sample Plugin
+# Inline Link Preview
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Inline Link Preview adds Trello- and Notion-style link cards to Obsidian. Whenever you paste a URL, the plugin fetches the page title and description and replaces the raw link with an inline preview such as:
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
-
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
-
-## First time developing plugins?
-
-Quick starting guide for new plugin devs:
-
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
-
-## Releasing new releases
-
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+```
+[![](https://trello.com/favicon.ico) Trello – Boards to organize anything — Plan your day better](https://trello.com/)
 ```
 
-If you have multiple URLs, you can also do:
+Emoji in titles or descriptions are preserved (unless you turn them off), so Reddit headlines and other rich text sources keep their flair. The favicon is rendered at emoji size for a Trello-style look.
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+## Features
 
-## API Documentation
+- Convert pasted URLs into inline previews automatically (can be toggled).
+- Display the site favicon before the preview text (can be disabled).
+- Keep emoji and other Unicode characters that appear in the source page.
+- Command palette action to convert the current selection to a preview.
+- Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
+- Adjustable description length limit plus networking timeout controls.
+- Optional status bar countdown when LinkPreview.net throttles requests.
 
-See https://github.com/obsidianmd/obsidian-api
+## Usage
+
+### Convert as you write
+1. Copy a URL to your clipboard.
+2. Paste it into a Markdown editor in Obsidian.
+3. The plugin briefly inserts the raw URL, then replaces it with a `[![favicon](favicon) Title — Description](url)` preview once metadata is fetched. If favicons or emoji are disabled in settings, they are omitted from the final text.
+
+If the page cannot be reached, the URL is left as-is so you never lose what you pasted.
+
+### Update existing notes
+Run **Convert existing links to inline previews…** from the command palette. Choose one of the available scopes:
+
+- **Active note** – updates only the file you are editing.
+- **Select note…** – opens a quick switcher to pick a single file.
+- **Folder…** – scans every Markdown file in the chosen folder (recursively).
+- **Entire vault** – processes every Markdown file in the vault.
+
+Only bare HTTP/HTTPS links outside of existing Markdown links or code blocks are replaced.
+
+## Settings
+
+Open **Settings → Community plugins → Inline link preview** to tune:
+
+- **Convert links on paste** – enable or disable automatic conversion.
+- **Include description** – decide whether to append the description after the title.
+- **Description length** – limit how many characters of the description are kept (default 60).
+- **Show favicons** – toggle whether the preview starts with the site icon.
+- **Keep emoji** – remove emoji if you prefer simpler text.
+- **Use LinkPreview.net** – request metadata with your LinkPreview.net API key (falls back to local parsing if disabled or the request fails).
+- **LinkPreview.net API key** – stored locally and used only for LinkPreview.net requests.
+- **Show rate limit timer** – display a status bar countdown whenever LinkPreview.net throttles requests.
+- **Request timeout** – abort metadata fetches that take too long (milliseconds).
+
+Changes apply immediately to future conversions.
+
+## Privacy and network usage
+
+To build a preview the plugin requests the linked page and parses its HTML locally. URLs you paste are sent directly to their target domains; no third-party metadata service is used. Responses are cached in memory for the current Obsidian session and nothing is persisted to disk. If a site is private or requires authentication, the plugin keeps the original URL.
+
+If you enable the LinkPreview.net integration, the pasted URL and your API key are sent to that service first. When the API cannot be reached the plugin silently falls back to local parsing. The plugin watches for rate-limit responses (HTTP 429 or "limit" errors) and pauses LinkPreview.net requests for the recommended wait time (or one hour when unspecified).
+
+## Installation
+
+Manual installation for testing:
+
+1. Clone this repository into `<Vault>/.obsidian/plugins/obsidian-inline-link-preview/`.
+2. Run `npm install`.
+3. Run `npm run build` to generate `main.js`.
+4. Enable **Inline Link Preview** inside **Settings → Community plugins**.
+
+The release bundle consists of `manifest.json`, `main.js`, and optionally `styles.css`.
+
+## Development
+
+- `npm install` – install dependencies.
+- `npm run dev` – watch mode with incremental builds.
+- `npm run build` – type-check and create a production bundle.
+- `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
+
+Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules. All commands must use Obsidian’s registration APIs so they clean up correctly when the plugin unloads.

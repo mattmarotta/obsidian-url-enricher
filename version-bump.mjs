@@ -1,17 +1,51 @@
+#!/usr/bin/env node
+
 import { readFileSync, writeFileSync } from "fs";
 
-const targetVersion = process.env.npm_package_version;
+const [, , cliVersion] = process.argv;
+const targetVersion = cliVersion ?? process.env.npm_package_version;
 
-// read minAppVersion from manifest.json and bump version to target version
-const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
-const { minAppVersion } = manifest;
+if (!targetVersion) {
+	console.error("Usage: node version-bump.mjs <version>");
+	process.exit(1);
+}
+
+if (!/^\d+\.\d+\.\d+$/.test(targetVersion)) {
+	console.error(`Invalid semantic version: ${targetVersion}`);
+	process.exit(1);
+}
+
+const PACKAGE_FILE = "package.json";
+const MANIFEST_FILE = "manifest.json";
+const VERSIONS_FILE = "versions.json";
+const LOCK_FILE = "package-lock.json";
+
+const manifest = readJson(MANIFEST_FILE);
+const minAppVersion = manifest.minAppVersion;
 manifest.version = targetVersion;
-writeFileSync("manifest.json", JSON.stringify(manifest, null, "\t"));
+writeJson(MANIFEST_FILE, manifest);
 
-// update versions.json with target version and minAppVersion from manifest.json
-// but only if the target version is not already in versions.json
-const versions = JSON.parse(readFileSync('versions.json', 'utf8'));
-if (!Object.values(versions).includes(minAppVersion)) {
-    versions[targetVersion] = minAppVersion;
-    writeFileSync('versions.json', JSON.stringify(versions, null, '\t'));
+const packageJson = readJson(PACKAGE_FILE);
+packageJson.version = targetVersion;
+writeJson(PACKAGE_FILE, packageJson);
+
+const lock = readJson(LOCK_FILE);
+lock.version = targetVersion;
+if (lock.packages && lock.packages[""]) {
+	lock.packages[""].version = targetVersion;
+}
+writeJson(LOCK_FILE, lock);
+
+const versions = readJson(VERSIONS_FILE);
+versions[targetVersion] = minAppVersion;
+writeJson(VERSIONS_FILE, versions);
+
+console.log(`Version bumped to ${targetVersion}`);
+
+function readJson(filePath) {
+	return JSON.parse(readFileSync(filePath, "utf8"));
+}
+
+function writeJson(filePath, data) {
+	writeFileSync(filePath, `${JSON.stringify(data, null, "\t")}\n`);
 }
