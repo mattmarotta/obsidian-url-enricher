@@ -35,9 +35,11 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.normalizeSettings();
 	}
 
 	async saveSettings(): Promise<void> {
+		this.normalizeSettings();
 		await this.saveData(this.settings);
 		this.linkPreviewService.updateOptions({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
@@ -64,5 +66,25 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		this.linkPreviewService.setRateLimitListener((resetAt) => {
 			this.rateLimitStatus.update(resetAt);
 		});
+	}
+
+	private normalizeSettings(): void {
+		const numericDescription = Number(this.settings.maxDescriptionLength);
+		this.settings.maxDescriptionLength = Number.isFinite(numericDescription)
+			? Math.max(0, Math.round(numericDescription))
+			: DEFAULT_SETTINGS.maxDescriptionLength;
+
+		const numericTimeout = Number(this.settings.requestTimeoutMs);
+		this.settings.requestTimeoutMs = Number.isFinite(numericTimeout)
+			? Math.max(500, Math.round(numericTimeout))
+			: DEFAULT_SETTINGS.requestTimeoutMs;
+
+		this.settings.showFavicon = Boolean(this.settings.showFavicon);
+		this.settings.keepEmoji = Boolean(this.settings.keepEmoji);
+		this.settings.useLinkPreviewApi = Boolean(this.settings.useLinkPreviewApi);
+		this.settings.showRateLimitTimer = Boolean(this.settings.showRateLimitTimer);
+		if (typeof this.settings.linkPreviewApiKey !== "string") {
+			this.settings.linkPreviewApiKey = "";
+		}
 	}
 }

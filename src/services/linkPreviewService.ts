@@ -543,14 +543,17 @@ export class LinkPreviewService {
 	private async finalizeMetadata(pageUrl: string, metadata: LinkMetadata, extraFavicons: string[] = []): Promise<LinkMetadata> {
 		const finalized: LinkMetadata = { ...metadata };
 
-		if (this.isRedditUrl(pageUrl) && this.isGenericRedditTitle(finalized.title)) {
-			const redditData = await this.fetchRedditMetadata(pageUrl);
-			if (redditData) {
-				if (redditData.title) {
-					finalized.title = redditData.title;
-				}
-				if (redditData.description) {
-					finalized.description = redditData.description;
+		if (this.isRedditUrl(pageUrl)) {
+			const needsRedditData = this.isGenericRedditTitle(finalized.title) || !finalized.description;
+			if (needsRedditData) {
+				const redditData = await this.fetchRedditMetadata(pageUrl);
+				if (redditData) {
+					if (redditData.title) {
+						finalized.title = redditData.title;
+					}
+					if (redditData.description) {
+						finalized.description = redditData.description;
+					}
 				}
 			}
 		}
@@ -685,15 +688,22 @@ export class LinkPreviewService {
 				return null;
 			}
 
-			const title = typeof post.title === "string" ? post.title.trim() : undefined;
-			const descriptionSource = typeof post.selftext === "string" ? post.selftext : typeof post.public_description === "string" ? post.public_description : "";
-			const description = descriptionSource
-				.replace(/\s+/g, " ")
-				.trim();
+			const rawTitle = typeof post.title === "string" ? post.title.trim() : "";
+			const subredditName = typeof post.subreddit === "string" ? post.subreddit.trim() : "";
+			const descriptionSource =
+				typeof post.selftext === "string"
+					? post.selftext
+					: typeof post.public_description === "string"
+					? post.public_description
+					: "";
+
+			const normalizedDescription = descriptionSource.replace(/\s+/g, " ").trim();
+			const preferredTitle = subredditName ? `r/${subredditName} - Reddit` : rawTitle;
+			const fallbackDescription = normalizedDescription || rawTitle;
 
 			return {
-				title,
-				description: description ? description : undefined,
+				title: preferredTitle || undefined,
+				description: fallbackDescription || undefined,
 			};
 		} catch (error) {
 			console.warn("[inline-link-preview] Failed to fetch Reddit metadata", error);

@@ -2,6 +2,7 @@ import type { InlineLinkPreviewSettings } from "../settings";
 import type { LinkMetadata } from "../services/linkPreviewService";
 
 const ELLIPSIS = "\u2026";
+const DEFAULT_DESCRIPTION_LIMIT = 60;
 
 export function buildMarkdownPreview(
 	url: string,
@@ -17,8 +18,17 @@ export function buildMarkdownPreview(
 		description = null;
 	}
 
+	const limitValue = Number((settings as Record<string, unknown>).maxDescriptionLength);
+	const limit = Number.isFinite(limitValue)
+		? Math.max(0, Math.round(limitValue))
+		: DEFAULT_DESCRIPTION_LIMIT;
+
 	if (description) {
-		description = truncate(description, settings.maxDescriptionLength);
+		if (limit === 0) {
+			description = null;
+		} else {
+			description = truncate(description, limit);
+		}
 	}
 
 	const linkText = description ? `${title} — ${description}` : title;
