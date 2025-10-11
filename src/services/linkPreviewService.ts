@@ -558,6 +558,13 @@ export class LinkPreviewService {
 			}
 		}
 
+		if (this.isGoogleSearchUrl(pageUrl)) {
+			const query = this.extractGoogleSearchQuery(pageUrl);
+			if (query && this.isGenericGoogleSearchTitle(finalized.title)) {
+				finalized.title = `Google Search — ${query}`;
+			}
+		}
+
 		finalized.favicon = await this.resolveFavicon(pageUrl, finalized.favicon, extraFavicons);
 		return finalized;
 	}
@@ -663,6 +670,40 @@ export class LinkPreviewService {
 			normalized === "reddit" ||
 			normalized.includes("the heart of the internet")
 		);
+	}
+
+	private isGoogleSearchUrl(url: string): boolean {
+		try {
+			const parsed = new URL(url);
+			if (parsed.pathname !== "/search") {
+				return false;
+			}
+
+			const segments = parsed.hostname.toLowerCase().split(".");
+			return segments.includes("google");
+		} catch {
+			return false;
+		}
+	}
+
+	private extractGoogleSearchQuery(url: string): string | null {
+		try {
+			const parsed = new URL(url);
+			const query = parsed.searchParams.get("q") ?? parsed.searchParams.get("query");
+			if (!query) {
+				return null;
+			}
+
+			const cleaned = query.replace(/\s+/g, " ").trim();
+			return cleaned.length ? cleaned : null;
+		} catch {
+			return null;
+		}
+	}
+
+	private isGenericGoogleSearchTitle(title: string): boolean {
+		const normalized = title.replace(/\s+/g, " ").trim().toLowerCase();
+		return normalized === "" || normalized === "google" || normalized === "google search";
 	}
 
 	private async fetchRedditMetadata(url: string): Promise<{ title?: string; description?: string } | null> {

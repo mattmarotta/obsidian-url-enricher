@@ -35,6 +35,7 @@ export default async function runPreviewFormatterTests(): Promise<void> {
 	zeroLimitRemovesDescription();
 	highLimitKeepsFullText();
 	stringLimitIsRespected();
+	await googleSearchPreviewIncludesQuery();
 	await descriptionLimitAppliesWithoutLinkPreviewApi();
 }
 
@@ -81,6 +82,78 @@ function stringLimitIsRespected(): void {
 		"String-based description limits should be coerced and respected.",
 	);
 	assert(!output.includes("trimmed when the limit"), "Description should be truncated to approximately 15 characters.");
+}
+
+async function googleSearchPreviewIncludesQuery(): Promise<void> {
+	const googleUrl = "https://www.google.com/search?q=white+richlieu+hook+rack";
+	const googleHtml = `
+		<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="utf-8" />
+				<title>Google Search</title>
+			</head>
+			<body>
+				<div>Sample Google results page</div>
+			</body>
+		</html>
+	`;
+
+	__setRequestUrlMock(async ({ url, method }) => {
+		const normalizedMethod = (method ?? "GET").toUpperCase();
+		if (url === googleUrl) {
+			return {
+				status: 200,
+				text: googleHtml,
+				headers: {
+					"content-type": "text/html; charset=utf-8",
+					"x-final-url": googleUrl,
+				},
+			};
+		}
+
+		if (url === "https://www.google.com/favicon.ico") {
+			return {
+				status: 200,
+				text: "",
+				headers: {
+					"content-type": "image/x-icon",
+				},
+			};
+		}
+
+		if (/google\.com\/favicon/i.test(url) || /google\.com\/apple-touch-icon/i.test(url)) {
+			return {
+				status: 404,
+				text: "",
+				headers: {
+					"content-type": "text/plain",
+				},
+			};
+		}
+
+		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
+	});
+
+	try {
+		const service = new LinkPreviewService({
+			requestTimeoutMs: 0,
+			useLinkPreviewApi: false,
+			linkPreviewApiKey: null,
+		});
+
+		const settings = createSettings({ showFavicon: false, includeDescription: false });
+		const builder = new LinkPreviewBuilder(service, () => settings);
+		const preview = await builder.build(googleUrl);
+
+		assert.equal(
+			preview,
+			"[Google Search — white richlieu hook rack](<https://www.google.com/search?q=white+richlieu+hook+rack>)",
+			"Google search previews should include the search query in the title.",
+		);
+	} finally {
+		__setRequestUrlMock(null);
+	}
 }
 
 async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
