@@ -18,13 +18,14 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 - Adjustable description length limit plus networking timeout controls.
 - Optional status bar countdown when LinkPreview.net throttles requests.
 - Domain-aware metadata enrichments for Google search and Reddit links, with an extensible handler pipeline for additional sites.
+- Floating progress indicator while multiple links are being processed.
 
 ## Usage
 
 ### Convert as you write
 1. Copy a URL to your clipboard.
 2. Paste it into a Markdown editor in Obsidian.
-3. The plugin briefly inserts the raw URL (or list of URLs), then replaces each entry with a `[![favicon](favicon) Title — Description](url)` preview once metadata is fetched. If favicons or emoji are disabled in settings, they are omitted from the final text.
+3. The plugin briefly inserts the raw URL (or list of URLs), then replaces each entry with a `[![favicon](favicon) Title — Description](url)` preview once metadata is fetched. A temporary floating progress banner appears when multiple links are being processed so you can tell work is underway. If favicons or emoji are disabled in settings, they are omitted from the final text.
 
 If the page cannot be reached, the URL is left as-is so you never lose what you pasted.
 

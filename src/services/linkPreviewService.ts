@@ -5,6 +5,7 @@ import {
 	type MetadataHandler,
 	type MetadataHandlerContext,
 } from "./metadataHandlers";
+import { decodeHtmlEntities, sanitizeTextContent } from "../utils/text";
 
 export type { LinkMetadata } from "./types";
 
@@ -377,14 +378,14 @@ export class LinkPreviewService {
 
 		const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
 		if (titleMatch) {
-			result.title = this.decodeEntities(titleMatch[1]);
+			result.title = decodeHtmlEntities(titleMatch[1]);
 		}
 
 		const metaRegex =
 			/<meta\s+[^>]*?(?:name|property)=["'](?:og:description|twitter:description|description)["'][^>]*content=["']([^"']+)["'][^>]*>/i;
 		const metaMatch = html.match(metaRegex);
 		if (metaMatch) {
-			result.description = this.decodeEntities(metaMatch[1]);
+			result.description = decodeHtmlEntities(metaMatch[1]);
 		}
 
 		const faviconRegex =
@@ -490,8 +491,8 @@ export class LinkPreviewService {
 			return null;
 		}
 
-		const normalized = value.replace(/\s+/g, " ").replace(/\u00a0/g, " ").trim();
-		return normalized.length ? normalized : null;
+		const sanitized = sanitizeTextContent(value);
+		return sanitized.length ? sanitized : null;
 	}
 
 	private buildFallbackMetadata(url: string): LinkMetadata {
@@ -500,16 +501,6 @@ export class LinkPreviewService {
 			description: null,
 			favicon: this.deriveFaviconFromUrl(url),
 		};
-	}
-
-	private decodeEntities(value: string): string {
-		if (typeof document === "undefined") {
-			return value;
-		}
-
-		const textarea = document.createElement("textarea");
-		textarea.innerHTML = value;
-		return textarea.value;
 	}
 
 	private resolveFaviconCandidate(candidates: Array<string | null | undefined>, baseUrl: string): string | null {

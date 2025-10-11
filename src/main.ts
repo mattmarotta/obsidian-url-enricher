@@ -6,6 +6,7 @@ import { BulkLinkPreviewUpdater } from "./updater/bulkLinkPreviewUpdater";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { RateLimitStatusManager } from "./status/rateLimitStatusManager";
+import { LinkProcessingStatusManager } from "./status/progressStatusManager";
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
@@ -14,14 +15,15 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	pasteHandler!: PastePreviewHandler;
 	bulkUpdater!: BulkLinkPreviewUpdater;
 	rateLimitStatus!: RateLimitStatusManager;
+	processingStatus!: LinkProcessingStatusManager;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
 		this.instantiateServices();
 
 		this.registerEvent(
-			this.app.workspace.on("editor-paste", async (event: ClipboardEvent, editor: Editor) => {
-				await this.pasteHandler.handlePaste(event, editor);
+			this.app.workspace.on("editor-paste", async (event: ClipboardEvent, editor: Editor, info) => {
+				await this.pasteHandler.handlePaste(event, editor, info);
 			}),
 		);
 
@@ -59,7 +61,13 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			linkPreviewApiKey: this.settings.linkPreviewApiKey || null,
 		});
 		this.previewBuilder = new LinkPreviewBuilder(this.linkPreviewService, () => this.settings);
-		this.pasteHandler = new PastePreviewHandler(this.previewBuilder, () => this.settings);
+		this.processingStatus = new LinkProcessingStatusManager(this);
+		this.pasteHandler = new PastePreviewHandler(
+			this.app,
+			this.previewBuilder,
+			() => this.settings,
+			this.processingStatus,
+		);
 		this.bulkUpdater = new BulkLinkPreviewUpdater(this.app, this.previewBuilder);
 		this.rateLimitStatus = new RateLimitStatusManager(this);
 		this.rateLimitStatus.setEnabled(this.settings.showRateLimitTimer);

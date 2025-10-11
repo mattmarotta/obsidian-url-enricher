@@ -3,6 +3,7 @@ import type { LinkPreviewBuilder } from "../linkPreview/previewBuilder";
 import { URL_IN_TEXT_REGEX } from "../utils/url";
 import { applyReplacements, TextReplacement } from "../utils/stringReplace";
 import { collectMarkdownFiles } from "../utils/vault";
+import type { ProgressReporter } from "../status/progressStatusManager";
 
 export interface BulkUpdateStats {
 	filesProcessed: number;
@@ -19,7 +20,7 @@ export class BulkLinkPreviewUpdater {
 		this.builder = builder;
 	}
 
-	async convertFile(file: TFile): Promise<number> {
+	async convertFile(file: TFile, progress?: ProgressReporter): Promise<number> {
 		const original = await this.app.vault.read(file);
 		const codeBlockRanges = findCodeBlockRanges(original);
 
@@ -52,6 +53,7 @@ export class BulkLinkPreviewUpdater {
 			}
 
 			replacements.push({ start, end: replaceEnd, value: cached + trailing });
+			progress?.increment();
 		}
 
 		if (!replacements.length) {
@@ -66,12 +68,12 @@ export class BulkLinkPreviewUpdater {
 		return replacements.length;
 	}
 
-	async convertFiles(files: TFile[]): Promise<BulkUpdateStats> {
+	async convertFiles(files: TFile[], progress?: ProgressReporter): Promise<BulkUpdateStats> {
 		let linksConverted = 0;
 		let filesUpdated = 0;
 
 		for (const file of files) {
-			const converted = await this.convertFile(file);
+			const converted = await this.convertFile(file, progress);
 			if (converted > 0) {
 				linksConverted += converted;
 				filesUpdated += 1;
@@ -85,14 +87,14 @@ export class BulkLinkPreviewUpdater {
 		};
 	}
 
-	async convertFolder(folder: TFolder): Promise<BulkUpdateStats> {
+	async convertFolder(folder: TFolder, progress?: ProgressReporter): Promise<BulkUpdateStats> {
 		const files = collectMarkdownFiles(folder);
-		return this.convertFiles(files);
+		return this.convertFiles(files, progress);
 	}
 
-	async convertVault(): Promise<BulkUpdateStats> {
+	async convertVault(progress?: ProgressReporter): Promise<BulkUpdateStats> {
 		const files = this.app.vault.getMarkdownFiles();
-		return this.convertFiles(files);
+		return this.convertFiles(files, progress);
 	}
 }
 

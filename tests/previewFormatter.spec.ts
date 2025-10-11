@@ -38,10 +38,13 @@ export default async function runPreviewFormatterTests(): Promise<void> {
 	zeroLimitRemovesDescription();
 	highLimitKeepsFullText();
 	stringLimitIsRespected();
+	metadataHtmlTagsAreRemoved();
 	urlListExtractionRecognizesMultipleUrls();
 	urlListExtractionRejectsMixedContent();
 	await replaceUrlsWithPreviewsHandlesMultipleLinks();
+	await replaceUrlsWithPreviewsHandlesLargeBatch();
 	await replaceUrlsWithPreviewsSkipsFailures();
+	await replaceUrlsWithPreviewsReportsProgress();
 	await googleSearchPreviewIncludesQuery();
 	await descriptionLimitAppliesWithoutLinkPreviewApi();
 	await customMetadataHandlerCanOverrideMetadata();
@@ -92,6 +95,27 @@ function stringLimitIsRespected(): void {
 	assert(!output.includes("trimmed when the limit"), "Description should be truncated to approximately 15 characters.");
 }
 
+function metadataHtmlTagsAreRemoved(): void {
+	const settings = createSettings({ showFavicon: false });
+	const metadata = createMetadata({
+		title: "<strong>Ludicity &amp; Co.</strong>",
+		description: '<blockquote>"While I\'m deeply sympathetic, the author should reconsider."</blockquote>',
+	});
+	const output = buildMarkdownPreview("https://ludic.mataroa.blog/", metadata, settings);
+	assert(
+		output.includes("Ludicity & Co."),
+		"HTML entities within titles should be decoded when building previews.",
+	);
+	assert(
+		output.includes("While I'm deeply sympathetic, the author should reconsider."),
+		"HTML markup should be stripped from descriptions while preserving text.",
+	);
+	assert(
+		!output.includes("<blockquote"),
+		"Generated markdown should not contain leftover HTML tags.",
+	);
+}
+
 function urlListExtractionRecognizesMultipleUrls(): void {
 	const clipboard = "<https://example.com>\nhttps://obsidian.md\n\nhttps://github.com";
 	const entries = extractUrlList(clipboard);
@@ -138,6 +162,28 @@ async function replaceUrlsWithPreviewsHandlesMultipleLinks(): Promise<void> {
 	);
 }
 
+async function replaceUrlsWithPreviewsHandlesLargeBatch(): Promise<void> {
+	const clipboard = Array.from({ length: 12 }, (_, index) => `https://example.com/page-${index + 1}`).join("\n");
+	const entries = extractUrlList(clipboard);
+	assert(entries && entries.length === 12, "extractUrlList should capture every URL in a large paste operation.");
+
+	const builder = {
+		async build(url: string): Promise<string> {
+			return `Converted preview for ${url}`;
+		},
+	};
+
+	const { text, converted } = await replaceUrlsWithPreviews(builder, clipboard, entries);
+	assert.equal(converted, 12, "replaceUrlsWithPreviews should convert every URL when the builder succeeds.");
+
+	const previews = text.split("\n");
+	assert.equal(previews.length, 12, "Converted text should contain one preview per URL.");
+	previews.forEach((preview, index) => {
+		const expectedUrl = `https://example.com/page-${index + 1}`;
+		assert.equal(preview, `Converted preview for ${expectedUrl}`, "Each preview should correspond to the correct URL.");
+	});
+}
+
 async function replaceUrlsWithPreviewsSkipsFailures(): Promise<void> {
 	const clipboard = "https://example.com\nhttps://obsidian.md";
 	const entries = extractUrlList(clipboard);
@@ -160,6 +206,38 @@ async function replaceUrlsWithPreviewsSkipsFailures(): Promise<void> {
 		"(https://example.com)\nhttps://obsidian.md",
 		"replaceUrlsWithPreviews should fall back to the original URL when a preview fails.",
 	);
+}
+
+async function replaceUrlsWithPreviewsReportsProgress(): Promise<void> {
+	const clipboard = "https://example.com\nhttps://example.org";
+	const entries = extractUrlList(clipboard);
+	assert(entries && entries.length === 2, "replaceUrlsWithPreviews requires URL metadata entries.");
+
+	const builder = {
+		async build(url: string): Promise<string> {
+			return `(${url})`;
+		},
+	};
+
+	let recordedTotal: number | null = null;
+	let increments = 0;
+	const progress = {
+		setTotal(total: number | null) {
+			recordedTotal = total;
+		},
+		increment(amount = 1) {
+			increments += amount;
+		},
+		finish() {
+			// no-op for tests
+		},
+	};
+
+	await replaceUrlsWithPreviews(builder, clipboard, entries, progress);
+	progress.finish();
+
+	assert.equal(recordedTotal, entries.length, "replaceUrlsWithPreviews should report the total number of URLs.");
+	assert.equal(increments, entries.length, "replaceUrlsWithPreviews should increment progress for every URL processed.");
 }
 
 async function googleSearchPreviewIncludesQuery(): Promise<void> {

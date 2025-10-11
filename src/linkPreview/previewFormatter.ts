@@ -1,4 +1,5 @@
 import type { InlineLinkPreviewSettings } from "../settings";
+import { sanitizeTextContent } from "../utils/text";
 import type { LinkMetadata } from "../services/linkPreviewService";
 
 const ELLIPSIS = "\u2026";
@@ -45,8 +46,11 @@ export function buildMarkdownPreview(
 }
 
 function sanitizeLinkText(value: string, keepEmoji: boolean): string {
-	const trimmed = value.replace(/\s+/g, " ").trim();
-	return keepEmoji ? trimmed : stripEmoji(trimmed);
+	const sanitized = sanitizeTextContent(value);
+	if (!sanitized) {
+		return "";
+	}
+	return keepEmoji ? sanitized : stripEmoji(sanitized);
 }
 
 function truncate(value: string, maxLength: number): string {

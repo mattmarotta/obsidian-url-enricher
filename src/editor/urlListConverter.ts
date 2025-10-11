@@ -1,5 +1,6 @@
 import type { LinkPreviewBuilder } from "../linkPreview/previewBuilder";
 import type { UrlListEntry } from "../utils/url";
+import type { ProgressReporter } from "../status/progressStatusManager";
 
 type PreviewBuilder = Pick<LinkPreviewBuilder, "build">;
 
@@ -12,10 +13,15 @@ export async function replaceUrlsWithPreviews(
 	builder: PreviewBuilder,
 	originalText: string,
 	entries: UrlListEntry[],
+	progress?: ProgressReporter,
 ): Promise<UrlListConversionResult> {
 	let result = "";
 	let cursor = 0;
 	let converted = 0;
+
+	if (progress) {
+		progress.setTotal(entries.length);
+	}
 
 	for (const entry of entries) {
 		result += originalText.slice(cursor, entry.start);
@@ -37,6 +43,7 @@ export async function replaceUrlsWithPreviews(
 		}
 
 		result += preview;
+		progress?.increment();
 		cursor = entry.end;
 	}
 

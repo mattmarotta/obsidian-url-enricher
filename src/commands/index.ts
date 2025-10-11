@@ -66,21 +66,22 @@ async function performBulkConversion(
 	plugin: InlineLinkPreviewPlugin,
 	scope: BulkConversionScope,
 ): Promise<void> {
+	const progress = plugin.processingStatus.create("Converting links");
 	try {
 		const { bulkUpdater } = plugin;
 		let stats;
 
 		if (scope.type === "file") {
-			const converted = await bulkUpdater.convertFile(scope.file);
+			const converted = await bulkUpdater.convertFile(scope.file, progress);
 			stats = {
 				filesProcessed: 1,
 				filesUpdated: converted > 0 ? 1 : 0,
 				linksConverted: converted,
 			};
 		} else if (scope.type === "folder") {
-			stats = await bulkUpdater.convertFolder(scope.folder);
+			stats = await bulkUpdater.convertFolder(scope.folder, progress);
 		} else {
-			stats = await bulkUpdater.convertVault();
+			stats = await bulkUpdater.convertVault(progress);
 		}
 
 		if (stats.linksConverted === 0) {
@@ -94,5 +95,7 @@ async function performBulkConversion(
 	} catch (error) {
 		console.error("[inline-link-preview] Bulk conversion failed", error);
 		new Notice("Failed to convert links. Check the developer console for details.");
+	} finally {
+		progress.finish();
 	}
 }
