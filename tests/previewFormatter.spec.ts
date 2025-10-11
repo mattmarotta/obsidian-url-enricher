@@ -6,6 +6,8 @@ import { LinkPreviewService } from "../src/services/linkPreviewService";
 import type { MetadataHandler } from "../src/services/metadataHandlers";
 import type { InlineLinkPreviewSettings } from "../src/settings";
 import type { LinkMetadata } from "../src/services/linkPreviewService";
+import { extractUrlList } from "../src/utils/url";
+import { replaceUrlsWithPreviews } from "../src/editor/urlListConverter";
 
 function createSettings(overrides: Partial<InlineLinkPreviewSettings> = {}): InlineLinkPreviewSettings {
 	return {
@@ -36,6 +38,10 @@ export default async function runPreviewFormatterTests(): Promise<void> {
 	zeroLimitRemovesDescription();
 	highLimitKeepsFullText();
 	stringLimitIsRespected();
+	urlListExtractionRecognizesMultipleUrls();
+	urlListExtractionRejectsMixedContent();
+	await replaceUrlsWithPreviewsHandlesMultipleLinks();
+	await replaceUrlsWithPreviewsSkipsFailures();
 	await googleSearchPreviewIncludesQuery();
 	await descriptionLimitAppliesWithoutLinkPreviewApi();
 	await customMetadataHandlerCanOverrideMetadata();
@@ -84,6 +90,76 @@ function stringLimitIsRespected(): void {
 		"String-based description limits should be coerced and respected.",
 	);
 	assert(!output.includes("trimmed when the limit"), "Description should be truncated to approximately 15 characters.");
+}
+
+function urlListExtractionRecognizesMultipleUrls(): void {
+	const clipboard = "<https://example.com>\nhttps://obsidian.md\n\nhttps://github.com";
+	const entries = extractUrlList(clipboard);
+	assert(entries && entries.length === 3, "extractUrlList should detect every URL in a pure list.");
+	const urls = entries?.map((entry) => entry.url) ?? [];
+	assert.deepEqual(
+		urls,
+		["https://example.com", "https://obsidian.md", "https://github.com"],
+		"extractUrlList should normalize wrapped and bare URLs.",
+	);
+}
+
+function urlListExtractionRejectsMixedContent(): void {
+	assert.equal(
+		extractUrlList("Take a look at https://example.com"),
+		null,
+		"extractUrlList should skip text that mixes prose with links.",
+	);
+	assert.equal(
+		extractUrlList("- https://example.com"),
+		null,
+		"extractUrlList should skip link lists that include additional characters.",
+	);
+}
+
+async function replaceUrlsWithPreviewsHandlesMultipleLinks(): Promise<void> {
+	const clipboard = "<https://example.com>\nhttps://obsidian.md";
+	const entries = extractUrlList(clipboard);
+	assert(entries && entries.length === 2, "replaceUrlsWithPreviews requires URL metadata entries.");
+
+	const builder = {
+		async build(url: string): Promise<string> {
+			return `[Preview for ${url}]`;
+		},
+	};
+
+	const { text, converted } = await replaceUrlsWithPreviews(builder, clipboard, entries);
+
+	assert.equal(converted, 2, "replaceUrlsWithPreviews should report the number of converted URLs.");
+	assert.equal(
+		text,
+		"[Preview for https://example.com]\n[Preview for https://obsidian.md]",
+		"replaceUrlsWithPreviews should substitute previews for every detected URL.",
+	);
+}
+
+async function replaceUrlsWithPreviewsSkipsFailures(): Promise<void> {
+	const clipboard = "https://example.com\nhttps://obsidian.md";
+	const entries = extractUrlList(clipboard);
+	assert(entries && entries.length === 2, "replaceUrlsWithPreviews requires URL metadata entries.");
+
+	const builder = {
+		async build(url: string): Promise<string> {
+			if (url.includes("obsidian")) {
+				throw new Error("metadata unavailable");
+			}
+			return `(${url})`;
+		},
+	};
+
+	const { text, converted } = await replaceUrlsWithPreviews(builder, clipboard, entries);
+
+	assert.equal(converted, 1, "replaceUrlsWithPreviews should only count successful conversions.");
+	assert.equal(
+		text,
+		"(https://example.com)\nhttps://obsidian.md",
+		"replaceUrlsWithPreviews should fall back to the original URL when a preview fails.",
+	);
 }
 
 async function googleSearchPreviewIncludesQuery(): Promise<void> {

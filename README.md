@@ -10,20 +10,21 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 
 ## Features
 
-- Convert pasted URLs into inline previews automatically (can be toggled).
+- Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
 - Display the site favicon before the preview text (can be disabled).
 - Keep emoji and other Unicode characters that appear in the source page.
 - Command palette action to convert the current selection to a preview.
 - Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
 - Adjustable description length limit plus networking timeout controls.
 - Optional status bar countdown when LinkPreview.net throttles requests.
+- Domain-aware metadata enrichments for Google search and Reddit links, with an extensible handler pipeline for additional sites.
 
 ## Usage
 
 ### Convert as you write
 1. Copy a URL to your clipboard.
 2. Paste it into a Markdown editor in Obsidian.
-3. The plugin briefly inserts the raw URL, then replaces it with a `[![favicon](favicon) Title — Description](url)` preview once metadata is fetched. If favicons or emoji are disabled in settings, they are omitted from the final text.
+3. The plugin briefly inserts the raw URL (or list of URLs), then replaces each entry with a `[![favicon](favicon) Title — Description](url)` preview once metadata is fetched. If favicons or emoji are disabled in settings, they are omitted from the final text.
 
 If the page cannot be reached, the URL is left as-is so you never lose what you pasted.
 
@@ -75,6 +76,7 @@ The release bundle consists of `manifest.json`, `main.js`, and optionally `style
 - `npm install` – install dependencies.
 - `npm run dev` – watch mode with incremental builds.
 - `npm run build` – type-check and create a production bundle.
+- `npm test` – run unit tests for preview formatting and paste conversion helpers.
 - `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
 
 Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules. All commands must use Obsidian’s registration APIs so they clean up correctly when the plugin unloads.

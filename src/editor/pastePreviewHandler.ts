@@ -1,8 +1,10 @@
-import { Editor, Notice } from "obsidian";
+import { Notice } from "obsidian";
+import type { Editor } from "obsidian";
 import type { LinkPreviewBuilder } from "../linkPreview/previewBuilder";
 import type { InlineLinkPreviewSettings } from "../settings";
 import { getPrimarySelection, isRangeMatching } from "../utils/editorHelpers";
-import { extractSingleUrl } from "../utils/url";
+import { extractUrlList } from "../utils/url";
+import { replaceUrlsWithPreviews } from "./urlListConverter";
 
 export class PastePreviewHandler {
 	private readonly builder: LinkPreviewBuilder;
@@ -20,8 +22,8 @@ export class PastePreviewHandler {
 		}
 
 		const clipboardText = event.clipboardData?.getData("text/plain") ?? "";
-		const url = extractSingleUrl(clipboardText);
-		if (!url) {
+		const urlEntries = extractUrlList(clipboardText);
+		if (!urlEntries || urlEntries.length === 0) {
 			return;
 		}
 
@@ -30,28 +32,28 @@ export class PastePreviewHandler {
 		const selection = getPrimarySelection(editor);
 		const startOffset = editor.posToOffset(selection.start);
 
-		editor.replaceSelection(url);
+		editor.replaceSelection(clipboardText);
 
 		const range = {
 			start: editor.offsetToPos(startOffset),
-			end: editor.offsetToPos(startOffset + url.length),
+			end: editor.offsetToPos(startOffset + clipboardText.length),
 		};
 
 		try {
-			const preview = await this.builder.build(url);
-			if (!preview) {
+			const { text: previewText, converted } = await replaceUrlsWithPreviews(this.builder, clipboardText, urlEntries);
+			if (converted === 0) {
 				return;
 			}
 
-			if (!isRangeMatching(editor, range, url)) {
+			if (!isRangeMatching(editor, range, clipboardText)) {
 				return;
 			}
 
-			editor.replaceRange(preview, range.start, range.end);
-			editor.setCursor(editor.offsetToPos(startOffset + preview.length));
+			editor.replaceRange(previewText, range.start, range.end);
+			editor.setCursor(editor.offsetToPos(startOffset + previewText.length));
 		} catch (error) {
-			console.warn("[inline-link-preview] Failed to build preview for pasted link", error);
-			new Notice("Inline link preview failed; pasted URL was left unchanged.");
+			console.warn("[inline-link-preview] Failed to build preview for pasted links", error);
+			new Notice("Inline link preview failed; pasted URLs were left unchanged.");
 		}
 	}
 }
