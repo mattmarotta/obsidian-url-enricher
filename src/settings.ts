@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type InlineLinkPreviewPlugin from "./main";
 
 export interface InlineLinkPreviewSettings {
@@ -157,5 +157,19 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					}
 				});
 			});
+
+		new Setting(containerEl)
+			.setName("Clear cached previews")
+			.setDesc("Remove stored metadata and favicons. Previews will be rebuilt on the next paste.")
+			.addButton((button) =>
+				button
+					.setButtonText("Clear cache")
+					.setWarning()
+					.onClick(() => {
+						this.plugin.linkPreviewService.clearCache();
+						this.plugin.rateLimitStatus?.update(null);
+						new Notice("Inline link preview cache cleared.");
+					}),
+			);
 	}
 }
