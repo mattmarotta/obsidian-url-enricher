@@ -3,6 +3,7 @@ import { __setRequestUrlMock } from "obsidian";
 import { buildMarkdownPreview } from "../src/linkPreview/previewFormatter";
 import { LinkPreviewBuilder } from "../src/linkPreview/previewBuilder";
 import { LinkPreviewService } from "../src/services/linkPreviewService";
+import type { MetadataHandler } from "../src/services/metadataHandlers";
 import type { InlineLinkPreviewSettings } from "../src/settings";
 import type { LinkMetadata } from "../src/services/linkPreviewService";
 
@@ -37,6 +38,7 @@ export default async function runPreviewFormatterTests(): Promise<void> {
 	stringLimitIsRespected();
 	await googleSearchPreviewIncludesQuery();
 	await descriptionLimitAppliesWithoutLinkPreviewApi();
+	await customMetadataHandlerCanOverrideMetadata();
 }
 
 function lowerLimitTruncates(): void {
@@ -260,6 +262,90 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 		assert(
 			!preview.includes("Pixel earbuds have we seen the best of Google ecosystem or is better coming?"),
 			"Truncated reddit previews should not include text beyond the configured description length.",
+		);
+	} finally {
+		__setRequestUrlMock(null);
+	}
+}
+
+async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
+	const articleUrl = "https://example.org/articles/123";
+	const articleHtml = `
+		<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="utf-8" />
+				<title>Example Domain</title>
+			</head>
+			<body>
+				<h1>Example placeholder</h1>
+			</body>
+		</html>
+	`;
+
+	const faviconUrl = "https://example.org/favicon.ico";
+
+	__setRequestUrlMock(async ({ url, method }) => {
+		const normalizedMethod = (method ?? "GET").toUpperCase();
+		if (url === articleUrl) {
+			return {
+				status: 200,
+				text: articleHtml,
+				headers: {
+					"content-type": "text/html; charset=utf-8",
+					"x-final-url": articleUrl,
+				},
+			};
+		}
+
+		if (url === faviconUrl) {
+			return {
+				status: 200,
+				text: "",
+				headers: {
+					"content-type": "image/x-icon",
+				},
+			};
+		}
+
+		if (/example\.org\/favicon/i.test(url) || /example\.org\/apple-touch-icon/i.test(url)) {
+			return {
+				status: 404,
+				text: "",
+				headers: {
+					"content-type": "text/plain",
+				},
+			};
+		}
+
+		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
+	});
+
+	try {
+		const service = new LinkPreviewService({
+			requestTimeoutMs: 0,
+			useLinkPreviewApi: false,
+			linkPreviewApiKey: null,
+		});
+
+		const customHandler: MetadataHandler = {
+			matches: ({ url }) => url.hostname === "example.org",
+			async enrich({ metadata }) {
+				metadata.title = "Example Override";
+				metadata.description = "Custom summary for Example.";
+			},
+		};
+
+		service.registerMetadataHandler(customHandler);
+
+		const settings = createSettings({ includeDescription: true, maxDescriptionLength: 120, showFavicon: false });
+		const builder = new LinkPreviewBuilder(service, () => settings);
+		const preview = await builder.build(articleUrl);
+
+		assert.equal(
+			preview,
+			"[Example Override — Custom summary for Example.](<https://example.org/articles/123>)",
+			"Custom metadata handlers should be able to override titles and descriptions for new domains.",
 		);
 	} finally {
 		__setRequestUrlMock(null);

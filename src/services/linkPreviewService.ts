@@ -1,10 +1,12 @@
-import { requestUrl, RequestUrlResponse } from "obsidian";
+import { requestUrl, RequestUrlParam, RequestUrlResponse } from "obsidian";
+import type { LinkMetadata } from "./types";
+import {
+	createDefaultMetadataHandlers,
+	type MetadataHandler,
+	type MetadataHandlerContext,
+} from "./metadataHandlers";
 
-export interface LinkMetadata {
-	title: string;
-	description: string | null;
-	favicon: string | null;
-}
+export type { LinkMetadata } from "./types";
 
 export interface LinkPreviewServiceOptions {
 	requestTimeoutMs: number;
@@ -21,13 +23,15 @@ interface ParsedMetadata {
 export class LinkPreviewService {
 	private cache = new Map<string, LinkMetadata>();
 	private options: LinkPreviewServiceOptions;
+	private readonly metadataHandlers: MetadataHandler[];
 	private rateLimitResetAt = 0;
 	private rateLimitListener: ((resetAt: number | null) => void) | null = null;
 	private faviconCache = new Map<string, string | null>();
 	private faviconValidationCache = new Map<string, string | null>();
 
-	constructor(options: LinkPreviewServiceOptions) {
+	constructor(options: LinkPreviewServiceOptions, metadataHandlers: MetadataHandler[] = createDefaultMetadataHandlers()) {
 		this.options = { ...options };
+		this.metadataHandlers = metadataHandlers;
 	}
 
 	updateOptions(options: Partial<LinkPreviewServiceOptions>): void {
@@ -43,6 +47,10 @@ export class LinkPreviewService {
 			this.rateLimitResetAt = 0;
 			this.notifyRateLimit(null);
 		}
+	}
+
+	registerMetadataHandler(handler: MetadataHandler): void {
+		this.metadataHandlers.push(handler);
 	}
 
 	clearCache(): void {
@@ -274,6 +282,23 @@ export class LinkPreviewService {
 			console.warn("[inline-link-preview] LinkPreview.net request failed", error);
 			this.rateLimitResetAt = 0;
 			this.notifyRateLimit(null);
+			return null;
+		}
+	}
+
+	private async performRequest(request: RequestUrlParam): Promise<RequestUrlResponse> {
+		const headers = {
+			...this.buildRequestHeaders(),
+			...(request.headers ?? {}),
+		};
+
+		return await requestUrl({ ...request, headers });
+	}
+
+	private parseUrl(rawUrl: string): URL | null {
+		try {
+			return new URL(rawUrl);
+		} catch {
 			return null;
 		}
 	}
@@ -543,30 +568,42 @@ export class LinkPreviewService {
 	private async finalizeMetadata(pageUrl: string, metadata: LinkMetadata, extraFavicons: string[] = []): Promise<LinkMetadata> {
 		const finalized: LinkMetadata = { ...metadata };
 
-		if (this.isRedditUrl(pageUrl)) {
-			const needsRedditData = this.isGenericRedditTitle(finalized.title) || !finalized.description;
-			if (needsRedditData) {
-				const redditData = await this.fetchRedditMetadata(pageUrl);
-				if (redditData) {
-					if (redditData.title) {
-						finalized.title = redditData.title;
-					}
-					if (redditData.description) {
-						finalized.description = redditData.description;
-					}
-				}
-			}
-		}
+		await this.applyMetadataHandlers(pageUrl, finalized);
 
-		if (this.isGoogleSearchUrl(pageUrl)) {
-			const query = this.extractGoogleSearchQuery(pageUrl);
-			if (query && this.isGenericGoogleSearchTitle(finalized.title)) {
-				finalized.title = `Google Search — ${query}`;
-			}
-		}
+		finalized.title = this.ensureTitle(finalized.title, pageUrl);
+		finalized.description = this.sanitizeText(finalized.description);
 
 		finalized.favicon = await this.resolveFavicon(pageUrl, finalized.favicon, extraFavicons);
 		return finalized;
+	}
+
+	private async applyMetadataHandlers(pageUrl: string, metadata: LinkMetadata): Promise<void> {
+		const parsedUrl = this.parseUrl(pageUrl);
+		if (!parsedUrl) {
+			return;
+		}
+
+		const context: MetadataHandlerContext = {
+			originalUrl: pageUrl,
+			url: parsedUrl,
+			metadata,
+			request: (request: RequestUrlParam) => this.performRequest(request),
+			sanitizeText: (value: string | null | undefined) => this.sanitizeText(value),
+		};
+
+		for (const handler of this.metadataHandlers) {
+			try {
+				if (await handler.matches(context)) {
+					await handler.enrich(context);
+				}
+			} catch (error) {
+				console.warn(
+					"[inline-link-preview] Metadata handler failed",
+					handler.constructor?.name ?? "UnknownHandler",
+					error instanceof Error ? error.message : error,
+				);
+			}
+		}
 	}
 
 	private async resolveFavicon(pageUrl: string, initial: string | null, extraCandidates: string[] = []): Promise<string | null> {
@@ -654,101 +691,4 @@ export class LinkPreviewService {
 		return null;
 	}
 
-	private isRedditUrl(url: string): boolean {
-		try {
-			const parsed = new URL(url);
-			return /(^|\.)reddit\.com$/i.test(parsed.hostname);
-		} catch {
-			return false;
-		}
-	}
-
-	private isGenericRedditTitle(title: string): boolean {
-		const normalized = title.trim().toLowerCase();
-		return (
-			normalized === "reddit.com" ||
-			normalized === "reddit" ||
-			normalized.includes("the heart of the internet")
-		);
-	}
-
-	private isGoogleSearchUrl(url: string): boolean {
-		try {
-			const parsed = new URL(url);
-			if (parsed.pathname !== "/search") {
-				return false;
-			}
-
-			const segments = parsed.hostname.toLowerCase().split(".");
-			return segments.includes("google");
-		} catch {
-			return false;
-		}
-	}
-
-	private extractGoogleSearchQuery(url: string): string | null {
-		try {
-			const parsed = new URL(url);
-			const query = parsed.searchParams.get("q") ?? parsed.searchParams.get("query");
-			if (!query) {
-				return null;
-			}
-
-			const cleaned = query.replace(/\s+/g, " ").trim();
-			return cleaned.length ? cleaned : null;
-		} catch {
-			return null;
-		}
-	}
-
-	private isGenericGoogleSearchTitle(title: string): boolean {
-		const normalized = title.replace(/\s+/g, " ").trim().toLowerCase();
-		return normalized === "" || normalized === "google" || normalized === "google search";
-	}
-
-	private async fetchRedditMetadata(url: string): Promise<{ title?: string; description?: string } | null> {
-		try {
-			const parsed = new URL(url);
-			if (!/\/comments\//.test(parsed.pathname)) {
-				return null;
-			}
-
-			const jsonUrl = new URL(parsed.pathname.replace(/\/?$/, "/") + ".json", `${parsed.protocol}//${parsed.host}`);
-			if (parsed.search) {
-				jsonUrl.search = parsed.search;
-			}
-
-			const response = await requestUrl({ url: jsonUrl.href, method: "GET", headers: this.buildRequestHeaders() });
-			if (response.status >= 400) {
-				return null;
-			}
-
-			const payload = JSON.parse(response.text) as Array<{ data?: { children?: Array<{ data?: any }> } }>;
-			const post = payload?.[0]?.data?.children?.[0]?.data;
-			if (!post) {
-				return null;
-			}
-
-			const rawTitle = typeof post.title === "string" ? post.title.trim() : "";
-			const subredditName = typeof post.subreddit === "string" ? post.subreddit.trim() : "";
-			const descriptionSource =
-				typeof post.selftext === "string"
-					? post.selftext
-					: typeof post.public_description === "string"
-					? post.public_description
-					: "";
-
-			const normalizedDescription = descriptionSource.replace(/\s+/g, " ").trim();
-			const preferredTitle = subredditName ? `r/${subredditName} - Reddit` : rawTitle;
-			const fallbackDescription = normalizedDescription || rawTitle;
-
-			return {
-				title: preferredTitle || undefined,
-				description: fallbackDescription || undefined,
-			};
-		} catch (error) {
-			console.warn("[inline-link-preview] Failed to fetch Reddit metadata", error);
-			return null;
-		}
-	}
 }
