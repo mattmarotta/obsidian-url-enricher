@@ -2,6 +2,7 @@ import type InlineLinkPreviewPlugin from "../main";
 
 export interface ProgressReporter {
 	setTotal(total: number | null): void;
+	setLabel(label: string): void;
 	increment(amount?: number): void;
 	finish(): void;
 }
@@ -119,7 +120,7 @@ export class LinkProcessingStatusManager {
 }
 
 class ProgressHandle implements ProgressReporter {
-	readonly label: string;
+	label: string;
 	private readonly manager: LinkProcessingStatusManager;
 	private finished = false;
 	completed = 0;
@@ -129,6 +130,14 @@ class ProgressHandle implements ProgressReporter {
 		this.manager = manager;
 		this.label = label;
 		this.total = total && total > 0 ? total : null;
+	}
+
+	setLabel(label: string): void {
+		if (this.finished) {
+			return;
+		}
+		this.label = label;
+		this.manager.notifyProgress(this);
 	}
 
 	setTotal(total: number | null): void {

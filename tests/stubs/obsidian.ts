@@ -7,7 +7,9 @@ export interface RequestUrlParams {
 export interface RequestUrlResponse {
 	status: number;
 	text: string;
-	headers?: Record<string, string>;
+	headers: Record<string, string>;
+	json?: () => Promise<unknown>;
+	arrayBuffer?: () => Promise<ArrayBuffer>;
 }
 
 type RequestUrlMock = (params: RequestUrlParams) => Promise<RequestUrlResponse> | RequestUrlResponse;

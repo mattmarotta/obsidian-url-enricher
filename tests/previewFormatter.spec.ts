@@ -8,6 +8,11 @@ import type { InlineLinkPreviewSettings } from "../src/settings";
 import type { LinkMetadata } from "../src/services/linkPreviewService";
 import { extractUrlList } from "../src/utils/url";
 import { replaceUrlsWithPreviews } from "../src/editor/urlListConverter";
+import type { RequestUrlParams, RequestUrlResponse } from "./stubs/obsidian";
+
+function setRequestUrlMock(mock: ((params: RequestUrlParams) => Promise<RequestUrlResponse> | RequestUrlResponse) | null): void {
+	(__setRequestUrlMock as unknown as (mock: ((params: RequestUrlParams) => Promise<RequestUrlResponse> | RequestUrlResponse) | null) => void)(mock);
+}
 
 function createSettings(overrides: Partial<InlineLinkPreviewSettings> = {}): InlineLinkPreviewSettings {
 	return {
@@ -33,6 +38,20 @@ function createMetadata(overrides: Partial<LinkMetadata> = {}): LinkMetadata {
 	};
 }
 
+function extractPreviewText(preview: string): string {
+	const markdownMatch = preview.match(/^\[(.+)]\(<.+>\)$/);
+	if (markdownMatch) {
+		return markdownMatch[1].replace(/^!\[inline-link-preview-icon]\(<[^>]+>\)\s*/, "").trimStart();
+	}
+
+	const htmlMatch = preview.match(/<span class="inline-link-preview-text">([^<]+)<\/span>/);
+	if (htmlMatch) {
+		return htmlMatch[1];
+	}
+
+	return preview;
+}
+
 export default async function runPreviewFormatterTests(): Promise<void> {
 	lowerLimitTruncates();
 	zeroLimitRemovesDescription();
@@ -45,19 +64,22 @@ export default async function runPreviewFormatterTests(): Promise<void> {
 	await replaceUrlsWithPreviewsHandlesLargeBatch();
 	await replaceUrlsWithPreviewsSkipsFailures();
 	await replaceUrlsWithPreviewsReportsProgress();
+	await replaceUrlsWithPreviewsHandlesMarkdownLinks();
+	descriptionLimitHandlesEmDash();
 	await googleSearchPreviewIncludesQuery();
 	await descriptionLimitAppliesWithoutLinkPreviewApi();
 	await customMetadataHandlerCanOverrideMetadata();
+	await youtubePreviewFallsBackToIcon();
+	await generatedFaviconUsedWhenSiteHasNone();
 }
 
 function lowerLimitTruncates(): void {
 	const settings = createSettings({ maxDescriptionLength: 10 });
 	const metadata = createMetadata();
 	const output = buildMarkdownPreview("https://example.com/page", metadata, settings);
-	assert(
-		output.includes("Sample Title — This is a…"),
-		"Description should truncate and append ellipsis when a short limit is set.",
-	);
+	const text = extractPreviewText(output);
+	assert(text.endsWith("…"), "Preview text should end with an ellipsis when truncated.");
+	assert(Array.from(text).length <= 10, "Preview text should respect the configured character limit.");
 }
 
 function zeroLimitRemovesDescription(): void {
@@ -75,10 +97,12 @@ function highLimitKeepsFullText(): void {
 	const settings = createSettings({ maxDescriptionLength: 200 });
 	const metadata = createMetadata();
 	const output = buildMarkdownPreview("https://example.com/page", metadata, settings);
+	const text = extractPreviewText(output);
 	assert(
-		output.includes("Sample Title — This is a long description"),
-		"Description should remain intact when the limit exceeds its length.",
+		text.includes("This is a long description"),
+		"Preview text should remain intact when the limit exceeds its length.",
 	);
+	assert(!text.endsWith("…"), "No ellipsis should be added when the preview is within the limit.");
 }
 
 function stringLimitIsRespected(): void {
@@ -88,11 +112,9 @@ function stringLimitIsRespected(): void {
 	});
 	const metadata = createMetadata();
 	const output = buildMarkdownPreview("https://example.com/page", metadata, settings);
-	assert(
-		output.includes("Sample Title — This is a"),
-		"String-based description limits should be coerced and respected.",
-	);
-	assert(!output.includes("trimmed when the limit"), "Description should be truncated to approximately 15 characters.");
+	const text = extractPreviewText(output);
+	assert(Array.from(text).length <= 15, "String-based description limits should be coerced and respected.");
+	assert(text.endsWith("…"), "Coerced limits should still append an ellipsis when truncating.");
 }
 
 function metadataHtmlTagsAreRemoved(): void {
@@ -102,12 +124,13 @@ function metadataHtmlTagsAreRemoved(): void {
 		description: '<blockquote>"While I\'m deeply sympathetic, the author should reconsider."</blockquote>',
 	});
 	const output = buildMarkdownPreview("https://ludic.mataroa.blog/", metadata, settings);
+	const text = extractPreviewText(output);
 	assert(
-		output.includes("Ludicity & Co."),
+		text.includes("Ludicity & Co."),
 		"HTML entities within titles should be decoded when building previews.",
 	);
 	assert(
-		output.includes("While I'm deeply sympathetic, the author should reconsider."),
+		text.includes("While I'm deeply sympathetic"),
 		"HTML markup should be stripped from descriptions while preserving text.",
 	);
 	assert(
@@ -221,7 +244,11 @@ async function replaceUrlsWithPreviewsReportsProgress(): Promise<void> {
 
 	let recordedTotal: number | null = null;
 	let increments = 0;
+	let lastLabel: string | null = null;
 	const progress = {
+		setLabel(label: string) {
+			lastLabel = label;
+		},
 		setTotal(total: number | null) {
 			recordedTotal = total;
 		},
@@ -238,6 +265,46 @@ async function replaceUrlsWithPreviewsReportsProgress(): Promise<void> {
 
 	assert.equal(recordedTotal, entries.length, "replaceUrlsWithPreviews should report the total number of URLs.");
 	assert.equal(increments, entries.length, "replaceUrlsWithPreviews should increment progress for every URL processed.");
+	assert.equal(lastLabel, null, "replaceUrlsWithPreviews should not update the progress label directly.");
+}
+
+async function replaceUrlsWithPreviewsHandlesMarkdownLinks(): Promise<void> {
+	const url = "https://example.com/article";
+	const markdown = `[${url}](${url})`;
+	const entries = extractUrlList(markdown);
+	assert(entries && entries.length === 1, "extractUrlList should treat markdown links as a single entry.");
+	if (!entries) {
+		throw new Error("extractUrlList did not return entries for markdown link");
+	}
+
+	const builder = {
+		async build(requested: string): Promise<string> {
+			return `converted:${requested}`;
+		},
+	};
+
+	const { text, converted } = await replaceUrlsWithPreviews(builder, markdown, entries);
+	assert.equal(text, `converted:${url}`, "Markdown links should be fully replaced by the preview markup.");
+	assert.equal(converted, 1, "Converting a markdown link should only count once.");
+}
+
+function descriptionLimitHandlesEmDash(): void {
+	const url = "https://example.com/fitness";
+	const description = "Take your posture out of the equation — start strong and keep going until the finish line.";
+	const settings = createSettings({ showFavicon: false, maxDescriptionLength: 40 });
+	const metadata = createMetadata({
+		title: "Strength Routine",
+		description,
+	});
+
+	const preview = buildMarkdownPreview(url, metadata, settings);
+	const match = preview.match(/— (.+)]\(<https:\/\/example\.com\/fitness>\)/);
+	assert(match, "Preview should contain the truncated description after the dash.");
+	const truncated = match?.[1] ?? "";
+	assert(truncated.endsWith("…"), "Truncated description should end with an ellipsis.");
+	const withoutEllipsis = truncated.slice(0, -1);
+	const length = Array.from(withoutEllipsis).length;
+	assert(length <= 40, "Truncated description should respect the configured character limit.");
 }
 
 async function googleSearchPreviewIncludesQuery(): Promise<void> {
@@ -255,37 +322,37 @@ async function googleSearchPreviewIncludesQuery(): Promise<void> {
 		</html>
 	`;
 
-	__setRequestUrlMock(async ({ url, method }) => {
+	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
 		const normalizedMethod = (method ?? "GET").toUpperCase();
 		if (url === googleUrl) {
-			return {
-				status: 200,
-				text: googleHtml,
-				headers: {
-					"content-type": "text/html; charset=utf-8",
-					"x-final-url": googleUrl,
-				},
-			};
+	return {
+		status: 200,
+		text: googleHtml,
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"x-final-url": googleUrl,
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (url === "https://www.google.com/favicon.ico") {
-			return {
-				status: 200,
-				text: "",
-				headers: {
-					"content-type": "image/x-icon",
-				},
-			};
+	return {
+		status: 200,
+		text: "",
+		headers: {
+			"content-type": "image/x-icon",
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (/google\.com\/favicon/i.test(url) || /google\.com\/apple-touch-icon/i.test(url)) {
-			return {
-				status: 404,
-				text: "",
-				headers: {
-					"content-type": "text/plain",
-				},
-			};
+	return {
+		status: 404,
+		text: "",
+		headers: {
+			"content-type": "text/plain",
+		},
+	} as RequestUrlResponse;
 		}
 
 		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
@@ -308,7 +375,7 @@ async function googleSearchPreviewIncludesQuery(): Promise<void> {
 			"Google search previews should include the search query in the title.",
 		);
 	} finally {
-		__setRequestUrlMock(null);
+		setRequestUrlMock(null);
 	}
 }
 
@@ -352,47 +419,47 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 	const redditJsonUrl =
 		"https://www.reddit.com/r/PixelBook/comments/1nxv8v5/i_am_deeply_embedded_within_the_google_android/.json";
 
-	__setRequestUrlMock(async ({ url, method }) => {
+	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
 		const normalizedMethod = (method ?? "GET").toUpperCase();
 		if (url === redditUrl) {
-			return {
-				status: 200,
-				text: redditHtml,
-				headers: {
-					"content-type": "text/html; charset=utf-8",
-					"x-final-url": redditUrl,
-				},
-			};
+	return {
+		status: 200,
+		text: redditHtml,
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"x-final-url": redditUrl,
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (url === redditJsonUrl) {
-			return {
-				status: 200,
-				text: redditJson,
-				headers: {
-					"content-type": "application/json",
-				},
-			};
+	return {
+		status: 200,
+		text: redditJson,
+		headers: {
+			"content-type": "application/json",
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (url === redditFavicon) {
-			return {
-				status: normalizedMethod === "HEAD" ? 200 : 200,
-				text: "",
-				headers: {
-					"content-type": "image/x-icon",
-				},
-			};
+	return {
+		status: normalizedMethod === "HEAD" ? 200 : 200,
+		text: "",
+		headers: {
+			"content-type": "image/x-icon",
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (/reddit\.com\/favicon/i.test(url) || /apple-touch-icon/i.test(url)) {
-			return {
-				status: 404,
-				text: "",
-				headers: {
-					"content-type": "text/plain",
-				},
-			};
+	return {
+		status: 404,
+		text: "",
+		headers: {
+			"content-type": "text/plain",
+		},
+	} as RequestUrlResponse;
 		}
 
 		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
@@ -407,18 +474,16 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 
 		const settings = createSettings({ maxDescriptionLength: 60, showFavicon: false });
 		const builder = new LinkPreviewBuilder(service, () => settings);
-		const preview = await builder.build(redditUrl);
+	const preview = await builder.build(redditUrl);
 
-		assert(
-			preview.startsWith("[r/PixelBook - Reddit — I am deeply embedded within the Google android ecosystem Pix…"),
-			"Reddit previews should use subreddit-based titles and truncate the post text when LinkPreview.net is disabled.",
-		);
-		assert(
-			!preview.includes("Pixel earbuds have we seen the best of Google ecosystem or is better coming?"),
-			"Truncated reddit previews should not include text beyond the configured description length.",
-		);
+	const text = extractPreviewText(preview);
+	assert(
+		text.startsWith("r/PixelBook - Reddit — I am deeply embedded within the Goog"),
+		`Reddit previews should use subreddit-based titles and include truncated post text when LinkPreview.net is disabled. Received: ${text}`,
+	);
+	assert(Array.from(text).length <= settings.maxDescriptionLength, "Preview text should respect the configured limit for Reddit links.");
 	} finally {
-		__setRequestUrlMock(null);
+		setRequestUrlMock(null);
 	}
 }
 
@@ -439,37 +504,37 @@ async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
 
 	const faviconUrl = "https://example.org/favicon.ico";
 
-	__setRequestUrlMock(async ({ url, method }) => {
+	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
 		const normalizedMethod = (method ?? "GET").toUpperCase();
 		if (url === articleUrl) {
-			return {
-				status: 200,
-				text: articleHtml,
-				headers: {
-					"content-type": "text/html; charset=utf-8",
-					"x-final-url": articleUrl,
-				},
-			};
+	return {
+		status: 200,
+		text: articleHtml,
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"x-final-url": articleUrl,
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (url === faviconUrl) {
-			return {
-				status: 200,
-				text: "",
-				headers: {
-					"content-type": "image/x-icon",
-				},
-			};
+	return {
+		status: 200,
+		text: "",
+		headers: {
+			"content-type": "image/x-icon",
+		},
+	} as RequestUrlResponse;
 		}
 
 		if (/example\.org\/favicon/i.test(url) || /example\.org\/apple-touch-icon/i.test(url)) {
-			return {
-				status: 404,
-				text: "",
-				headers: {
-					"content-type": "text/plain",
-				},
-			};
+	return {
+		status: 404,
+		text: "",
+		headers: {
+			"content-type": "text/plain",
+		},
+	} as RequestUrlResponse;
 		}
 
 		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
@@ -502,6 +567,202 @@ async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
 			"Custom metadata handlers should be able to override titles and descriptions for new domains.",
 		);
 	} finally {
-		__setRequestUrlMock(null);
+		setRequestUrlMock(null);
+	}
+}
+
+async function youtubePreviewFallsBackToIcon(): Promise<void> {
+	const globalObject = globalThis as unknown as { fetch?: typeof fetch };
+	const originalFetch = globalObject.fetch;
+
+	const youtubeUrl = "https://www.youtube.com/watch?v=abcdefghijk";
+	const youtubeHtml = `
+		<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="utf-8" />
+				<title>YouTube</title>
+			</head>
+			<body>
+				<div>YouTube placeholder</div>
+			</body>
+		</html>
+	`;
+
+	const faviconUrl = "https://www.youtube.com/favicon.ico";
+
+	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
+		const normalizedMethod = (method ?? "GET").toUpperCase();
+		if (url === youtubeUrl) {
+	return {
+		status: 200,
+		text: youtubeHtml,
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"x-final-url": youtubeUrl,
+		},
+	} as RequestUrlResponse;
+		}
+
+		if (url === faviconUrl) {
+	return {
+		status: normalizedMethod === "HEAD" ? 404 : 404,
+		text: "",
+		headers: {
+			"content-type": "text/plain",
+		},
+	} as RequestUrlResponse;
+		}
+
+		if (/youtube\.com\/favicon/i.test(url)) {
+	return {
+		status: 404,
+		text: "",
+		headers: {
+			"content-type": "text/plain",
+		},
+	} as RequestUrlResponse;
+		}
+
+		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
+	});
+
+	globalObject.fetch = (async (input: RequestInfo | URL) => {
+		const href = typeof input === "string" ? input : input instanceof URL ? input.href : "";
+		if (href.startsWith("https://api.linkpreview.net")) {
+			const headers: Record<string, string> = {
+				"content-type": "application/json",
+			};
+
+			const payload = {
+				title: "YouTube Video Title",
+				description: "Video description from LinkPreview API.",
+				image: "https://img.youtube.com/vi/abcdefghijk/maxresdefault.jpg",
+				url: youtubeUrl,
+			};
+
+			return {
+				ok: true,
+				status: 200,
+				headers: {
+					get(name: string) {
+						return headers[name.toLowerCase()] ?? headers[name] ?? null;
+					},
+				},
+				async json() {
+					return payload;
+				},
+			} as unknown as Response;
+		}
+
+		throw new Error(`Unhandled fetch request: ${href}`);
+	}) as typeof fetch;
+
+	try {
+		const service = new LinkPreviewService({
+			requestTimeoutMs: 0,
+			useLinkPreviewApi: true,
+			linkPreviewApiKey: "dummy-key",
+		});
+
+		const settings = createSettings({ showFavicon: true, includeDescription: false });
+		const builder = new LinkPreviewBuilder(service, () => settings);
+	const preview = await builder.build(youtubeUrl);
+
+	assert(preview.startsWith("<a class=\"inline-link-preview-link\""), "YouTube previews should render as an HTML anchor to suppress Obsidian embeds.");
+	assert(
+		preview.includes("<img class=\"inline-link-preview-icon\""),
+		"YouTube previews should include the favicon image within the HTML anchor.",
+	);
+	assert(
+		preview.includes("<span class=\"inline-link-preview-text\">YouTube Video Title"),
+		"YouTube previews should render the link text inside a span for consistent styling.",
+	);
+	assert(
+		preview.includes("https://www.youtube-nocookie.com/watch?v=abcdefghijk"),
+		"YouTube previews should point to the privacy-friendly youtube-nocookie.com domain to avoid embeds.",
+	);
+	assert(
+		preview.includes('src="data:image/svg+xml'),
+		"YouTube previews should fall back to a generated favicon when LinkPreview API returns thumbnails.",
+	);
+	assert(
+		!preview.includes("img.youtube.com"),
+		"YouTube previews should avoid embedding the video thumbnail in the markdown output.",
+	);
+	} finally {
+	setRequestUrlMock(null);
+		if (originalFetch) {
+			globalObject.fetch = originalFetch;
+		} else {
+			delete globalObject.fetch;
+		}
+	}
+}
+
+async function generatedFaviconUsedWhenSiteHasNone(): Promise<void> {
+	const articleUrl = "https://news.example.com/story";
+
+	const articleHtml = `
+		<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="utf-8" />
+				<title>Example News Story</title>
+			</head>
+			<body>
+				<p>Example article</p>
+			</body>
+		</html>
+	`;
+
+	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
+		const normalizedMethod = (method ?? "GET").toUpperCase();
+
+		if (url === articleUrl) {
+	return {
+		status: 200,
+		text: articleHtml,
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"x-final-url": articleUrl,
+		},
+	} as RequestUrlResponse;
+		}
+
+		if (/news\.example\.com\/favicon/i.test(url)) {
+	return {
+		status: 404,
+		text: "",
+		headers: {
+			"content-type": "text/plain",
+		},
+	} as RequestUrlResponse;
+		}
+
+		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
+	});
+
+	try {
+		const service = new LinkPreviewService({
+			requestTimeoutMs: 0,
+			useLinkPreviewApi: false,
+			linkPreviewApiKey: null,
+		});
+
+		const settings = createSettings({ showFavicon: true, includeDescription: false });
+		const builder = new LinkPreviewBuilder(service, () => settings);
+		const preview = await builder.build(articleUrl);
+
+	assert(
+		preview.includes("![inline-link-preview-icon]"),
+		"Sites without a favicon should still render a generated inline icon for consistency.",
+	);
+	assert(
+		preview.includes('(<data:image/svg+xml'),
+		"Sites without a favicon should fall back to a generated icon so the preview never shows a broken image.",
+	);
+	} finally {
+		setRequestUrlMock(null);
 	}
 }

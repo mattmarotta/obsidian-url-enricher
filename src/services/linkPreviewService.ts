@@ -16,9 +16,9 @@ export interface LinkPreviewServiceOptions {
 }
 
 interface ParsedMetadata {
-    title?: string | null;
-    description?: string | null;
-    favicon?: string | null;
+	title?: string | null;
+	description?: string | null;
+	favicon?: string | null;
 }
 
 export class LinkPreviewService {
@@ -259,8 +259,10 @@ export class LinkPreviewService {
 
 			const title = payload.title ?? "";
 			const description = payload.description ?? null;
-			const faviconCandidate = this.sanitizeFavicon(payload.image ?? null, payload.url ?? url);
-			const favicon = this.deriveFaviconFromUrl(payload.url ?? url);
+			const sanitizedImage = this.sanitizeFavicon(payload.image ?? null, payload.url ?? url);
+			const directFavicon = sanitizedImage && this.isLikelyFaviconUrl(sanitizedImage) ? sanitizedImage : null;
+			const favicon = directFavicon ?? this.deriveFaviconFromUrl(payload.url ?? url);
+			const extraFavicons: string[] = directFavicon ? [directFavicon] : [];
 
 			if (!title && !description) {
 				this.rateLimitResetAt = 0;
@@ -277,7 +279,7 @@ export class LinkPreviewService {
 					description,
 					favicon,
 				},
-				extraFavicons: faviconCandidate ? [faviconCandidate] : [],
+				extraFavicons,
 			};
 		} catch (error) {
 			console.warn("[inline-link-preview] LinkPreview.net request failed", error);
@@ -534,6 +536,46 @@ export class LinkPreviewService {
 		return null;
 	}
 
+	private generateFallbackFavicon(pageUrl: string): string | null {
+		try {
+			const parsed = new URL(pageUrl);
+			const host = parsed.hostname.replace(/^www\./i, "");
+			const letterMatch = host.match(/[a-z0-9]/i);
+			const letter = (letterMatch?.[0] ?? "•").toUpperCase();
+			const palette = ["#6366F1", "#EC4899", "#F97316", "#22C55E", "#06B6D4", "#8B5CF6"];
+			const color = palette[Math.abs(this.hashHost(host)) % palette.length];
+			const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="${color}" stop-opacity="0.95"/><stop offset="100%" stop-color="${color}" stop-opacity="0.75"/></linearGradient></defs><circle cx="24" cy="24" r="22" fill="url(#grad)"/><text x="24" y="29" font-size="20" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">${letter}</text></svg>`;
+			return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+		} catch {
+			return null;
+		}
+	}
+
+	private hashHost(value: string): number {
+		let hash = 0;
+		for (let index = 0; index < value.length; index += 1) {
+			hash = (hash * 31 + value.charCodeAt(index)) | 0;
+		}
+		return hash;
+	}
+
+	private isLikelyFaviconUrl(candidate: string): boolean {
+		const lower = candidate.toLowerCase();
+		if (lower.startsWith("data:")) {
+			return true;
+		}
+
+		if (/\.(ico|png|svg|gif|webp)$/i.test(lower)) {
+			return true;
+		}
+
+		if (/\.(jpg|jpeg)$/i.test(lower)) {
+			return /\b(icon|favicon|logo)\b/.test(lower);
+		}
+
+		return /\b(icon|favicon|logo)\b/.test(lower);
+	}
+
 	private sanitizeFavicon(candidate: string | null | undefined, baseUrl: string): string | null {
 		if (!candidate) {
 			return null;
@@ -621,6 +663,12 @@ export class LinkPreviewService {
 				}
 			}
 
+			const fallback = this.generateFallbackFavicon(pageUrl);
+			if (fallback) {
+				this.faviconCache.set(origin, fallback);
+				return fallback;
+			}
+
 			this.faviconCache.set(origin, null);
 			return null;
 		} catch {
@@ -651,11 +699,19 @@ export class LinkPreviewService {
 			return null;
 		}
 
+		if (candidate.startsWith("data:")) {
+			this.faviconValidationCache.set(candidate, candidate);
+			return candidate;
+		}
+
 		if (this.faviconValidationCache.has(candidate)) {
 			return this.faviconValidationCache.get(candidate) ?? null;
 		}
 
-		const headers = this.buildRequestHeaders();
+		const headers = {
+			...this.buildRequestHeaders(),
+			Accept: "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
+		};
 		try {
 			const response = await requestUrl({ url: candidate, method: "HEAD", headers });
 			if (response.status >= 200 && response.status < 400) {

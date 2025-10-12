@@ -1,6 +1,7 @@
 import type { LinkPreviewBuilder } from "../linkPreview/previewBuilder";
 import type { UrlListEntry } from "../utils/url";
 import type { ProgressReporter } from "../status/progressStatusManager";
+import { findMarkdownLinkRange } from "../utils/markdown";
 
 type PreviewBuilder = Pick<LinkPreviewBuilder, "build">;
 
@@ -24,7 +25,16 @@ export async function replaceUrlsWithPreviews(
 	}
 
 	for (const entry of entries) {
-		result += originalText.slice(cursor, entry.start);
+		if (entry.end <= cursor) {
+			progress?.increment();
+			continue;
+		}
+
+		const markdownRange = findMarkdownLinkRange(originalText, entry.start, entry.end);
+		const replaceStart = markdownRange ? markdownRange.start : entry.start;
+		const replaceEnd = markdownRange ? markdownRange.end : entry.end;
+
+		result += originalText.slice(cursor, replaceStart);
 
 		let preview: string;
 		try {
@@ -44,7 +54,7 @@ export async function replaceUrlsWithPreviews(
 
 		result += preview;
 		progress?.increment();
-		cursor = entry.end;
+		cursor = replaceEnd;
 	}
 
 	result += originalText.slice(cursor);

@@ -12,6 +12,8 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 
 - Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
 - Display the site favicon before the preview text (can be disabled).
+- Generate a clean fallback icon when a site does not expose a working favicon, so previews never show broken images.
+- Treat YouTube links as standard previews that stick to the YouTube favicon instead of embedding video thumbnails.
 - Keep emoji and other Unicode characters that appear in the source page.
 - Command palette action to convert the current selection to a preview.
 - Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
@@ -38,6 +40,8 @@ Run **Convert existing links to inline previews…** from the command palette. C
 - **Entire vault** – processes every Markdown file in the vault.
 
 Only bare HTTP/HTTPS links outside of existing Markdown links or code blocks are replaced.
+
+The floating progress banner tracks how many notes remain and highlights the one currently processing. If the active note is being converted you’ll see a reminder not to edit it until the update finishes.
 
 ## Settings
 

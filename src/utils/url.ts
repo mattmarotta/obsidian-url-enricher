@@ -48,13 +48,29 @@ export function extractUrlList(text: string): UrlListEntry[] | null {
 
 	for (const match of text.matchAll(pattern)) {
 		const matchIndex = match.index ?? 0;
+		const url = match[0];
+
+		if (matchIndex > 0) {
+			const before = text[matchIndex - 1] ?? "";
+			const after = text[matchIndex + url.length] ?? "";
+			if (before === "(" && after === ")" && matchIndex >= 2 && text[matchIndex - 2] === "]") {
+				continue;
+			}
+		}
+
 		let segmentStart = matchIndex;
+		let allowNonWhitespacePrefix = false;
 
 		let searchIndex = matchIndex;
 		while (searchIndex > cursor) {
 			const candidate = text[searchIndex - 1];
 			if (candidate === "<") {
 				segmentStart = searchIndex - 1;
+				break;
+			}
+			if (candidate === "[") {
+				segmentStart = searchIndex - 1;
+				allowNonWhitespacePrefix = true;
 				break;
 			}
 			if (!/\s/.test(candidate)) {
@@ -64,11 +80,10 @@ export function extractUrlList(text: string): UrlListEntry[] | null {
 		}
 
 		const leading = text.slice(cursor, segmentStart);
-		if (!WHITESPACE_ONLY_REGEX.test(leading)) {
+		if (!allowNonWhitespacePrefix && !WHITESPACE_ONLY_REGEX.test(leading)) {
 			return null;
 		}
 
-		const url = match[0];
 		const urlEnd = matchIndex + url.length;
 		let segmentEnd = urlEnd;
 
@@ -79,6 +94,17 @@ export function extractUrlList(text: string): UrlListEntry[] | null {
 
 		if (lookahead < text.length && text[lookahead] === ">") {
 			segmentEnd = lookahead + 1;
+		} else if (allowNonWhitespacePrefix) {
+			let closeIndex = lookahead;
+			while (closeIndex < text.length && text[closeIndex] !== ")") {
+				if (text[closeIndex] === "\n") {
+					break;
+				}
+				closeIndex += 1;
+			}
+			if (closeIndex < text.length && text[closeIndex] === ")") {
+				segmentEnd = closeIndex + 1;
+			}
 		} else {
 			segmentEnd = urlEnd;
 		}
