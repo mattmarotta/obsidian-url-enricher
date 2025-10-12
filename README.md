@@ -12,13 +12,13 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 
 - Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
 - Display the site favicon before the preview text (can be disabled).
-- Generate a clean fallback icon when a site does not expose a working favicon, so previews never show broken images.
+- Fetch favicons from Google's favicon service so icons stay consistent across sites.
+- Skip the icon when Google's service cannot find one, avoiding broken placeholders.
 - Treat YouTube links as standard previews that stick to the YouTube favicon instead of embedding video thumbnails.
 - Keep emoji and other Unicode characters that appear in the source page.
 - Command palette action to convert the current selection to a preview.
 - Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
 - Adjustable description length limit plus networking timeout controls.
-- Optional status bar countdown when LinkPreview.net throttles requests.
 - Domain-aware metadata enrichments for Google search and Reddit links, with an extensible handler pipeline for additional sites.
 - Floating progress indicator while multiple links are being processed.
 
@@ -52,18 +52,13 @@ Open **Settings → Community plugins → Inline link preview** to tune:
 - **Description length** – limit how many characters of the description are kept (default 60).
 - **Show favicons** – toggle whether the preview starts with the site icon.
 - **Keep emoji** – remove emoji if you prefer simpler text.
-- **Use LinkPreview.net** – request metadata with your LinkPreview.net API key (falls back to local parsing if disabled or the request fails).
-- **LinkPreview.net API key** – stored locally and used only for LinkPreview.net requests.
-- **Show rate limit timer** – display a status bar countdown whenever LinkPreview.net throttles requests.
 - **Request timeout** – abort metadata fetches that take too long (milliseconds).
 
 Changes apply immediately to future conversions.
 
 ## Privacy and network usage
 
-To build a preview the plugin requests the linked page and parses its HTML locally. URLs you paste are sent directly to their target domains; no third-party metadata service is used. Responses are cached in memory for the current Obsidian session and nothing is persisted to disk. If a site is private or requires authentication, the plugin keeps the original URL.
-
-If you enable the LinkPreview.net integration, the pasted URL and your API key are sent to that service first. When the API cannot be reached the plugin silently falls back to local parsing. The plugin watches for rate-limit responses (HTTP 429 or "limit" errors) and pauses LinkPreview.net requests for the recommended wait time (or one hour when unspecified).
+To build a preview the plugin requests the linked page and parses its HTML locally. Favicons are fetched via Google's public favicon service so icons stay a consistent size. URLs you paste are sent directly to their target domains; no additional third-party metadata service is used. Responses are cached in memory for the current Obsidian session and nothing is persisted to disk. If a site is private or requires authentication, the plugin keeps the original URL.
 
 ## Installation
 

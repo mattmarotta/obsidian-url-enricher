@@ -22,9 +22,6 @@ function createSettings(overrides: Partial<InlineLinkPreviewSettings> = {}): Inl
 		requestTimeoutMs: 7000,
 		showFavicon: false,
 		keepEmoji: true,
-		useLinkPreviewApi: false,
-		linkPreviewApiKey: "",
-		showRateLimitTimer: false,
 		...overrides,
 	};
 }
@@ -67,10 +64,10 @@ export default async function runPreviewFormatterTests(): Promise<void> {
 	await replaceUrlsWithPreviewsHandlesMarkdownLinks();
 	descriptionLimitHandlesEmDash();
 	await googleSearchPreviewIncludesQuery();
-	await descriptionLimitAppliesWithoutLinkPreviewApi();
+	await descriptionLimitAppliesWithLocalParsing();
 	await customMetadataHandlerCanOverrideMetadata();
-	await youtubePreviewFallsBackToIcon();
-	await generatedFaviconUsedWhenSiteHasNone();
+	await youtubePreviewUsesGoogleFavicon();
+	await noFaviconRenderedWhenGoogleUnavailable();
 }
 
 function lowerLimitTruncates(): void {
@@ -335,22 +332,12 @@ async function googleSearchPreviewIncludesQuery(): Promise<void> {
 	} as RequestUrlResponse;
 		}
 
-		if (url === "https://www.google.com/favicon.ico") {
+		if (/www\.google\.com\/s2\/favicons/.test(url)) {
 	return {
 		status: 200,
 		text: "",
 		headers: {
-			"content-type": "image/x-icon",
-		},
-	} as RequestUrlResponse;
-		}
-
-		if (/google\.com\/favicon/i.test(url) || /google\.com\/apple-touch-icon/i.test(url)) {
-	return {
-		status: 404,
-		text: "",
-		headers: {
-			"content-type": "text/plain",
+			"content-type": "image/png",
 		},
 	} as RequestUrlResponse;
 		}
@@ -361,8 +348,6 @@ async function googleSearchPreviewIncludesQuery(): Promise<void> {
 	try {
 		const service = new LinkPreviewService({
 			requestTimeoutMs: 0,
-			useLinkPreviewApi: false,
-			linkPreviewApiKey: null,
 		});
 
 		const settings = createSettings({ showFavicon: false, includeDescription: false });
@@ -379,7 +364,7 @@ async function googleSearchPreviewIncludesQuery(): Promise<void> {
 	}
 }
 
-async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
+async function descriptionLimitAppliesWithLocalParsing(): Promise<void> {
 	const redditUrl =
 		"https://www.reddit.com/r/PixelBook/comments/1nxv8v5/i_am_deeply_embedded_within_the_google_android/";
 	const longTitle =
@@ -415,7 +400,6 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 		},
 	]);
 
-	const redditFavicon = "https://www.reddit.com/favicon.ico";
 	const redditJsonUrl =
 		"https://www.reddit.com/r/PixelBook/comments/1nxv8v5/i_am_deeply_embedded_within_the_google_android/.json";
 
@@ -442,22 +426,12 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 	} as RequestUrlResponse;
 		}
 
-		if (url === redditFavicon) {
+		if (/www\.google\.com\/s2\/favicons/.test(url)) {
 	return {
-		status: normalizedMethod === "HEAD" ? 200 : 200,
+		status: 200,
 		text: "",
 		headers: {
-			"content-type": "image/x-icon",
-		},
-	} as RequestUrlResponse;
-		}
-
-		if (/reddit\.com\/favicon/i.test(url) || /apple-touch-icon/i.test(url)) {
-	return {
-		status: 404,
-		text: "",
-		headers: {
-			"content-type": "text/plain",
+			"content-type": "image/png",
 		},
 	} as RequestUrlResponse;
 		}
@@ -468,8 +442,6 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 	try {
 		const service = new LinkPreviewService({
 			requestTimeoutMs: 0,
-			useLinkPreviewApi: false,
-			linkPreviewApiKey: null,
 		});
 
 		const settings = createSettings({ maxDescriptionLength: 60, showFavicon: false });
@@ -506,8 +478,6 @@ async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
 		</html>
 	`;
 
-	const faviconUrl = "https://example.org/favicon.ico";
-
 	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
 		const normalizedMethod = (method ?? "GET").toUpperCase();
 		if (url === articleUrl) {
@@ -521,22 +491,12 @@ async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
 	} as RequestUrlResponse;
 		}
 
-		if (url === faviconUrl) {
+		if (/www\.google\.com\/s2\/favicons/.test(url)) {
 	return {
 		status: 200,
 		text: "",
 		headers: {
-			"content-type": "image/x-icon",
-		},
-	} as RequestUrlResponse;
-		}
-
-		if (/example\.org\/favicon/i.test(url) || /example\.org\/apple-touch-icon/i.test(url)) {
-	return {
-		status: 404,
-		text: "",
-		headers: {
-			"content-type": "text/plain",
+			"content-type": "image/png",
 		},
 	} as RequestUrlResponse;
 		}
@@ -547,8 +507,6 @@ async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
 	try {
 		const service = new LinkPreviewService({
 			requestTimeoutMs: 0,
-			useLinkPreviewApi: false,
-			linkPreviewApiKey: null,
 		});
 
 		const customHandler: MetadataHandler = {
@@ -575,129 +533,7 @@ async function customMetadataHandlerCanOverrideMetadata(): Promise<void> {
 	}
 }
 
-async function youtubePreviewFallsBackToIcon(): Promise<void> {
-	const globalObject = globalThis as unknown as { fetch?: typeof fetch };
-	const originalFetch = globalObject.fetch;
-
-	const youtubeUrl = "https://www.youtube.com/watch?v=abcdefghijk";
-	const youtubeHtml = `
-		<!DOCTYPE html>
-		<html lang="en">
-			<head>
-				<meta charset="utf-8" />
-				<title>YouTube</title>
-			</head>
-			<body>
-				<div>YouTube placeholder</div>
-			</body>
-		</html>
-	`;
-
-	const faviconUrl = "https://www.youtube.com/favicon.ico";
-
-	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
-		const normalizedMethod = (method ?? "GET").toUpperCase();
-		if (url === youtubeUrl) {
-	return {
-		status: 200,
-		text: youtubeHtml,
-		headers: {
-			"content-type": "text/html; charset=utf-8",
-			"x-final-url": youtubeUrl,
-		},
-	} as RequestUrlResponse;
-		}
-
-		if (url === faviconUrl) {
-	return {
-		status: normalizedMethod === "HEAD" ? 404 : 404,
-		text: "",
-		headers: {
-			"content-type": "text/plain",
-		},
-	} as RequestUrlResponse;
-		}
-
-		if (/youtube\.com\/favicon/i.test(url)) {
-	return {
-		status: 404,
-		text: "",
-		headers: {
-			"content-type": "text/plain",
-		},
-	} as RequestUrlResponse;
-		}
-
-		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
-	});
-
-	globalObject.fetch = (async (input: RequestInfo | URL) => {
-		const href = typeof input === "string" ? input : input instanceof URL ? input.href : "";
-		if (href.startsWith("https://api.linkpreview.net")) {
-			const headers: Record<string, string> = {
-				"content-type": "application/json",
-			};
-
-			const payload = {
-				title: "YouTube Video Title",
-				description: "Video description from LinkPreview API.",
-				image: "https://img.youtube.com/vi/abcdefghijk/maxresdefault.jpg",
-				url: youtubeUrl,
-			};
-
-			return {
-				ok: true,
-				status: 200,
-				headers: {
-					get(name: string) {
-						return headers[name.toLowerCase()] ?? headers[name] ?? null;
-					},
-				},
-				async json() {
-					return payload;
-				},
-			} as unknown as Response;
-		}
-
-		throw new Error(`Unhandled fetch request: ${href}`);
-	}) as typeof fetch;
-
-	try {
-		const service = new LinkPreviewService({
-			requestTimeoutMs: 0,
-			useLinkPreviewApi: true,
-			linkPreviewApiKey: "dummy-key",
-		});
-
-		const settings = createSettings({ showFavicon: true, includeDescription: false });
-		const builder = new LinkPreviewBuilder(service, () => settings);
-		const preview = await builder.build(youtubeUrl);
-
-		assert(preview.startsWith("<a class=\"inline-link-preview-link\""), "YouTube previews should render as an HTML anchor to suppress Obsidian embeds.");
-		assert(
-			preview.includes("<img class=\"inline-link-preview-icon\""),
-			"YouTube previews should include the favicon image within the HTML anchor.",
-		);
-		assert(
-			preview.includes("<span class=\"inline-link-preview-text\">YouTube Video Title</span>"),
-			"YouTube previews should render the video title once inside the span wrapper.",
-		);
-		assert(
-			preview.includes("https://www.youtube.com/watch?v=abcdefghijk"),
-			"YouTube previews should link to the canonical youtube.com watch URL.",
-		);
-		assert(!preview.includes("img.youtube.com"), "YouTube previews should avoid embedding the video thumbnail in the output.");
-	} finally {
-	setRequestUrlMock(null);
-		if (originalFetch) {
-			globalObject.fetch = originalFetch;
-		} else {
-			delete globalObject.fetch;
-		}
-	}
-}
-
-async function generatedFaviconUsedWhenSiteHasNone(): Promise<void> {
+async function noFaviconRenderedWhenGoogleUnavailable(): Promise<void> {
 	const articleUrl = "https://news.example.com/story";
 
 	const articleHtml = `
@@ -727,7 +563,7 @@ async function generatedFaviconUsedWhenSiteHasNone(): Promise<void> {
 	} as RequestUrlResponse;
 		}
 
-		if (/news\.example\.com\/favicon/i.test(url)) {
+		if (/www\.google\.com\/s2\/favicons/.test(url)) {
 	return {
 		status: 404,
 		text: "",
@@ -743,8 +579,6 @@ async function generatedFaviconUsedWhenSiteHasNone(): Promise<void> {
 	try {
 		const service = new LinkPreviewService({
 			requestTimeoutMs: 0,
-			useLinkPreviewApi: false,
-			linkPreviewApiKey: null,
 		});
 
 		const settings = createSettings({ showFavicon: true, includeDescription: false });
@@ -752,13 +586,87 @@ async function generatedFaviconUsedWhenSiteHasNone(): Promise<void> {
 		const preview = await builder.build(articleUrl);
 
 	assert(
-		preview.includes("![inline-link-preview-icon]"),
-		"Sites without a favicon should still render a generated inline icon for consistency.",
+		!preview.includes("![inline-link-preview-icon]"),
+		"Sites without a favicon should not render the inline icon when Google's favicon service cannot provide one.",
 	);
 	assert(
-		preview.includes('(<data:image/svg+xml'),
-		"Sites without a favicon should fall back to a generated icon so the preview never shows a broken image.",
+		!preview.includes("https://www.google.com/s2/favicons"),
+		"Sites without a favicon should leave the preview without referencing the Google favicon URL when none is available.",
 	);
+	} finally {
+		setRequestUrlMock(null);
+	}
+}
+async function youtubePreviewUsesGoogleFavicon(): Promise<void> {
+	const youtubeUrl = "https://www.youtube.com/watch?v=abcdefghijk";
+	const youtubeHtml = `
+		<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="utf-8" />
+				<title>YouTube Video Title</title>
+				<meta property="og:title" content="YouTube Video Title" />
+				<meta property="og:description" content="Video description from local parsing." />
+			</head>
+			<body>
+				<div>YouTube placeholder</div>
+			</body>
+		</html>
+	`;
+
+	setRequestUrlMock(async ({ url, method }: RequestUrlParams) => {
+		const normalizedMethod = (method ?? "GET").toUpperCase();
+		if (url === youtubeUrl) {
+	return {
+		status: 200,
+		text: youtubeHtml,
+		headers: {
+			"content-type": "text/html; charset=utf-8",
+			"x-final-url": youtubeUrl,
+		},
+	} as RequestUrlResponse;
+		}
+
+		if (/www\.google\.com\/s2\/favicons/.test(url)) {
+	return {
+		status: 200,
+		text: "",
+		headers: {
+			"content-type": "image/png",
+		},
+	} as RequestUrlResponse;
+		}
+
+		throw new Error(`Unhandled requestUrl invocation: ${normalizedMethod} ${url}`);
+	});
+
+	try {
+		const service = new LinkPreviewService({
+			requestTimeoutMs: 0,
+		});
+
+		const settings = createSettings({ showFavicon: true, includeDescription: false });
+		const builder = new LinkPreviewBuilder(service, () => settings);
+		const preview = await builder.build(youtubeUrl);
+
+		assert(preview.startsWith("<a class=\"inline-link-preview-link\""), "YouTube previews should render as an HTML anchor to suppress Obsidian embeds.");
+		assert(
+			preview.includes("<img class=\"inline-link-preview-icon\""),
+			"YouTube previews should include the favicon image within the HTML anchor.",
+		);
+		assert(
+			preview.includes("https://www.google.com/s2/favicons?domain=www.youtube.com"),
+			"YouTube previews should source favicons from Google's favicon service.",
+		);
+		assert(
+			preview.includes("<span class=\"inline-link-preview-text\">YouTube Video Title</span>"),
+			"YouTube previews should render the video title once inside the span wrapper.",
+		);
+		assert(
+			preview.includes("https://www.youtube.com/watch?v=abcdefghijk"),
+			"YouTube previews should link to the canonical youtube.com watch URL.",
+		);
+		assert(!preview.includes("img.youtube.com"), "YouTube previews should avoid embedding the video thumbnail in the output.");
 	} finally {
 		setRequestUrlMock(null);
 	}

@@ -8,9 +8,6 @@ export interface InlineLinkPreviewSettings {
 	requestTimeoutMs: number;
 	showFavicon: boolean;
 	keepEmoji: boolean;
-	useLinkPreviewApi: boolean;
-	linkPreviewApiKey: string;
-	showRateLimitTimer: boolean;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
@@ -20,9 +17,6 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	requestTimeoutMs: 7000,
 	showFavicon: true,
 	keepEmoji: true,
-	useLinkPreviewApi: false,
-	linkPreviewApiKey: "",
-	showRateLimitTimer: true,
 };
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
@@ -106,42 +100,6 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Use LinkPreview.net")
-			.setDesc("Query the LinkPreview.net API before falling back to local metadata parsing.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.useLinkPreviewApi)
-					.onChange(async (value) => {
-						this.plugin.settings.useLinkPreviewApi = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("LinkPreview.net API key")
-			.setDesc("Stored locally and sent only to LinkPreview.net when fetching metadata.")
-			.addText((text) => {
-				text.setPlaceholder("Optional");
-				text.setValue(settings.linkPreviewApiKey);
-				text.onChange(async (value) => {
-					this.plugin.settings.linkPreviewApiKey = value.trim();
-					await this.plugin.saveSettings();
-				});
-			});
-
-		new Setting(containerEl)
-			.setName("Show rate limit timer")
-			.setDesc("Display a status bar countdown when LinkPreview.net rate limits requests.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.showRateLimitTimer)
-					.onChange(async (value) => {
-						this.plugin.settings.showRateLimitTimer = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
 			.setName("Request timeout")
 			.setDesc("Stop fetching metadata if the request takes too long (milliseconds).")
 			.addText((text) => {
@@ -167,7 +125,6 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.setWarning()
 					.onClick(() => {
 						this.plugin.linkPreviewService.clearCache();
-						this.plugin.rateLimitStatus?.update(null);
 						new Notice("Inline link preview cache cleared.");
 					}),
 			);

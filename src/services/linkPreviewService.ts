@@ -11,8 +11,6 @@ export type { LinkMetadata } from "./types";
 
 export interface LinkPreviewServiceOptions {
 	requestTimeoutMs: number;
-	useLinkPreviewApi: boolean;
-	linkPreviewApiKey: string | null;
 }
 
 interface ParsedMetadata {
@@ -25,8 +23,6 @@ export class LinkPreviewService {
 	private cache = new Map<string, LinkMetadata>();
 	private options: LinkPreviewServiceOptions;
 	private readonly metadataHandlers: MetadataHandler[];
-	private rateLimitResetAt = 0;
-	private rateLimitListener: ((resetAt: number | null) => void) | null = null;
 	private faviconCache = new Map<string, string | null>();
 	private faviconValidationCache = new Map<string, string | null>();
 
@@ -39,14 +35,8 @@ export class LinkPreviewService {
 		const previous = { ...this.options };
 		this.options = { ...this.options, ...options };
 
-		if (
-			previous.requestTimeoutMs !== this.options.requestTimeoutMs ||
-			previous.useLinkPreviewApi !== this.options.useLinkPreviewApi ||
-			previous.linkPreviewApiKey !== this.options.linkPreviewApiKey
-		) {
+		if (previous.requestTimeoutMs !== this.options.requestTimeoutMs) {
 			this.clearCache();
-			this.rateLimitResetAt = 0;
-			this.notifyRateLimit(null);
 		}
 	}
 
@@ -58,19 +48,6 @@ export class LinkPreviewService {
 		this.cache.clear();
 		this.faviconCache.clear();
 		this.faviconValidationCache.clear();
-	}
-
-	setRateLimitListener(listener: ((resetAt: number | null) => void) | null): void {
-		this.rateLimitListener = listener;
-		const currentReset = this.getRateLimitResetAt();
-		if (!listener) {
-			return;
-		}
-		listener(currentReset);
-	}
-
-	getRateLimitResetAt(): number | null {
-		return this.rateLimitResetAt > Date.now() ? this.rateLimitResetAt : null;
 	}
 
 	async getMetadata(rawUrl: string): Promise<LinkMetadata> {
@@ -90,63 +67,27 @@ export class LinkPreviewService {
 	}
 
 	private async fetchMetadata(url: string): Promise<LinkMetadata> {
-		let metadata: LinkMetadata | null = null;
-		const extraFavicons: string[] = [];
-		if (this.options.useLinkPreviewApi && this.options.linkPreviewApiKey) {
-			const apiResult = await this.fetchFromLinkPreviewApi(url);
-			if (apiResult) {
-				metadata = apiResult.metadata;
-				extraFavicons.push(...apiResult.extraFavicons);
-			}
-		}
-		if (!metadata) {
-			if (!this.options.useLinkPreviewApi || !this.options.linkPreviewApiKey) {
-				this.rateLimitResetAt = 0;
-				this.notifyRateLimit(null);
+		try {
+			const response = await this.requestWithTimeout(url);
+			if (response.status >= 400) {
+				throw new Error(`HTTP ${response.status}`);
 			}
 
-			try {
-				const response = await this.requestWithTimeout(url);
-				if (response.status >= 400) {
-					throw new Error(`HTTP ${response.status}`);
-				}
+			const contentType = this.getHeader(response, "content-type") ?? "";
+			const metadata =
+				!contentType.toLowerCase().includes("html")
+					? this.buildFallbackMetadata(url)
+					: this.parseHtmlMetadata(this.getHeader(response, "x-final-url") ?? url, response.text);
 
-				const contentType = this.getHeader(response, "content-type") ?? "";
-				if (!contentType.toLowerCase().includes("html")) {
-					metadata = this.buildFallbackMetadata(url);
-				} else {
-					const finalUrl = this.getHeader(response, "x-final-url") ?? url;
-					metadata = this.parseHtmlMetadata(finalUrl, response.text);
-				}
-
-				if (this.rateLimitResetAt !== 0 && Date.now() >= this.rateLimitResetAt) {
-					this.rateLimitResetAt = 0;
-					this.notifyRateLimit(null);
-				}
-			} catch (error) {
-				console.warn(
-					"[inline-link-preview] Failed to fetch metadata for URL",
-					url,
-					error instanceof Error ? error.message : error,
-				);
-				metadata = this.buildFallbackMetadata(url);
-			}
+			return this.finalizeMetadata(url, metadata);
+		} catch (error) {
+			console.warn(
+				"[inline-link-preview] Failed to fetch metadata for URL",
+				url,
+				error instanceof Error ? error.message : error,
+			);
+			return this.finalizeMetadata(url, this.buildFallbackMetadata(url));
 		}
-
-		return this.finalizeMetadata(url, metadata ?? this.buildFallbackMetadata(url), extraFavicons);
-	}
-
-	private notifyRateLimit(resetAt: number | null): void {
-		if (!this.rateLimitListener) {
-			return;
-		}
-
-		if (!resetAt || resetAt <= Date.now()) {
-			this.rateLimitListener(null);
-			return;
-		}
-
-		this.rateLimitListener(resetAt);
 	}
 
 	private async requestWithTimeout(url: string): Promise<RequestUrlResponse> {
@@ -209,107 +150,6 @@ export class LinkPreviewService {
 			}
 		}
 		return undefined;
-	}
-
-	private async fetchFromLinkPreviewApi(url: string): Promise<{ metadata: LinkMetadata; extraFavicons: string[] } | null> {
-		if (Date.now() < this.rateLimitResetAt) {
-			this.notifyRateLimit(this.rateLimitResetAt);
-			return null;
-		}
-
-		const endpoint = "https://api.linkpreview.net";
-		const params = new URLSearchParams({
-			key: this.options.linkPreviewApiKey ?? "",
-			q: url,
-		});
-
-		try {
-			const response = await fetch(`${endpoint}/?${params.toString()}`);
-			if (!response.ok) {
-				if (response.status === 429) {
-					const retryAfter = this.parseRetryAfter(response.headers.get("Retry-After"));
-					const waitMs = retryAfter ?? 60 * 60 * 1000;
-					this.rateLimitResetAt = Date.now() + waitMs;
-					console.warn(
-						"[inline-link-preview] LinkPreview.net rate limit reached. Suppressing API calls for",
-						Math.round(waitMs / 1000),
-						"seconds.",
-					);
-					this.notifyRateLimit(this.rateLimitResetAt);
-					return null;
-				}
-
-				if (response.status === 403 || response.status === 401) {
-					console.warn("[inline-link-preview] LinkPreview.net rejected the request. Check your API key and quota.");
-					this.rateLimitResetAt = 0;
-					this.notifyRateLimit(null);
-					return null;
-				}
-
-				if (response.status >= 500) {
-					console.warn(
-						"[inline-link-preview] LinkPreview.net server error",
-						response.status,
-					);
-					this.rateLimitResetAt = 0;
-					this.notifyRateLimit(null);
-					return null;
-				}
-
-				console.warn(
-					"[inline-link-preview] LinkPreview.net request failed with status",
-					response.status,
-				);
-				this.rateLimitResetAt = 0;
-				this.notifyRateLimit(null);
-				return null;
-			}
-
-			const payload: { title?: string; description?: string; image?: string; url?: string; error?: string } =
-				await response.json();
-
-			if (payload.error) {
-				console.warn("[inline-link-preview] LinkPreview.net responded with an error:", payload.error);
-				if (/limit/i.test(payload.error ?? "")) {
-					this.rateLimitResetAt = Date.now() + 60 * 60 * 1000;
-					this.notifyRateLimit(this.rateLimitResetAt);
-					return null;
-				}
-				this.rateLimitResetAt = 0;
-				this.notifyRateLimit(null);
-				return null;
-			}
-
-			const title = payload.title ?? "";
-			const description = payload.description ?? null;
-			const sanitizedImage = this.sanitizeFavicon(payload.image ?? null, payload.url ?? url);
-			const directFavicon = sanitizedImage && this.isLikelyFaviconUrl(sanitizedImage) ? sanitizedImage : null;
-			const favicon = directFavicon ?? this.deriveFaviconFromUrl(payload.url ?? url);
-			const extraFavicons: string[] = directFavicon ? [directFavicon] : [];
-
-			if (!title && !description) {
-				this.rateLimitResetAt = 0;
-				this.notifyRateLimit(null);
-				return null;
-			}
-
-			this.rateLimitResetAt = 0;
-			this.notifyRateLimit(null);
-
-			return {
-				metadata: {
-					title: title || url,
-					description,
-					favicon,
-				},
-				extraFavicons,
-			};
-		} catch (error) {
-			console.warn("[inline-link-preview] LinkPreview.net request failed", error);
-			this.rateLimitResetAt = 0;
-			this.notifyRateLimit(null);
-			return null;
-		}
 	}
 
 	private async performRequest(request: RequestUrlParam): Promise<RequestUrlResponse> {
@@ -541,47 +381,6 @@ export class LinkPreviewService {
 		return this.deriveFaviconFromUrl(baseUrl);
 	}
 
-	private parseRetryAfter(header: string | null): number | null {
-		if (!header) {
-			return null;
-		}
-
-		const seconds = Number(header);
-		if (Number.isFinite(seconds)) {
-			return Math.max(0, seconds) * 1000;
-		}
-
-		const date = Date.parse(header);
-		if (!Number.isNaN(date)) {
-			return Math.max(0, date - Date.now());
-		}
-
-		return null;
-	}
-
-	private generateFallbackFavicon(pageUrl: string): string | null {
-		try {
-			const parsed = new URL(pageUrl);
-			const host = parsed.hostname.replace(/^www\./i, "");
-			const letterMatch = host.match(/[a-z0-9]/i);
-			const letter = (letterMatch?.[0] ?? "•").toUpperCase();
-			const palette = ["#6366F1", "#EC4899", "#F97316", "#22C55E", "#06B6D4", "#8B5CF6"];
-			const color = palette[Math.abs(this.hashHost(host)) % palette.length];
-			const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="${color}" stop-opacity="0.95"/><stop offset="100%" stop-color="${color}" stop-opacity="0.75"/></linearGradient></defs><circle cx="24" cy="24" r="22" fill="url(#grad)"/><text x="24" y="29" font-size="20" text-anchor="middle" fill="#FFFFFF" font-family="Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">${letter}</text></svg>`;
-			return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-		} catch {
-			return null;
-		}
-	}
-
-	private hashHost(value: string): number {
-		let hash = 0;
-		for (let index = 0; index < value.length; index += 1) {
-			hash = (hash * 31 + value.charCodeAt(index)) | 0;
-		}
-		return hash;
-	}
-
 	private isLikelyFaviconUrl(candidate: string): boolean {
 		const lower = candidate.toLowerCase();
 		if (lower.startsWith("data:")) {
@@ -614,14 +413,13 @@ export class LinkPreviewService {
 
 	private deriveFaviconFromUrl(url: string): string | null {
 		try {
-			const pageUrl = new URL(url);
-			return this.buildGoogleFaviconUrl(pageUrl) ?? new URL("/favicon.ico", pageUrl).href;
+			return this.buildGoogleFaviconUrl(new URL(url));
 		} catch {
 			return null;
 		}
 	}
 
-	private async finalizeMetadata(pageUrl: string, metadata: LinkMetadata, extraFavicons: string[] = []): Promise<LinkMetadata> {
+	private async finalizeMetadata(pageUrl: string, metadata: LinkMetadata): Promise<LinkMetadata> {
 		const finalized: LinkMetadata = { ...metadata };
 
 		await this.applyMetadataHandlers(pageUrl, finalized);
@@ -629,7 +427,7 @@ export class LinkPreviewService {
 		finalized.title = this.ensureTitle(finalized.title, pageUrl);
 		finalized.description = this.sanitizeText(finalized.description);
 
-		finalized.favicon = await this.resolveFavicon(pageUrl, finalized.favicon, extraFavicons);
+		finalized.favicon = await this.resolveFavicon(pageUrl);
 		return finalized;
 	}
 
@@ -662,60 +460,21 @@ export class LinkPreviewService {
 		}
 	}
 
-	private async resolveFavicon(pageUrl: string, initial: string | null, extraCandidates: string[] = []): Promise<string | null> {
+	private async resolveFavicon(pageUrl: string): Promise<string | null> {
 		try {
-			const origin = new URL(pageUrl).origin;
-			if (initial) {
-				const verifiedInitial = await this.validateFavicon(initial);
-				if (verifiedInitial) {
-					this.faviconCache.set(origin, verifiedInitial);
-					return verifiedInitial;
-				}
-			}
+			const parsed = new URL(pageUrl);
+			const origin = parsed.origin;
 
 			if (this.faviconCache.has(origin)) {
 				return this.faviconCache.get(origin) ?? null;
 			}
 
-			const candidates = [...extraCandidates, ...this.buildFallbackFaviconCandidates(pageUrl)];
-			for (const candidate of candidates) {
-				const verified = await this.validateFavicon(candidate);
-				if (verified) {
-					this.faviconCache.set(origin, verified);
-					return verified;
-				}
-			}
-
-			const fallback = this.generateFallbackFavicon(pageUrl);
-			if (fallback) {
-				this.faviconCache.set(origin, fallback);
-				return fallback;
-			}
-
-			this.faviconCache.set(origin, null);
+			const googleFavicon = this.buildGoogleFaviconUrl(parsed);
+			const verified = await this.validateFavicon(googleFavicon);
+			this.faviconCache.set(origin, verified);
+			return verified;
+		} catch {
 			return null;
-		} catch {
-			return initial;
-		}
-	}
-
-	private buildFallbackFaviconCandidates(pageUrl: string): string[] {
-		try {
-			const base = new URL(pageUrl);
-			const googleFavicon = this.buildGoogleFaviconUrl(base);
-			const suffixes = [
-				"/favicon.ico",
-				"/favicon.png",
-				"/favicon.svg",
-				"/favicon-32x32.png",
-				"/favicon-16x16.png",
-				"/apple-touch-icon.png",
-				"/apple-touch-icon-precomposed.png",
-			];
-			const localCandidates = suffixes.map((suffix) => new URL(suffix, base).href);
-			return googleFavicon ? [googleFavicon, ...localCandidates] : localCandidates;
-		} catch {
-			return [];
 		}
 	}
 
@@ -725,10 +484,7 @@ export class LinkPreviewService {
 			return null;
 		}
 
-		const params = new URLSearchParams({
-			sz: "64",
-			domain: host,
-		});
+		const params = new URLSearchParams({ domain: host });
 		return `https://www.google.com/s2/favicons?${params.toString()}`;
 	}
 
