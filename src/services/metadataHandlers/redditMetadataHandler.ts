@@ -97,12 +97,12 @@ export class RedditMetadataHandler implements MetadataHandler {
 					: "";
 
 			const normalizedDescription = descriptionSource.replace(/\s+/g, " ").trim();
-			const preferredTitle = subredditName ? `r/${subredditName} - Reddit` : rawTitle;
-			const fallbackDescription = normalizedDescription || rawTitle;
+			const title = subredditName ? `r/${subredditName}` : rawTitle;
+			const description = normalizedDescription || rawTitle;
 
 			return {
-				title: preferredTitle || undefined,
-				description: fallbackDescription || undefined,
+				title: title || undefined,
+				description: description || undefined,
 			};
 		} catch (error) {
 			console.warn("[inline-link-preview] Failed to parse Reddit metadata response", error);

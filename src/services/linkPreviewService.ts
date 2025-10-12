@@ -615,7 +615,7 @@ export class LinkPreviewService {
 	private deriveFaviconFromUrl(url: string): string | null {
 		try {
 			const pageUrl = new URL(url);
-			return new URL("/favicon.ico", pageUrl).href;
+			return this.buildGoogleFaviconUrl(pageUrl) ?? new URL("/favicon.ico", pageUrl).href;
 		} catch {
 			return null;
 		}
@@ -702,6 +702,7 @@ export class LinkPreviewService {
 	private buildFallbackFaviconCandidates(pageUrl: string): string[] {
 		try {
 			const base = new URL(pageUrl);
+			const googleFavicon = this.buildGoogleFaviconUrl(base);
 			const suffixes = [
 				"/favicon.ico",
 				"/favicon.png",
@@ -711,10 +712,24 @@ export class LinkPreviewService {
 				"/apple-touch-icon.png",
 				"/apple-touch-icon-precomposed.png",
 			];
-			return suffixes.map((suffix) => new URL(suffix, base).href);
+			const localCandidates = suffixes.map((suffix) => new URL(suffix, base).href);
+			return googleFavicon ? [googleFavicon, ...localCandidates] : localCandidates;
 		} catch {
 			return [];
 		}
+	}
+
+	private buildGoogleFaviconUrl(pageUrl: URL): string | null {
+		const host = pageUrl.hostname;
+		if (!host) {
+			return null;
+		}
+
+		const params = new URLSearchParams({
+			sz: "64",
+			domain: host,
+		});
+		return `https://www.google.com/s2/favicons?${params.toString()}`;
 	}
 
 	private async validateFavicon(candidate: string | null): Promise<string | null> {

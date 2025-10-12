@@ -478,8 +478,12 @@ async function descriptionLimitAppliesWithoutLinkPreviewApi(): Promise<void> {
 
 	const text = extractPreviewText(preview);
 	assert(
-		text.startsWith("r/PixelBook - Reddit — I am deeply embedded within the Goog"),
-		`Reddit previews should use subreddit-based titles and include truncated post text when LinkPreview.net is disabled. Received: ${text}`,
+		text.startsWith("r/PixelBook — "),
+		`Reddit previews should begin with the subreddit name followed by the post title. Received: ${text}`,
+	);
+	assert(
+		text.includes("I am deeply embedded within the Google"),
+		"Reddit previews should surface the original post title immediately after the subreddit name.",
 	);
 	assert(Array.from(text).length <= settings.maxDescriptionLength, "Preview text should respect the configured limit for Reddit links.");
 	} finally {
@@ -667,29 +671,22 @@ async function youtubePreviewFallsBackToIcon(): Promise<void> {
 
 		const settings = createSettings({ showFavicon: true, includeDescription: false });
 		const builder = new LinkPreviewBuilder(service, () => settings);
-	const preview = await builder.build(youtubeUrl);
+		const preview = await builder.build(youtubeUrl);
 
-	assert(preview.startsWith("<a class=\"inline-link-preview-link\""), "YouTube previews should render as an HTML anchor to suppress Obsidian embeds.");
-	assert(
-		preview.includes("<img class=\"inline-link-preview-icon\""),
-		"YouTube previews should include the favicon image within the HTML anchor.",
-	);
-	assert(
-		preview.includes("<span class=\"inline-link-preview-text\">YouTube Video Title"),
-		"YouTube previews should render the link text inside a span for consistent styling.",
-	);
-	assert(
-		preview.includes("https://www.youtube-nocookie.com/watch?v=abcdefghijk"),
-		"YouTube previews should point to the privacy-friendly youtube-nocookie.com domain to avoid embeds.",
-	);
-	assert(
-		preview.includes('src="data:image/svg+xml'),
-		"YouTube previews should fall back to a generated favicon when LinkPreview API returns thumbnails.",
-	);
-	assert(
-		!preview.includes("img.youtube.com"),
-		"YouTube previews should avoid embedding the video thumbnail in the markdown output.",
-	);
+		assert(preview.startsWith("<a class=\"inline-link-preview-link\""), "YouTube previews should render as an HTML anchor to suppress Obsidian embeds.");
+		assert(
+			preview.includes("<img class=\"inline-link-preview-icon\""),
+			"YouTube previews should include the favicon image within the HTML anchor.",
+		);
+		assert(
+			preview.includes("<span class=\"inline-link-preview-text\">YouTube Video Title</span>"),
+			"YouTube previews should render the video title once inside the span wrapper.",
+		);
+		assert(
+			preview.includes("https://www.youtube.com/watch?v=abcdefghijk"),
+			"YouTube previews should link to the canonical youtube.com watch URL.",
+		);
+		assert(!preview.includes("img.youtube.com"), "YouTube previews should avoid embedding the video thumbnail in the output.");
 	} finally {
 	setRequestUrlMock(null);
 		if (originalFetch) {

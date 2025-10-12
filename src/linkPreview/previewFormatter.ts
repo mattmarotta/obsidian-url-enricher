@@ -20,6 +20,10 @@ export function buildMarkdownPreview(
 		? sanitizeLinkText(metadata.description, settings.keepEmoji)
 		: null;
 
+	if (description && equalsIgnoreCase(description, title)) {
+		description = null;
+	}
+
 	const limitInput = settings.maxDescriptionLength as unknown;
 	let limitValue: number;
 	if (typeof limitInput === "string") {
@@ -140,95 +144,98 @@ function stripEmoji(value: string): string {
 }
 
 function normalizeLinkUrl(url: string): NormalizedLink {
-	const youTubeId = extractYouTubeVideoId(url);
-	if (!youTubeId) {
-		return { url, type: "default" };
+	const canonicalYouTube = canonicalizeYouTubeUrl(url);
+	if (canonicalYouTube) {
+		return { url: canonicalYouTube, type: "youtube" };
 	}
 
-	const parameters = extractYouTubeParameters(url);
-	const searchParams = new URLSearchParams();
-	searchParams.set("v", youTubeId);
-
-	if (parameters.t) {
-		const seconds = convertTimestampToSeconds(parameters.t);
-		if (seconds > 0) {
-			searchParams.set("start", String(seconds));
-		}
-	}
-
-	if (parameters.start && !searchParams.has("start")) {
-		searchParams.set("start", String(parameters.start));
-	}
-
-	return { url: `https://www.youtube-nocookie.com/watch?${searchParams.toString()}`, type: "youtube" };
+	return { url, type: "default" };
 }
 
-function extractYouTubeVideoId(url: string): string | null {
+function canonicalizeYouTubeUrl(url: string): string | null {
+	let parsed: URL;
 	try {
-		const parsed = new URL(url);
-		const host = parsed.hostname.toLowerCase();
-		if (host === "youtu.be") {
-			const segment = parsed.pathname.split("/").filter(Boolean)[0];
+		parsed = new URL(url);
+	} catch {
+		return null;
+	}
+
+	const videoId = extractYouTubeVideoId(parsed);
+	if (!videoId) {
+		return null;
+	}
+
+	const canonical = new URL("https://www.youtube.com/watch");
+	canonical.searchParams.set("v", videoId);
+
+	const allowedParams = new Set(["list", "index"]);
+	for (const [key, value] of parsed.searchParams.entries()) {
+		const lower = key.toLowerCase();
+		if (lower === "v" || lower === "t" || lower === "start") {
+			continue;
+		}
+		if (!allowedParams.has(lower)) {
+			continue;
+		}
+		canonical.searchParams.set(key, value);
+	}
+
+	const hashParams = parsed.hash ? new URLSearchParams(parsed.hash.replace(/^#/, "")) : null;
+	const timestampSeconds = extractYouTubeTimestampSeconds(parsed.searchParams, hashParams);
+	if (timestampSeconds > 0) {
+		canonical.searchParams.set("t", String(timestampSeconds));
+	}
+
+	return canonical.toString();
+}
+
+function extractYouTubeVideoId(parsed: URL): string | null {
+	const host = parsed.hostname.toLowerCase();
+	if (host === "youtu.be") {
+		const segment = parsed.pathname.split("/").filter(Boolean)[0];
+		return segment ?? null;
+	}
+
+	if (host.endsWith("youtube.com")) {
+		if (parsed.pathname === "/watch") {
+			return parsed.searchParams.get("v");
+		}
+
+		if (parsed.pathname.startsWith("/shorts/")) {
+			const segment = parsed.pathname.split("/").filter(Boolean)[1];
 			return segment ?? null;
 		}
 
-		if (host.endsWith("youtube.com")) {
-			if (parsed.pathname === "/watch") {
-				return parsed.searchParams.get("v");
-			}
-
-			if (parsed.pathname.startsWith("/shorts/")) {
-				const segment = parsed.pathname.split("/").filter(Boolean)[1];
-				return segment ?? null;
-			}
+		if (parsed.pathname.startsWith("/embed/")) {
+			const segment = parsed.pathname.split("/").filter(Boolean)[1];
+			return segment ?? null;
 		}
-
-		return null;
-	} catch {
-		return null;
 	}
+
+	return null;
 }
 
-function extractYouTubeParameters(url: string): { t?: string; start?: number } {
-	try {
-		const parsed = new URL(url);
-		const params: { t?: string; start?: number } = {};
-
-		const tParam = parsed.searchParams.get("t");
-		if (tParam) {
-			params.t = tParam;
+function extractYouTubeTimestampSeconds(
+	searchParams: URLSearchParams,
+	hashParams: URLSearchParams | null,
+): number {
+	const tParam = searchParams.get("t") ?? hashParams?.get("t") ?? null;
+	if (tParam) {
+		const seconds = convertTimestampToSeconds(tParam);
+		if (seconds > 0) {
+			return seconds;
 		}
-
-		const startParam = parsed.searchParams.get("start");
-		if (startParam) {
-			const value = Number(startParam);
-			if (Number.isFinite(value) && value >= 0) {
-				params.start = Math.floor(value);
-			}
-		}
-
-		if (!params.t) {
-			const hash = parsed.hash?.replace(/^#/, "") ?? "";
-			if (hash) {
-				const hashParams = new URLSearchParams(hash);
-				const tHash = hashParams.get("t");
-				if (tHash) {
-					params.t = tHash;
-				}
-				const startHash = hashParams.get("start");
-				if (startHash) {
-					const value = Number(startHash);
-					if (Number.isFinite(value) && value >= 0) {
-						params.start = Math.floor(value);
-					}
-				}
-			}
-		}
-
-		return params;
-	} catch {
-		return {};
 	}
+
+	const startParam = searchParams.get("start") ?? hashParams?.get("start") ?? null;
+	if (startParam) {
+		const value = Number(startParam);
+		if (Number.isFinite(value) && value > 0) {
+			return Math.floor(value);
+		}
+	}
+
+	return 0;
 }
 
 function convertTimestampToSeconds(value: string): number {
@@ -277,4 +284,8 @@ function escapeAttribute(value: string): string {
 
 function escapeHtml(value: string): string {
 	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function equalsIgnoreCase(a: string, b: string): boolean {
+	return a.localeCompare(b, undefined, { sensitivity: "accent" }) === 0;
 }
