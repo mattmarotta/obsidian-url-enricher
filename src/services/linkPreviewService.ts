@@ -173,6 +173,29 @@ export class LinkPreviewService {
 		}
 	}
 
+	private async requestWithTimeoutParam(request: RequestUrlParam): Promise<RequestUrlResponse> {
+		const requestPromise = requestUrl(request);
+		if (this.options.requestTimeoutMs <= 0) {
+			return await requestPromise;
+		}
+
+		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+		try {
+			const timeoutPromise = new Promise<never>((_, reject) => {
+				timeoutId = setTimeout(() => {
+					reject(new Error("Request timed out"));
+				}, this.options.requestTimeoutMs);
+			});
+
+			const response = (await Promise.race([requestPromise, timeoutPromise])) as RequestUrlResponse;
+			return response;
+		} finally {
+			if (timeoutId !== null) {
+				clearTimeout(timeoutId);
+			}
+		}
+	}
+
 	private getHeader(response: RequestUrlResponse, header: string): string | undefined {
 		const headers = response.headers ?? {};
 		const direct = headers[header];
@@ -713,7 +736,7 @@ export class LinkPreviewService {
 			Accept: "image/avif,image/webp,image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5",
 		};
 		try {
-			const response = await requestUrl({ url: candidate, method: "HEAD", headers });
+			const response = await this.requestWithTimeoutParam({ url: candidate, method: "HEAD", headers });
 			if (response.status >= 200 && response.status < 400) {
 				const type = this.getHeader(response, "content-type");
 				if (!type || type.toLowerCase().includes("image")) {
@@ -723,7 +746,7 @@ export class LinkPreviewService {
 			}
 		} catch {
 			try {
-				const resp = await requestUrl({ url: candidate, headers });
+				const resp = await this.requestWithTimeoutParam({ url: candidate, headers });
 				const type = this.getHeader(resp, "content-type");
 				if (!type || type.toLowerCase().includes("image")) {
 					this.faviconValidationCache.set(candidate, candidate);
