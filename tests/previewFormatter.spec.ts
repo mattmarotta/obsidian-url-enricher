@@ -22,6 +22,7 @@ function createSettings(overrides: Partial<InlineLinkPreviewSettings> = {}): Inl
 		requestTimeoutMs: 7000,
 		showFavicon: false,
 		keepEmoji: true,
+		dynamicPreviewMode: false,
 		...overrides,
 	};
 }

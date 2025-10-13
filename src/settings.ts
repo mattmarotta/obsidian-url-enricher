@@ -8,6 +8,7 @@ export interface InlineLinkPreviewSettings {
 	requestTimeoutMs: number;
 	showFavicon: boolean;
 	keepEmoji: boolean;
+	dynamicPreviewMode: boolean;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
@@ -17,6 +18,7 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	requestTimeoutMs: 7000,
 	showFavicon: true,
 	keepEmoji: true,
+	dynamicPreviewMode: false,
 };
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
@@ -100,6 +102,18 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Dynamic preview mode")
+			.setDesc("Show titles and descriptions for bare URLs dynamically in Live Preview without modifying the markdown. URLs stay as plain text but render with metadata.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(settings.dynamicPreviewMode)
+					.onChange(async (value) => {
+						this.plugin.settings.dynamicPreviewMode = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("Request timeout")
 			.setDesc("Stop fetching metadata if the request takes too long (milliseconds).")
 			.addText((text) => {
@@ -116,16 +130,41 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 				});
 			});
 
+		containerEl.createEl("h3", { text: "Cache Management" });
+
+		// Cache stats
+		const stats = this.plugin.faviconCache?.getStats();
+		if (stats) {
+			const statsEl = containerEl.createDiv({ cls: "setting-item-description" });
+			statsEl.style.marginBottom = "1em";
+			statsEl.style.padding = "0.5em";
+			statsEl.style.background = "var(--background-secondary)";
+			statsEl.style.borderRadius = "4px";
+			
+			statsEl.innerHTML = `
+				<strong>Cache Statistics:</strong><br>
+				• Cached domains: ${stats.entries}<br>
+				• Oldest entry: ${stats.oldestTimestamp ? new Date(stats.oldestTimestamp).toLocaleDateString() : 'N/A'}<br>
+				• Cache expires after 30 days
+			`;
+		}
+
 		new Setting(containerEl)
 			.setName("Clear cached previews")
-			.setDesc("Remove stored metadata and favicons. Previews will be rebuilt on the next paste.")
+			.setDesc("Remove all stored metadata and favicons from memory and disk. Previews will be rebuilt on the next paste or view.")
 			.addButton((button) =>
 				button
 					.setButtonText("Clear cache")
 					.setWarning()
-					.onClick(() => {
+					.onClick(async () => {
 						this.plugin.linkPreviewService.clearCache();
+						if (this.plugin.faviconCache) {
+							this.plugin.faviconCache.clear();
+							await this.plugin.faviconCache.flush();
+						}
 						new Notice("Inline link preview cache cleared.");
+						// Refresh the display to update stats
+						this.display();
 					}),
 			);
 	}

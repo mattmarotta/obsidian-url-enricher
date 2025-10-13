@@ -2,6 +2,7 @@ import { Editor, Plugin } from "obsidian";
 import { registerCommands } from "./commands";
 import { PastePreviewHandler } from "./editor/pastePreviewHandler";
 import { createFaviconDecorator } from "./editor/faviconDecorator";
+import { createUrlPreviewDecorator } from "./editor/urlPreviewDecorator";
 import { LinkPreviewBuilder } from "./linkPreview/previewBuilder";
 import { BulkLinkPreviewUpdater } from "./updater/bulkLinkPreviewUpdater";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
@@ -28,9 +29,10 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			}),
 		);
 
-		// Register the favicon decorator for Live Preview
+		// Register the favicon decorator and URL preview decorator for Live Preview
 		this.registerEditorExtension([
-			createFaviconDecorator(this.linkPreviewService, () => this.settings)
+			createFaviconDecorator(this.linkPreviewService, () => this.settings),
+			createUrlPreviewDecorator(this.linkPreviewService, () => this.settings)
 		]);
 
 		registerCommands(this);

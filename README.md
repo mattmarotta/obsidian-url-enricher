@@ -10,7 +10,9 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 
 ## Features
 
+- **Hybrid approach**: Choose between automatic conversion (URLs replaced with markdown) or dynamic preview mode (URLs stay intact but show live previews in Live Preview).
 - Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
+- **Dynamic preview mode**: When enabled, bare URLs show inline previews in Live Preview without modifying your markdown source.
 - Display the site favicon before the preview text (can be disabled).
 - Favicons are displayed dynamically in Live Preview mode at 32x32 resolution for crisp quality.
 - Uses Google's favicon service for reliable coverage across all sites.
@@ -22,6 +24,7 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 - Adjustable description length limit plus networking timeout controls.
 - Domain-aware metadata enrichments for Google search and Reddit links, with an extensible handler pipeline for additional sites.
 - Floating progress indicator while multiple links are being processed.
+- Persistent favicon cache with 30-day expiration and cache statistics display.
 
 ## Usage
 
@@ -50,13 +53,23 @@ The floating progress banner tracks how many notes remain and highlights the one
 Open **Settings → Community plugins → Inline link preview** to tune:
 
 - **Convert links on paste** – enable or disable automatic conversion.
+- **Dynamic preview mode** – when enabled, bare URLs show inline previews in Live Preview mode without modifying the markdown source. Great for keeping notes portable while still seeing rich link information.
 - **Include description** – decide whether to append the description after the title.
 - **Description length** – limit how many characters of the description are kept (default 60).
 - **Show favicons** – toggle whether the preview starts with the site icon.
 - **Keep emoji** – remove emoji if you prefer simpler text.
 - **Request timeout** – abort metadata fetches that take too long (milliseconds).
+- **Cache management** – view cache statistics (number of cached domains, oldest entry date) and clear the favicon cache if needed.
 
 Changes apply immediately to future conversions.
+
+### Dynamic vs. Conversion Modes
+
+**Conversion mode** (default): When you paste a URL, it's automatically replaced with `[Title — Description](url)` in your markdown source. This creates a permanent, readable link in your notes.
+
+**Dynamic preview mode**: URLs remain as plain text in your markdown source (e.g., `https://example.com`), but in Live Preview they appear with an inline preview bubble showing the title, description, and favicon. The source stays clean and portable, while you still get rich visual feedback.
+
+You can use both modes together or switch between them based on your workflow.
 
 ## Privacy and network usage
 
