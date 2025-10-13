@@ -1,8 +1,11 @@
 import { editorLivePreviewField, editorViewField } from "obsidian";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
-import { RangeSetBuilder } from "@codemirror/state";
+import { RangeSetBuilder, StateEffect } from "@codemirror/state";
 import type { LinkPreviewService } from "../services/linkPreviewService";
 import type { InlineLinkPreviewSettings } from "../settings";
+
+// StateEffect to trigger decoration refresh when settings change
+export const refreshDecorationsEffect = StateEffect.define<null>();
 
 class FaviconWidget extends WidgetType {
 	constructor(private faviconUrl: string) {
@@ -47,7 +50,8 @@ export function createFaviconDecorator(
 			}
 
 			update(update: ViewUpdate): void {
-				if (update.docChanged || update.viewportChanged) {
+				// Rebuild if doc changed, viewport changed, OR if we received a refresh effect
+				if (update.docChanged || update.viewportChanged || update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))) {
 					this.decorations = this.buildDecorations(update.view);
 				}
 			}

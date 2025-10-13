@@ -13,6 +13,11 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 - **Hybrid approach**: Choose between automatic conversion (URLs replaced with markdown) or dynamic preview mode (URLs stay intact but show live previews in Live Preview).
 - Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
 - **Dynamic preview mode**: When enabled, bare URLs show inline previews in Live Preview without modifying your markdown source.
+  - **Three display modes**: URL + Preview, Preview Only, or Small URL + Preview (recommended)
+  - **Clickable preview bubbles**: Click any preview bubble to open the URL in a new tab
+  - **Real-time settings updates**: Changes apply immediately without page navigation
+  - **Flexible description length**: Control how much metadata is shown with natural word-wrapping
+  - Keeps your markdown portable while providing rich visual feedback
 - Display the site favicon before the preview text (can be disabled).
 - Favicons are displayed dynamically in Live Preview mode at 32x32 resolution for crisp quality.
 - Uses Google's favicon service for reliable coverage across all sites.
@@ -54,8 +59,12 @@ Open **Settings → Community plugins → Inline link preview** to tune:
 
 - **Convert links on paste** – enable or disable automatic conversion.
 - **Dynamic preview mode** – when enabled, bare URLs show inline previews in Live Preview mode without modifying the markdown source. Great for keeping notes portable while still seeing rich link information.
+- **URL display mode** – choose how previews appear in dynamic mode:
+  - **URL + Preview**: Show the full URL in standard link style with preview bubble
+  - **Preview Only**: Hide the URL completely, show only the preview (clickable bubble)
+  - **Small URL + Preview**: Show a subtle, faded, smaller URL with preview (recommended - least intrusive)
 - **Include description** – decide whether to append the description after the title.
-- **Description length** – limit how many characters of the description are kept (default 60).
+- **Description length** – limit how many characters of the description are kept (default 60). Higher values enable word-wrapping for multi-line previews.
 - **Show favicons** – toggle whether the preview starts with the site icon.
 - **Keep emoji** – remove emoji if you prefer simpler text.
 - **Request timeout** – abort metadata fetches that take too long (milliseconds).
@@ -69,7 +78,14 @@ Changes apply immediately to future conversions.
 
 **Dynamic preview mode**: URLs remain as plain text in your markdown source (e.g., `https://example.com`), but in Live Preview they appear with an inline preview bubble showing the title, description, and favicon. The source stays clean and portable, while you still get rich visual feedback.
 
-You can use both modes together or switch between them based on your workflow.
+The **URL display mode** setting controls how dynamic previews appear:
+- **URL + Preview**: Best when you want standard link styling (blue/purple, underlined)
+- **Preview Only**: Best for the cleanest reading experience - URLs are completely hidden but preview bubbles are clickable
+- **Small URL + Preview** (recommended): Best for most users - URLs appear subtle and non-intrusive (75% size, faded, no underline) while remaining fully visible, clickable, and editable
+
+All preview bubbles are clickable and will open the URL in a new tab. Settings changes apply immediately without needing to navigate away from your current note.
+
+You can use both conversion and dynamic modes together or switch between them based on your workflow.
 
 ## Privacy and network usage
 

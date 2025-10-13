@@ -1,8 +1,8 @@
 import { Editor, Plugin } from "obsidian";
 import { registerCommands } from "./commands";
 import { PastePreviewHandler } from "./editor/pastePreviewHandler";
-import { createFaviconDecorator } from "./editor/faviconDecorator";
-import { createUrlPreviewDecorator } from "./editor/urlPreviewDecorator";
+import { createFaviconDecorator, refreshDecorationsEffect as faviconRefreshEffect } from "./editor/faviconDecorator";
+import { createUrlPreviewDecorator, refreshDecorationsEffect as urlPreviewRefreshEffect } from "./editor/urlPreviewDecorator";
 import { LinkPreviewBuilder } from "./linkPreview/previewBuilder";
 import { BulkLinkPreviewUpdater } from "./updater/bulkLinkPreviewUpdater";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
@@ -56,6 +56,27 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		await this.saveData(this.settings);
 		this.linkPreviewService.updateOptions({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
+		});
+	}
+
+	refreshDecorations(): void {
+		// Dispatch the refresh StateEffect to all markdown editors
+		// This properly triggers the ViewPlugin update cycle
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view.getViewType() === "markdown") {
+				const view = leaf.view as any;
+				const cm = view.editor?.cm;
+				
+				if (cm) {
+					// Dispatch both refresh effects to trigger decoration rebuild
+					cm.dispatch({
+						effects: [
+							faviconRefreshEffect.of(null),
+							urlPreviewRefreshEffect.of(null)
+						]
+					});
+				}
+			}
 		});
 	}
 

@@ -1,6 +1,8 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type InlineLinkPreviewPlugin from "./main";
 
+export type UrlDisplayMode = "url-and-preview" | "preview-only" | "small-url-and-preview";
+
 export interface InlineLinkPreviewSettings {
 	autoPreviewOnPaste: boolean;
 	includeDescription: boolean;
@@ -9,6 +11,7 @@ export interface InlineLinkPreviewSettings {
 	showFavicon: boolean;
 	keepEmoji: boolean;
 	dynamicPreviewMode: boolean;
+	urlDisplayMode: UrlDisplayMode;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
@@ -19,6 +22,7 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	showFavicon: true,
 	keepEmoji: true,
 	dynamicPreviewMode: false,
+	urlDisplayMode: "url-and-preview",
 };
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
@@ -57,6 +61,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.includeDescription = value;
 						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
 					}),
 			);
 
@@ -74,6 +80,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					}
 					this.plugin.settings.maxDescriptionLength = Math.round(parsed);
 					await this.plugin.saveSettings();
+					// Trigger decoration refresh
+					this.plugin.refreshDecorations();
 				});
 			});
 
@@ -86,6 +94,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.showFavicon = value;
 						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
 					}),
 			);
 
@@ -110,6 +120,25 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.dynamicPreviewMode = value;
 						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("URL display mode")
+			.setDesc("Choose how URLs are displayed in dynamic preview mode.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("url-and-preview", "URL + Preview — Show full-sized URL with preview bubble")
+					.addOption("preview-only", "Preview Only — Hide URL, show only the preview")
+					.addOption("small-url-and-preview", "Small URL + Preview — Show subtle, non-intrusive URL with preview")
+					.setValue(settings.urlDisplayMode)
+					.onChange(async (value) => {
+						this.plugin.settings.urlDisplayMode = value as UrlDisplayMode;
+						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
 					}),
 			);
 

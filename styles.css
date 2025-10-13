@@ -97,22 +97,22 @@ img[alt="inline-link-preview-icon"] {
 
 /* Dynamic URL Preview Styles */
 .inline-url-preview {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35em;
+	display: block;
 	padding: 0.15em 0.5em;
-	margin-left: 0.35em;
+	margin-left: 0;
+	margin-top: 0.25em;
 	background: var(--background-modifier-border);
 	border-radius: 4px;
 	font-size: 0.9em;
 	color: var(--text-muted);
-	vertical-align: middle;
-	max-width: 400px;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 	opacity: 0.8;
 	transition: opacity 0.2s ease;
+	cursor: pointer;
+	/* Allow text to wrap based on description length setting */
+	white-space: normal;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	max-width: fit-content;
 }
 
 .inline-url-preview:hover {
@@ -122,6 +122,83 @@ img[alt="inline-link-preview-icon"] {
 .inline-url-preview--loading {
 	font-style: italic;
 	opacity: 0.5;
+	white-space: nowrap;
+}
+
+/* Small URL widget - completely replaces the URL */
+.inline-url-preview-small-url-widget {
+	font-size: 0.75em !important;
+	color: var(--text-faint) !important;
+	opacity: 0.6 !important;
+	cursor: pointer !important;
+	text-decoration: none !important;
+	border-bottom: none !important;
+	background: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+
+.inline-url-preview-small-url-widget:hover {
+	opacity: 0.9 !important;
+	text-decoration: none !important;
+}
+
+/* Small URL styling for small-url-and-preview mode - remove ALL underlines */
+/* Target the mark decoration wrapper */
+.cm-line .inline-url-preview-small-url,
+.cm-content .inline-url-preview-small-url,
+.inline-url-preview-small-url {
+	font-size: 0.75em !important;
+	color: var(--text-faint) !important;
+	text-decoration: none !important;
+	opacity: 0.6;
+	border-bottom: none !important;
+}
+
+/* Target everything inside the mark decoration */
+.inline-url-preview-small-url * {
+	font-size: inherit !important;
+	color: inherit !important;
+	text-decoration: none !important;
+	border-bottom: none !important;
+	background-image: none !important;
+}
+
+.inline-url-preview-small-url:hover {
+	opacity: 0.9;
+	text-decoration: none !important;
+	border-bottom: none !important;
+}
+
+.inline-url-preview-small-url:hover * {
+	text-decoration: none !important;
+	border-bottom: none !important;
+}
+
+/* Override all possible link underline sources - target actual link elements inside */
+.inline-url-preview-small-url .cm-link,
+.inline-url-preview-small-url .cm-url,
+.inline-url-preview-small-url .cm-underline,
+.cm-line .inline-url-preview-small-url .cm-link,
+.cm-line .inline-url-preview-small-url .cm-url,
+.cm-content .inline-url-preview-small-url .cm-link,
+.cm-content .inline-url-preview-small-url .cm-url,
+.cm-line a.inline-url-preview-small-url,
+.cm-content a.inline-url-preview-small-url,
+a.inline-url-preview-small-url,
+.cm-link.inline-url-preview-small-url,
+.cm-url.inline-url-preview-small-url {
+	color: var(--text-faint) !important;
+	text-decoration: none !important;
+	border-bottom: none !important;
+	background-image: none !important;
+}
+
+/* Remove underline from internal links too */
+.internal-link.inline-url-preview-small-url,
+.inline-url-preview-small-url .internal-link {
+	text-decoration: none !important;
+	border-bottom: none !important;
 }
 
 .inline-url-preview__favicon {
@@ -131,31 +208,28 @@ img[alt="inline-link-preview-icon"] {
 	border-radius: 2px;
 	flex-shrink: 0;
 	background: rgba(0, 0, 0, 0.05);
+	vertical-align: text-bottom;
+	display: inline-block;
+	margin-right: 0.35em;
 }
 
 .inline-url-preview__text {
-	display: inline-flex;
-	align-items: baseline;
-	gap: 0.25em;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	display: inline;
+	vertical-align: baseline;
 }
 
 .inline-url-preview__title {
 	font-weight: 500;
 	color: var(--text-normal);
-	flex-shrink: 0;
 }
 
 .inline-url-preview__separator {
 	color: var(--text-faint);
-	flex-shrink: 0;
 }
 
 .inline-url-preview__description {
 	color: var(--text-muted);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	/* Allow description to wrap naturally */
+	white-space: normal;
+	word-wrap: break-word;
 }

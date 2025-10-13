@@ -1,9 +1,12 @@
 import { editorLivePreviewField } from "obsidian";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
-import { RangeSetBuilder } from "@codemirror/state";
+import { RangeSetBuilder, StateEffect } from "@codemirror/state";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import type { InlineLinkPreviewSettings } from "../settings";
+import type { InlineLinkPreviewSettings, UrlDisplayMode } from "../settings";
 import { sanitizeTextContent } from "../utils/text";
+
+// StateEffect to trigger decoration refresh when settings change
+export const refreshDecorationsEffect = StateEffect.define<null>();
 
 const ELLIPSIS = "\u2026";
 
@@ -20,12 +23,56 @@ function stripEmoji(value: string): string {
 	return value.replace(emojiRegex, "").replace(/\s+/g, " ").trim();
 }
 
+class SmallUrlWidget extends WidgetType {
+	constructor(private url: string) {
+		super();
+	}
+
+	toDOM(): HTMLElement {
+		const span = document.createElement("span");
+		span.className = "inline-url-preview-small-url-widget";
+		span.textContent = this.url;
+		// Use inline styles to override everything
+		span.style.cssText = `
+			font-size: 0.75em !important;
+			color: var(--text-faint) !important;
+			opacity: 0.6 !important;
+			cursor: pointer !important;
+			text-decoration: none !important;
+			border-bottom: none !important;
+			background: none !important;
+			padding: 0 !important;
+			margin: 0 !important;
+		`.replace(/\s+/g, ' ').trim();
+		
+		// Make it clickable
+		span.onclick = (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			window.open(this.url, "_blank");
+		};
+		
+		return span;
+	}
+
+	eq(other: SmallUrlWidget): boolean {
+		return other.url === this.url;
+	}
+
+	ignoreEvent(event: Event): boolean {
+		// Let click events through
+		return event.type !== "mousedown";
+	}
+}
+
 class UrlPreviewWidget extends WidgetType {
 	constructor(
+		private url: string,
 		private title: string | null,
 		private description: string | null,
 		private faviconUrl: string | null,
-		private isLoading: boolean
+		private isLoading: boolean,
+		private displayMode: UrlDisplayMode
 	) {
 		super();
 	}
@@ -39,6 +86,14 @@ class UrlPreviewWidget extends WidgetType {
 			container.textContent = "Loading...";
 			return container;
 		}
+
+		// Make the preview bubble clickable
+		container.style.cursor = "pointer";
+		container.onclick = (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			window.open(this.url, "_blank");
+		};
 
 		// Favicon
 		if (this.faviconUrl) {
@@ -78,10 +133,12 @@ class UrlPreviewWidget extends WidgetType {
 
 	eq(other: UrlPreviewWidget): boolean {
 		return (
+			other.url === this.url &&
 			other.title === this.title &&
 			other.description === this.description &&
 			other.faviconUrl === this.faviconUrl &&
-			other.isLoading === this.isLoading
+			other.isLoading === this.isLoading &&
+			other.displayMode === this.displayMode
 		);
 	}
 
@@ -139,7 +196,8 @@ export function createUrlPreviewDecorator(
 			}
 
 			update(update: ViewUpdate): void {
-				if (update.docChanged || update.viewportChanged) {
+				// Rebuild if doc changed, viewport changed, OR if we received a refresh effect
+				if (update.docChanged || update.viewportChanged || update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))) {
 					this.decorations = this.buildDecorations(update.view);
 				}
 			}
@@ -252,11 +310,35 @@ export function createUrlPreviewDecorator(
 
 					// Only show preview if we have metadata or are loading
 					if (isLoading || title) {
-						const widget = Decoration.widget({
-							widget: new UrlPreviewWidget(title, description, faviconUrl, isLoading),
-							side: 1, // Display after the URL
-						});
-						builder.add(urlEnd, urlEnd, widget);
+						const displayMode = settings.urlDisplayMode;
+						
+						if (displayMode === "preview-only") {
+							// Hide the URL completely and show only the preview
+							const replacementWidget = Decoration.replace({
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, displayMode),
+							});
+							builder.add(urlStart, urlEnd, replacementWidget);
+						} else if (displayMode === "small-url-and-preview") {
+							// Replace URL with small styled version
+							const smallUrlWidget = Decoration.replace({
+								widget: new SmallUrlWidget(url),
+							});
+							builder.add(urlStart, urlEnd, smallUrlWidget);
+							
+							// Add preview widget after URL
+							const widget = Decoration.widget({
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, displayMode),
+								side: 1,
+							});
+							builder.add(urlEnd, urlEnd, widget);
+						} else {
+							// Show preview after URL (url-and-preview)
+							const widget = Decoration.widget({
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, displayMode),
+								side: 1, // Display after the URL
+							});
+							builder.add(urlEnd, urlEnd, widget);
+						}
 					}
 				}
 

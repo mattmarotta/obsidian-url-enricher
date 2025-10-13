@@ -23,6 +23,7 @@ function createSettings(overrides: Partial<InlineLinkPreviewSettings> = {}): Inl
 		showFavicon: false,
 		keepEmoji: true,
 		dynamicPreviewMode: false,
+		urlDisplayMode: "url-and-preview",
 		...overrides,
 	};
 }
