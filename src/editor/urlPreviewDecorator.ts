@@ -1,6 +1,7 @@
 import { editorLivePreviewField } from "obsidian";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder, StateEffect } from "@codemirror/state";
+import { syntaxTree } from "@codemirror/language";
 import type { LinkPreviewService } from "../services/linkPreviewService";
 import type { InlineLinkPreviewSettings, UrlDisplayMode } from "../settings";
 import { sanitizeTextContent } from "../utils/text";
@@ -230,6 +231,9 @@ export function createUrlPreviewDecorator(
 				const builder = new RangeSetBuilder<Decoration>();
 				const doc = view.state.doc;
 				const text = doc.toString();
+				
+				// Get syntax tree for markdown context detection
+				const tree = syntaxTree(view.state);
 
 				// Match bare URLs (not already in markdown link syntax)
 				// This regex looks for URLs that are NOT preceded by ]( and followed by )
@@ -250,12 +254,60 @@ export function createUrlPreviewDecorator(
 					}
 					processedRanges.add(rangeKey);
 
-					// Additional check: make sure this isn't part of a markdown link
-					// by looking at surrounding context
-					const beforeMatch = text.slice(Math.max(0, urlStart - 2), urlStart);
-					const afterMatch = text.slice(urlEnd, Math.min(text.length, urlEnd + 1));
+					// Check if URL is inside markdown link syntax using text analysis
+					// Live Preview doesn't provide full markdown structure in syntax tree,
+					// so we need to check the actual text context
 					
-					if (beforeMatch === "](" || afterMatch === ")") {
+					// Look backwards to find if there's a ]( before this URL
+					let isInMarkdownLink = false;
+					const searchStart = Math.max(0, urlStart - 1000); // Look back up to 1000 chars
+					const beforeText = text.slice(searchStart, urlStart);
+					
+					// Find the last occurrence of ]( before our URL
+					const lastLinkStart = beforeText.lastIndexOf('](');
+					
+					if (lastLinkStart !== -1) {
+						// Check if there's a closing ) after our URL without any [ in between
+						const afterUrlPos = urlEnd;
+						const searchEnd = Math.min(text.length, afterUrlPos + 100);
+						const afterText = text.slice(afterUrlPos, searchEnd);
+						
+						// Find first ) after URL
+						const nextParen = afterText.indexOf(')');
+						
+						if (nextParen !== -1) {
+							// Check if there's no [ between ]( and )
+							const potentialLinkText = beforeText.slice(lastLinkStart + 2) + url + afterText.slice(0, nextParen);
+							
+							// If no [ in this section, we're likely inside [text](url)
+							if (!potentialLinkText.includes('[')) {
+								isInMarkdownLink = true;
+							}
+						}
+					}
+					
+					// Skip if inside a markdown link [text](url)
+					if (isInMarkdownLink) {
+						continue;
+					}
+					
+					// Also check for image syntax ![alt](url)
+					const imageCheck = text.slice(Math.max(0, urlStart - 3), urlStart);
+					if (imageCheck.endsWith('!(') || imageCheck.endsWith('](')) {
+						const charBefore = text[Math.max(0, urlStart - 4)];
+						if (charBefore === '!') {
+							continue; // Skip images
+						}
+					}
+					
+					// Check for inline code context using syntax tree
+					const node = tree.resolveInner(urlStart, 1);
+					if (node.type.name === "InlineCode" || node.parent?.type.name === "InlineCode") {
+						continue;
+					}
+					
+					// Check for code block
+					if (node.type.name === "CodeText" || node.parent?.type.name === "FencedCode") {
 						continue;
 					}
 
