@@ -78,13 +78,23 @@ class UrlPreviewWidget extends WidgetType {
 	}
 
 	toDOM(): HTMLElement {
+		// Create a container with a line break before it
+		const wrapper = document.createElement("span");
+		
+		// Add line break before the preview bubble (except for preview-only mode)
+		if (this.displayMode !== "preview-only") {
+			const br = document.createElement("br");
+			wrapper.appendChild(br);
+		}
+		
 		const container = document.createElement("span");
 		container.className = "inline-url-preview";
 
 		if (this.isLoading) {
 			container.className += " inline-url-preview--loading";
 			container.textContent = "Loading...";
-			return container;
+			wrapper.appendChild(container);
+			return wrapper;
 		}
 
 		// Make the preview bubble clickable
@@ -128,7 +138,8 @@ class UrlPreviewWidget extends WidgetType {
 		}
 
 		container.appendChild(textContainer);
-		return container;
+		wrapper.appendChild(container);
+		return wrapper;
 	}
 
 	eq(other: UrlPreviewWidget): boolean {

@@ -23,6 +23,9 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		await this.loadSettings();
 		await this.instantiateServices();
 
+		// Apply bubble color CSS
+		this.updateBubbleColorCSS();
+
 		this.registerEvent(
 			this.app.workspace.on("editor-paste", async (event: ClipboardEvent, editor: Editor, info) => {
 				await this.pasteHandler.handlePaste(event, editor, info);
@@ -57,6 +60,26 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		this.linkPreviewService.updateOptions({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
 		});
+	}
+
+	updateBubbleColorCSS(): void {
+		let color: string;
+
+		switch (this.settings.bubbleColorMode) {
+			case "none":
+				color = "transparent";
+				break;
+			case "custom":
+				color = this.settings.customBubbleColor;
+				break;
+			case "grey":
+			default:
+				color = "var(--background-modifier-border)";
+				break;
+		}
+
+		// Update CSS variable
+		document.documentElement.style.setProperty("--inline-preview-bg", color);
 	}
 
 	refreshDecorations(): void {

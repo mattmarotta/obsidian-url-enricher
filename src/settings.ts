@@ -2,6 +2,7 @@ import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type InlineLinkPreviewPlugin from "./main";
 
 export type UrlDisplayMode = "url-and-preview" | "preview-only" | "small-url-and-preview";
+export type BubbleColorMode = "none" | "grey" | "custom";
 
 export interface InlineLinkPreviewSettings {
 	autoPreviewOnPaste: boolean;
@@ -12,6 +13,8 @@ export interface InlineLinkPreviewSettings {
 	keepEmoji: boolean;
 	dynamicPreviewMode: boolean;
 	urlDisplayMode: UrlDisplayMode;
+	bubbleColorMode: BubbleColorMode;
+	customBubbleColor: string;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
@@ -23,6 +26,8 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	keepEmoji: true,
 	dynamicPreviewMode: false,
 	urlDisplayMode: "url-and-preview",
+	bubbleColorMode: "grey",
+	customBubbleColor: "#4a4a4a",
 };
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
@@ -33,12 +38,36 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	private updateBubbleColorCSS(): void {
+		const settings = this.plugin.settings;
+		let color: string;
+
+		switch (settings.bubbleColorMode) {
+			case "none":
+				color = "transparent";
+				break;
+			case "custom":
+				color = settings.customBubbleColor;
+				break;
+			case "grey":
+			default:
+				color = "var(--background-modifier-border)";
+				break;
+		}
+
+		// Update CSS variable
+		document.documentElement.style.setProperty("--inline-preview-bg", color);
+	}
+
 	display(): void {
 		const { containerEl } = this;
 		const settings = this.plugin.settings;
 
 		containerEl.empty();
 		containerEl.createEl("h2", { text: "Inline link preview" });
+
+		// Apply bubble color on display
+		this.updateBubbleColorCSS();
 
 		new Setting(containerEl)
 			.setName("Convert links on paste")
@@ -141,6 +170,39 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 						this.plugin.refreshDecorations();
 					}),
 			);
+
+		new Setting(containerEl)
+			.setName("Preview bubble background")
+			.setDesc("Choose the background color for preview bubbles.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("none", "None (transparent)")
+					.addOption("grey", "Grey (default)")
+					.addOption("custom", "Custom color")
+					.setValue(settings.bubbleColorMode)
+					.onChange(async (value) => {
+						this.plugin.settings.bubbleColorMode = value as BubbleColorMode;
+						await this.plugin.saveSettings();
+						this.updateBubbleColorCSS();
+						this.display(); // Refresh to show/hide color picker
+					}),
+			);
+
+		// Show color picker only if custom mode is selected
+		if (settings.bubbleColorMode === "custom") {
+			new Setting(containerEl)
+				.setName("Custom bubble color")
+				.setDesc("Choose a custom background color for preview bubbles.")
+				.addColorPicker((color) =>
+					color
+						.setValue(settings.customBubbleColor)
+						.onChange(async (value) => {
+							this.plugin.settings.customBubbleColor = value;
+							await this.plugin.saveSettings();
+							this.updateBubbleColorCSS();
+						}),
+				);
+		}
 
 		new Setting(containerEl)
 			.setName("Request timeout")

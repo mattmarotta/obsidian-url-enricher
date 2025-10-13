@@ -24,6 +24,8 @@ function createSettings(overrides: Partial<InlineLinkPreviewSettings> = {}): Inl
 		keepEmoji: true,
 		dynamicPreviewMode: false,
 		urlDisplayMode: "url-and-preview",
+		bubbleColorMode: "grey",
+		customBubbleColor: "#4a4a4a",
 		...overrides,
 	};
 }
