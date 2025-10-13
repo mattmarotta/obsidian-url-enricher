@@ -12,9 +12,10 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 
 - Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
 - Display the site favicon before the preview text (can be disabled).
-- Fetch favicons from Google's favicon service so icons stay consistent across sites.
-- Skip the icon when Google's service cannot find one, avoiding broken placeholders.
-- Treat YouTube links as standard previews that stick to the YouTube favicon instead of embedding video thumbnails.
+- Favicons are displayed dynamically in Live Preview mode at 32x32 resolution for crisp quality.
+- Uses Google's favicon service for reliable coverage across all sites.
+- Favicons are not embedded in the Markdown, keeping source files clean and readable.
+- Treat YouTube links as standard previews with the site favicon, avoiding unwanted video embeds.
 - Keep emoji and other Unicode characters that appear in the source page.
 - Command palette action to convert the current selection to a preview.
 - Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
@@ -27,7 +28,8 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 ### Convert as you write
 1. Copy a URL to your clipboard.
 2. Paste it into a Markdown editor in Obsidian.
-3. The plugin briefly inserts the raw URL (or list of URLs), then replaces each entry with a `[![favicon](favicon) Title — Description](url)` preview once metadata is fetched. A temporary floating progress banner appears when multiple links are being processed so you can tell work is underway. If favicons or emoji are disabled in settings, they are omitted from the final text.
+3. The plugin briefly inserts the raw URL (or list of URLs), then replaces each entry with a `[Title — Description](url)` preview once metadata is fetched. A temporary floating progress banner appears when multiple links are being processed so you can tell work is underway. If emoji are disabled in settings, they are omitted from the final text.
+4. When favicons are enabled, they appear dynamically in Live Preview mode before each link (not embedded in the Markdown).
 
 If the page cannot be reached, the URL is left as-is so you never lose what you pasted.
 
@@ -58,7 +60,9 @@ Changes apply immediately to future conversions.
 
 ## Privacy and network usage
 
-To build a preview the plugin requests the linked page and parses its HTML locally. Favicons are fetched via Google's public favicon service so icons stay a consistent size. URLs you paste are sent directly to their target domains; no additional third-party metadata service is used. Responses are cached in memory for the current Obsidian session and nothing is persisted to disk. If a site is private or requires authentication, the plugin keeps the original URL.
+To build a preview the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 32x32 resolution for consistent, high-quality icons across all sites. URLs you paste are sent directly to their target domains; no additional third-party metadata service is used. 
+
+Favicon URLs are cached on disk for 30 days to improve performance and reduce network requests. The cache stores only the mapping between domains and their favicon URLs (e.g., `reddit.com → https://www.google.com/s2/favicons?domain=reddit.com`), not the actual images or page content. If a site is private or requires authentication, the plugin keeps the original URL.
 
 ## Installation
 

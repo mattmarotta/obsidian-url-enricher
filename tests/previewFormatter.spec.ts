@@ -627,12 +627,12 @@ async function youtubePreviewUsesGoogleFavicon(): Promise<void> {
 	} as RequestUrlResponse;
 		}
 
-		if (/www\.google\.com\/s2\/favicons/.test(url)) {
+		if (url === "https://www.youtube.com/favicon.ico") {
 	return {
 		status: 200,
 		text: "",
 		headers: {
-			"content-type": "image/png",
+			"content-type": "image/x-icon",
 		},
 	} as RequestUrlResponse;
 		}
@@ -649,24 +649,17 @@ async function youtubePreviewUsesGoogleFavicon(): Promise<void> {
 		const builder = new LinkPreviewBuilder(service, () => settings);
 		const preview = await builder.build(youtubeUrl);
 
-		assert(preview.startsWith("<a class=\"inline-link-preview-link\""), "YouTube previews should render as an HTML anchor to suppress Obsidian embeds.");
+		assert(preview.startsWith("["), "YouTube previews should render as standard Markdown links.");
 		assert(
-			preview.includes("<img class=\"inline-link-preview-icon\""),
-			"YouTube previews should include the favicon image within the HTML anchor.",
-		);
-		assert(
-			preview.includes("https://www.google.com/s2/favicons?domain=www.youtube.com"),
-			"YouTube previews should source favicons from Google's favicon service.",
-		);
-		assert(
-			preview.includes("<span class=\"inline-link-preview-text\">YouTube Video Title</span>"),
-			"YouTube previews should render the video title once inside the span wrapper.",
+			preview.includes("YouTube Video Title"),
+			"YouTube previews should render the video title.",
 		);
 		assert(
 			preview.includes("https://www.youtube.com/watch?v=abcdefghijk"),
 			"YouTube previews should link to the canonical youtube.com watch URL.",
 		);
 		assert(!preview.includes("img.youtube.com"), "YouTube previews should avoid embedding the video thumbnail in the output.");
+		assert(!preview.includes("favicon"), "Favicons should not be embedded in the Markdown output.");
 	} finally {
 		setRequestUrlMock(null);
 	}

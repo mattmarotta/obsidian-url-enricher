@@ -7,27 +7,21 @@ If your plugin does not need CSS, delete this file.
 
 */
 
+/* Target favicon images using a specific class */
+img.inline-link-favicon,
 img[alt="inline-link-preview-icon"] {
-	width: 1em;
-	height: 1em;
-	max-width: 1em;
-	max-height: 1em;
-	object-fit: cover;
+	width: 1em !important;
+	height: 1em !important;
+	max-width: 1em !important;
+	max-height: 1em !important;
+	min-width: 1em !important;
+	min-height: 1em !important;
+	object-fit: contain !important;
 	border-radius: 4px;
-	vertical-align: text-bottom;
+	vertical-align: text-bottom !important;
 	margin-right: 0.35em;
-	display: inline-block;
+	display: inline-block !important;
 	background: rgba(0, 0, 0, 0.05);
-}
-
-.inline-link-preview-link {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35em;
-}
-
-.inline-link-preview-link .inline-link-preview-text {
-	display: inline;
 }
 
 .status-bar-item.inline-link-preview-rate-limit {

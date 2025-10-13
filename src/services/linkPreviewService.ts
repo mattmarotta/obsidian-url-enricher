@@ -6,6 +6,7 @@ import {
 	type MetadataHandlerContext,
 } from "./metadataHandlers";
 import { decodeHtmlEntities, sanitizeTextContent } from "../utils/text";
+import { FaviconCache } from "./faviconCache";
 
 export type { LinkMetadata } from "./types";
 
@@ -23,12 +24,16 @@ export class LinkPreviewService {
 	private cache = new Map<string, LinkMetadata>();
 	private options: LinkPreviewServiceOptions;
 	private readonly metadataHandlers: MetadataHandler[];
-	private faviconCache = new Map<string, string | null>();
+	private persistentFaviconCache: FaviconCache | null = null;
 	private faviconValidationCache = new Map<string, string | null>();
 
 	constructor(options: LinkPreviewServiceOptions, metadataHandlers: MetadataHandler[] = createDefaultMetadataHandlers()) {
 		this.options = { ...options };
 		this.metadataHandlers = metadataHandlers;
+	}
+
+	setPersistentFaviconCache(cache: FaviconCache): void {
+		this.persistentFaviconCache = cache;
 	}
 
 	updateOptions(options: Partial<LinkPreviewServiceOptions>): void {
@@ -46,7 +51,9 @@ export class LinkPreviewService {
 
 	clearCache(): void {
 		this.cache.clear();
-		this.faviconCache.clear();
+		if (this.persistentFaviconCache) {
+			this.persistentFaviconCache.clear();
+		}
 		this.faviconValidationCache.clear();
 	}
 
@@ -378,7 +385,8 @@ export class LinkPreviewService {
 				return sanitized;
 			}
 		}
-		return this.deriveFaviconFromUrl(baseUrl);
+		// Fallback to native /favicon.ico before using Google's service
+		return this.buildNativeFaviconUrl(baseUrl);
 	}
 
 	private isLikelyFaviconUrl(candidate: string): boolean {
@@ -413,7 +421,16 @@ export class LinkPreviewService {
 
 	private deriveFaviconFromUrl(url: string): string | null {
 		try {
-			return this.buildGoogleFaviconUrl(new URL(url));
+			return this.buildNativeFaviconUrl(url);
+		} catch {
+			return null;
+		}
+	}
+
+	private buildNativeFaviconUrl(url: string): string | null {
+		try {
+			const parsed = new URL(url);
+			return `${parsed.origin}/favicon.ico`;
 		} catch {
 			return null;
 		}
@@ -465,14 +482,39 @@ export class LinkPreviewService {
 			const parsed = new URL(pageUrl);
 			const origin = parsed.origin;
 
-			if (this.faviconCache.has(origin)) {
-				return this.faviconCache.get(origin) ?? null;
+			// Check persistent cache first
+			if (this.persistentFaviconCache) {
+				const cached = this.persistentFaviconCache.get(origin);
+				if (cached !== undefined) {
+					return cached;
+				}
 			}
 
+			// Use Google's favicon service as primary source for reliability
+			// It has better coverage and avoids generic/default icons
 			const googleFavicon = this.buildGoogleFaviconUrl(parsed);
-			const verified = await this.validateFavicon(googleFavicon);
-			this.faviconCache.set(origin, verified);
-			return verified;
+			if (googleFavicon) {
+				if (this.persistentFaviconCache) {
+					this.persistentFaviconCache.set(origin, googleFavicon);
+				}
+				return googleFavicon;
+			}
+
+			// Fallback to native favicon only if Google's service isn't available
+			const nativeFavicon = this.buildNativeFaviconUrl(pageUrl);
+			const verified = await this.validateFavicon(nativeFavicon);
+			
+			if (verified) {
+				if (this.persistentFaviconCache) {
+					this.persistentFaviconCache.set(origin, verified);
+				}
+				return verified;
+			}
+
+			if (this.persistentFaviconCache) {
+				this.persistentFaviconCache.set(origin, null);
+			}
+			return null;
 		} catch {
 			return null;
 		}
@@ -484,7 +526,12 @@ export class LinkPreviewService {
 			return null;
 		}
 
-		const params = new URLSearchParams({ domain: host });
+		// Request larger size (32x32) for better quality on high-DPI displays
+		// CSS will scale it down to 1em while maintaining crispness
+		const params = new URLSearchParams({ 
+			domain: host,
+			sz: "32"
+		});
 		return `https://www.google.com/s2/favicons?${params.toString()}`;
 	}
 
@@ -510,7 +557,8 @@ export class LinkPreviewService {
 			const response = await this.requestWithTimeoutParam({ url: candidate, method: "HEAD", headers });
 			if (response.status >= 200 && response.status < 400) {
 				const type = this.getHeader(response, "content-type");
-				if (!type || type.toLowerCase().includes("image")) {
+				// Only accept if we have a valid image content-type
+				if (type && type.toLowerCase().includes("image")) {
 					this.faviconValidationCache.set(candidate, candidate);
 					return candidate;
 				}
@@ -519,7 +567,8 @@ export class LinkPreviewService {
 			try {
 				const resp = await this.requestWithTimeoutParam({ url: candidate, headers });
 				const type = this.getHeader(resp, "content-type");
-				if (!type || type.toLowerCase().includes("image")) {
+				// Only accept if we have a valid image content-type
+				if (type && type.toLowerCase().includes("image")) {
 					this.faviconValidationCache.set(candidate, candidate);
 					return candidate;
 				}

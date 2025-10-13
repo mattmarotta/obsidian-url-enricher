@@ -1,15 +1,18 @@
 import { Editor, Plugin } from "obsidian";
 import { registerCommands } from "./commands";
 import { PastePreviewHandler } from "./editor/pastePreviewHandler";
+import { createFaviconDecorator } from "./editor/faviconDecorator";
 import { LinkPreviewBuilder } from "./linkPreview/previewBuilder";
 import { BulkLinkPreviewUpdater } from "./updater/bulkLinkPreviewUpdater";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
+import { FaviconCache } from "./services/faviconCache";
 import { LinkProcessingStatusManager } from "./status/progressStatusManager";
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
 	linkPreviewService!: LinkPreviewService;
+	faviconCache!: FaviconCache;
 	previewBuilder!: LinkPreviewBuilder;
 	pasteHandler!: PastePreviewHandler;
 	bulkUpdater!: BulkLinkPreviewUpdater;
@@ -17,7 +20,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
-		this.instantiateServices();
+		await this.instantiateServices();
 
 		this.registerEvent(
 			this.app.workspace.on("editor-paste", async (event: ClipboardEvent, editor: Editor, info) => {
@@ -25,12 +28,20 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			}),
 		);
 
+		// Register the favicon decorator for Live Preview
+		this.registerEditorExtension([
+			createFaviconDecorator(this.linkPreviewService, () => this.settings)
+		]);
+
 		registerCommands(this);
 		this.addSettingTab(new InlineLinkPreviewSettingTab(this.app, this));
 	}
 
-	onunload(): void {
-		// Nothing to clean up yet.
+	async onunload(): Promise<void> {
+		// Flush favicon cache to disk before unloading
+		if (this.faviconCache) {
+			await this.faviconCache.flush();
+		}
 	}
 
 	async loadSettings(): Promise<void> {
@@ -46,10 +57,20 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		});
 	}
 
-	private instantiateServices(): void {
+	private async instantiateServices(): Promise<void> {
+		// Initialize favicon cache
+		this.faviconCache = new FaviconCache(
+			() => this.loadData(),
+			(data) => this.saveData(data)
+		);
+		await this.faviconCache.load();
+
+		// Initialize link preview service
 		this.linkPreviewService = new LinkPreviewService({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
 		});
+		this.linkPreviewService.setPersistentFaviconCache(this.faviconCache);
+
 		this.previewBuilder = new LinkPreviewBuilder(this.linkPreviewService, () => this.settings);
 		this.processingStatus = new LinkProcessingStatusManager(this);
 		this.pasteHandler = new PastePreviewHandler(

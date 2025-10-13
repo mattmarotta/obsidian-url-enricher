@@ -44,24 +44,9 @@ export function buildMarkdownPreview(
 	const limitedLinkText = limit > 0 ? truncate(linkText, limit) : linkText;
 	const normalized = normalizeLinkUrl(url);
 
-	const iconMarkdown =
-		settings.showFavicon && metadata.favicon ? buildImageComponent(metadata.favicon) : null;
-	const iconHtml = settings.showFavicon && metadata.favicon ? buildImageHtml(metadata.favicon) : null;
-
-	if (normalized.type === "youtube") {
-		return buildYoutubeLinkHtml(normalized.url, iconHtml, limitedLinkText);
-	}
-
-	const components: string[] = [];
-	if (iconMarkdown) {
-		components.push(iconMarkdown);
-	}
-
 	const escapedText = escapeMarkdownLinkText(limitedLinkText);
-	components.push(escapedText);
-
 	const linkDestination = formatLinkDestination(normalized.url);
-	return `[${components.join(" ")}](${linkDestination})`;
+	return `[${escapedText}](${linkDestination})`;
 }
 
 function sanitizeLinkText(value: string, keepEmoji: boolean): string {
@@ -91,21 +76,6 @@ function truncate(value: string, maxLength: number): string {
 
 function escapeMarkdownLinkText(text: string): string {
 	return text.replace(/([\[\]\\])/g, "\\$1");
-}
-
-function buildImageComponent(url: string): string | null {
-	if (!url) {
-		return null;
-	}
-	return `![inline-link-preview-icon](${formatLinkDestination(url)})`;
-}
-
-function buildImageHtml(url: string): string | null {
-	if (!url) {
-		return null;
-	}
-	const escaped = escapeAttribute(url);
-	return `<img class="inline-link-preview-icon" src="${escaped}" alt="inline-link-preview-icon" width="16" height="16" loading="lazy" decoding="async">`;
 }
 
 function formatLinkDestination(url: string): string {
@@ -261,29 +231,6 @@ function convertTimestampToSeconds(value: string): number {
 	}
 
 	return hours * 3600 + minutes * 60 + seconds;
-}
-
-function buildYoutubeLinkHtml(url: string, iconHtml: string | null, linkText: string): string {
-	const escapedUrl = escapeAttribute(url);
-	const escapedText = escapeHtml(linkText);
-	const parts: string[] = [];
-	if (iconHtml) {
-		parts.push(iconHtml);
-	}
-	parts.push(`<span class="inline-link-preview-text">${escapedText}</span>`);
-	return `<a class="inline-link-preview-link" href="${escapedUrl}" rel="noopener noreferrer">${parts.join(" ")}</a>`;
-}
-
-function escapeAttribute(value: string): string {
-	return value
-		.replace(/&/g, "&amp;")
-		.replace(/"/g, "&quot;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;");
-}
-
-function escapeHtml(value: string): string {
-	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function equalsIgnoreCase(a: string, b: string): boolean {
