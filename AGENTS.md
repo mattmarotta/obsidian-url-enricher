@@ -1,19 +1,28 @@
-# Obsidian community plugin
+# Obsidian Inline Link Preview Plugin
 
 ## Project overview
 
-- Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).
-- Entry point: `main.ts` compiled to `main.js` and loaded by Obsidian.
-- Required release artifacts: `main.js`, `manifest.json`, and optional `styles.css`.
+This plugin adds Trello- and Notion-style link cards to Obsidian. It provides two main modes:
+1. **Conversion mode**: Automatically replaces pasted URLs with markdown-formatted inline previews `[Title — Description](url)`
+2. **Dynamic preview mode**: Shows live preview "bubbles" next to bare URLs in Live Preview without modifying the markdown source
+
+- Target: Obsidian Community Plugin (TypeScript → bundled JavaScript)
+- Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian
+- Required release artifacts: `main.js`, `manifest.json`, `styles.css`
+- Current version: 0.4.0
 
 ## Environment & tooling
 
-- Node.js: use current LTS (Node 18+ recommended).
-- **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
-- **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
-- Types: `obsidian` type definitions.
+- Node.js: use current LTS (Node 18+ recommended)
+- **Package manager: npm** (required)
+- **Bundler: esbuild** (required - `esbuild.config.mjs` and build scripts depend on it)
+- Types: `obsidian` type definitions
+- **Key dependencies**:
+  - `@codemirror/view` - ViewPlugin, Decoration API for Live Preview features
+  - `@codemirror/state` - StateEffect for reactive settings updates
+  - `@codemirror/language` - syntaxTree for syntax analysis and context detection
 
-**Note**: This sample project has specific technical dependencies on npm and esbuild. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
+**Note**: This project has specific technical dependencies on npm and esbuild. Alternative bundlers like Rollup or webpack are acceptable if they bundle all external dependencies into `main.js`.
 
 ### Install
 
@@ -42,27 +51,135 @@ npm run build
 
 ## File & folder conventions
 
-- **Organize code into multiple files**: Split functionality across separate modules rather than putting everything in `main.ts`.
-- Source lives in `src/`. Keep `main.ts` small and focused on plugin lifecycle (loading, unloading, registering commands).
-- **Example file structure**:
+- **Organize code into multiple files**: Split functionality across separate modules rather than putting everything in `main.ts`
+- Source lives in `src/`. Keep `main.ts` small and focused on plugin lifecycle (loading, unloading, registering commands)
+- **Current file structure**:
   ```
   src/
-    main.ts           # Plugin entry point, lifecycle management
-    settings.ts       # Settings interface and defaults
-    commands/         # Command implementations
-      command1.ts
-      command2.ts
-    ui/              # UI components, modals, views
-      modal.ts
-      view.ts
-    utils/           # Utility functions, helpers
-      helpers.ts
-      constants.ts
-    types.ts         # TypeScript interfaces and types
+    main.ts                    # Plugin entry point, lifecycle management
+    settings.ts                # Settings interface, defaults, and UI
+    commands/
+      index.ts                 # Command registration
+    editor/
+      faviconDecorator.ts      # Live Preview favicon rendering
+      urlPreviewDecorator.ts   # Dynamic URL preview bubbles (key component)
+      pastePreviewHandler.ts   # Paste event handler for conversion mode
+      urlListConverter.ts      # Batch URL conversion logic
+    linkPreview/
+      previewBuilder.ts        # Markdown preview generation
+      previewFormatter.ts      # Title/description formatting
+    modals/
+      bulkConversionModal.ts   # UI for bulk conversion scope selection
+      fileSuggest.ts           # File picker component
+    services/
+      linkPreviewService.ts    # Core metadata fetching service
+      faviconCache.ts          # Persistent favicon cache with expiration
+      types.ts                 # Shared type definitions
+      metadataHandlers/        # Domain-specific metadata extraction
+        index.ts
+        metadataHandler.ts
+        googleSearchMetadataHandler.ts
+        redditMetadataHandler.ts
+    status/
+      progressStatusManager.ts # Floating progress indicator
+    updater/
+      bulkLinkPreviewUpdater.ts # Vault-wide conversion logic
+    utils/
+      editorHelpers.ts         # CodeMirror utilities
+      markdown.ts              # Markdown parsing helpers
+      stringReplace.ts         # Safe string replacement
+      text.ts                  # Text processing and sanitization
+      url.ts                   # URL validation and normalization
+      vault.ts                 # Vault file operations
+  tests/
+    previewFormatter.spec.ts   # Unit tests
+    run-tests.mjs              # Test runner
+    stubs/
+      obsidian.ts              # Obsidian API mocks
   ```
-- **Do not commit build artifacts**: Never commit `node_modules/`, `main.js`, or other generated files to version control.
-- Keep the plugin small. Avoid large dependencies. Prefer browser-compatible packages.
-- Generated output should be placed at the plugin root or `dist/` depending on your build setup. Release artifacts must end up at the top level of the plugin folder in the vault (`main.js`, `manifest.json`, `styles.css`).
+- **Do not commit build artifacts**: Never commit `node_modules/`, `main.js`, or other generated files to version control
+- Keep the plugin small. Avoid large dependencies. Prefer browser-compatible packages
+- Generated output should be placed at the plugin root. Release artifacts must end up at the top level: `main.js`, `manifest.json`, `styles.css`
+
+## Key architectural components
+
+### CodeMirror 6 Decorations
+This plugin uses CodeMirror 6's ViewPlugin and Decoration APIs to add visual enhancements to Live Preview mode:
+
+- **faviconDecorator**: Adds favicon images before links using `Decoration.widget()`
+- **urlPreviewDecorator**: Shows preview "bubbles" next to bare URLs with title/description using `Decoration.widget()`, `Decoration.replace()`, and `Decoration.mark()`
+
+Both decorators:
+- Use `StateEffect` to trigger reactive updates when settings change
+- Implement context-aware detection to avoid decorating inappropriate locations
+- Support three display modes: URL + Preview, Preview Only, Small URL + Preview
+
+### Context Detection
+The urlPreviewDecorator uses a **hybrid detection approach** to determine when to show preview bubbles:
+
+1. **Syntax tree analysis** (via `@codemirror/language`): Detects inline code blocks and code fences where URLs should not be decorated
+2. **Text-based pattern matching**: Detects markdown links by searching backwards up to 1000 chars for `](` and forwards up to 100 chars for `)`, validating structure
+
+**Why text analysis?** Live Preview mode doesn't expose full markdown structure in the syntax tree. Both bare URLs and URLs inside markdown links appear with parent type "Document", making syntax-only detection impossible.
+
+**Performance**: The hybrid approach analyzes ~1100 chars maximum per URL. Typical performance: ~0.02ms per URL, ~0.3ms for a note with 15 URLs.
+
+### Settings Reactivity
+Settings changes trigger immediate updates across all open editor tabs:
+
+```typescript
+// In main.ts
+refreshDecorations(): void {
+  this.app.workspace.iterateAllLeaves((leaf) => {
+    const cm = leaf.view.editor?.cm;
+    if (cm) {
+      cm.dispatch({
+        effects: [
+          faviconRefreshEffect.of(null),
+          urlPreviewRefreshEffect.of(null)
+        ]
+      });
+    }
+  });
+}
+```
+
+Each decorator's ViewPlugin listens for its StateEffect and rebuilds decorations when triggered.
+
+### Metadata Enrichment Pipeline
+The `LinkPreviewService` uses a handler chain pattern for domain-specific metadata extraction:
+
+- Base handler: Generic HTML meta tag parsing
+- Google Search handler: Extracts search query from URL parameters
+- Reddit handler: Custom title formatting for Reddit posts
+- **Extensible**: Additional handlers can be registered via `registerMetadataHandler()`
+
+Handlers run in sequence; first match wins.
+
+### Favicon Caching
+`FaviconCache` provides persistent storage for favicons:
+
+- Uses Obsidian's `loadData()`/`saveData()` for persistence
+- 30-day expiration per domain
+- Automatic flushing on plugin unload
+- Cache statistics available in settings UI
+- Falls back to Google's favicon service (32x32) for reliable coverage
+
+### Conversion Modes
+The plugin supports two operating modes:
+
+**Conversion mode** (default):
+- Listens to `editor-paste` events
+- Fetches metadata immediately
+- Replaces URL text with `[Title — Description](url)` markdown
+- Shows floating progress indicator for multi-link pastes
+
+**Dynamic preview mode**:
+- Leaves markdown source unchanged
+- Decorates URLs in Live Preview only
+- Clickable preview bubbles
+- Three display modes for different levels of visual prominence
+- Customizable bubble colors (none/grey/custom)
 
 ## Manifest rules (`manifest.json`)
 
@@ -232,6 +349,86 @@ async onload() {
 this.registerEvent(this.app.workspace.on("file-open", f => { /* ... */ }));
 this.registerDomEvent(window, "resize", () => { /* ... */ });
 this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
+```
+
+### Create a CodeMirror 6 ViewPlugin decorator
+
+```ts
+import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import { StateEffect } from "@codemirror/state";
+
+// Define a StateEffect for triggering updates
+export const refreshEffect = StateEffect.define<null>();
+
+export function createMyDecorator() {
+  return ViewPlugin.fromClass(class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = this.buildDecorations(view);
+    }
+
+    update(update: ViewUpdate) {
+      // Rebuild on document changes or when refresh effect is dispatched
+      if (update.docChanged || update.transactions.some(tr => 
+        tr.effects.some(e => e.is(refreshEffect))
+      )) {
+        this.decorations = this.buildDecorations(update.view);
+      }
+    }
+
+    buildDecorations(view: EditorView): DecorationSet {
+      // Your decoration logic here
+      return Decoration.none;
+    }
+  }, {
+    decorations: v => v.decorations
+  });
+}
+```
+
+### Trigger decoration updates from settings
+
+```ts
+// In main.ts
+refreshDecorations(): void {
+  this.app.workspace.iterateAllLeaves((leaf) => {
+    if (leaf.view.getViewType() === "markdown") {
+      const view = leaf.view as any;
+      const cm = view.editor?.cm;
+      
+      if (cm) {
+        cm.dispatch({
+          effects: [refreshEffect.of(null)]
+        });
+      }
+    }
+  });
+}
+
+// In settings.ts - call after settings change
+await this.plugin.saveSettings();
+this.plugin.refreshDecorations();
+```
+
+### Add a metadata handler for domain-specific enrichment
+
+```ts
+import type { MetadataHandler, MetadataHandlerContext } from "./metadataHandler";
+
+export const myDomainMetadataHandler: MetadataHandler = {
+  canHandle(url: string): boolean {
+    return url.includes("mydomain.com");
+  },
+
+  async enrich(context: MetadataHandlerContext): Promise<void> {
+    // Modify context.metadata.title or description
+    context.metadata.title = "Custom title for " + context.url;
+  }
+};
+
+// Register in linkPreviewService.ts
+this.linkPreviewService.registerMetadataHandler(myDomainMetadataHandler);
 ```
 
 ## Troubleshooting
