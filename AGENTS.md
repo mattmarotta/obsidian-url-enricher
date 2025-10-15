@@ -98,7 +98,7 @@ The decorator:
 - Implements context-aware detection to avoid decorating inappropriate locations (markdown links, code blocks, etc.)
 - Supports two preview styles: bubble (compact) and card (prominent)
 - Supports two display modes: inline (flows with text, can wrap across lines) and block (appears on new line)
-- Supports three URL display modes: URL + Preview, Preview Only, Small URL + Preview
+- URL display is automatic: bubbles hide URLs, cards show small editable URLs
 
 ## Core technical approaches
 
@@ -107,7 +107,7 @@ The plugin uses **CodeMirror 6's decoration API** (`@codemirror/view`) to render
 
 - `ViewPlugin.fromClass()` creates a stateful decorator that manages decorations
 - `Decoration.widget()` inserts custom DOM elements (preview bubbles/cards) after URLs
-- `Decoration.replace()` hides/replaces URLs in "preview-only" and "small-url-and-preview" modes
+- `Decoration.replace()` hides URLs for bubble previews; shows small URL widget for cards
 - Decorations rebuild on: document changes, viewport changes, or explicit refresh effects
 - **Non-destructive**: Source markdown never changes; decorations are view-only
 

@@ -70,15 +70,15 @@ The Inline Link Preview plugin has been completely redesigned to be **100% non-d
 - Preview bubble follows URL
 - Best balance of context and readability
 
-**URL + Preview**:
-- Full-sized URL with standard link styling
-- Preview bubble follows URL
-- Maximum visibility of original URL
+**Cards**:
+- Small editable URL displayed with card preview
+- More prominent, detailed preview with Material Design aesthetics
+- Best for rich content and descriptions
 
-**Preview Only**:
+**Bubbles**:
 - URL completely hidden
 - Only preview bubble visible
-- Cleanest reading experience
+- Compact and clean reading experience
 
 ## Migration Guide
 

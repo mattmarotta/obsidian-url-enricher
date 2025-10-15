@@ -1,7 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type InlineLinkPreviewPlugin from "./main";
 
-export type UrlDisplayMode = "url-and-preview" | "preview-only" | "small-url-and-preview";
 export type PreviewColorMode = "none" | "grey" | "custom";
 export type PreviewStyle = "bubble" | "card";
 export type DisplayMode = "inline" | "block";
@@ -15,7 +14,6 @@ export interface InlineLinkPreviewSettings {
 	keepEmoji: boolean;
 	previewStyle: PreviewStyle;
 	displayMode: DisplayMode;
-	urlDisplayMode: UrlDisplayMode;
 	previewColorMode: PreviewColorMode;
 	customPreviewColor: string;
 }
@@ -29,7 +27,6 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	keepEmoji: true,
 	previewStyle: "bubble",
 	displayMode: "block",
-	urlDisplayMode: "small-url-and-preview",
 	previewColorMode: "grey",
 	customPreviewColor: "#4a4a4a",
 };
@@ -101,23 +98,6 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.setValue(settings.displayMode)
 					.onChange(async (value) => {
 						this.plugin.settings.displayMode = value as DisplayMode;
-						await this.plugin.saveSettings();
-						// Trigger decoration refresh
-						this.plugin.refreshDecorations();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("URL display mode")
-			.setDesc("Choose how URLs are displayed in dynamic preview mode.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("url-and-preview", "URL + Preview — Show full-sized URL with preview bubble")
-					.addOption("preview-only", "Preview Only — Hide URL, show only the preview")
-					.addOption("small-url-and-preview", "Small URL + Preview — Show subtle, non-intrusive URL with preview")
-					.setValue(settings.urlDisplayMode)
-					.onChange(async (value) => {
-						this.plugin.settings.urlDisplayMode = value as UrlDisplayMode;
 						await this.plugin.saveSettings();
 						// Trigger decoration refresh
 						this.plugin.refreshDecorations();

@@ -7,12 +7,12 @@ All notable changes to the Inline Link Preview plugin will be documented in this
 ### Breaking Changes
 - **Removed all conversion/paste functionality** - The plugin is now 100% non-destructive
 - **Removed favicon decorator** - No longer adds favicons to `[text](url)` markdown links (only decorates bare URLs)
+- **Removed URL display mode setting** - URL display is now automatic: cards show small editable URLs, bubbles hide URLs entirely
 - Removed "Convert links on paste" setting
 - Removed command palette commands:
   - "Convert selection to inline preview"
   - "Convert existing links to inline previews…"
 - Changed default `dynamicPreviewMode` from `false` to `true`
-- Changed default `urlDisplayMode` from `"url-and-preview"` to `"small-url-and-preview"`
 
 ### Added
 - **Card-style previews** - New "card" style option for more prominent, detailed previews with Material Design principles

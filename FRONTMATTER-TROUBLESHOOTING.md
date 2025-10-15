@@ -54,11 +54,12 @@ max-card-length: 500                   # 100-5000
 max-bubble-length: 200                 # 50-5000
 show-favicon: true                     # or false
 include-description: true              # or false
-url-display-mode: small-url-and-preview  # or url-and-preview, preview-only
 preview-color-mode: grey               # or none, custom
 custom-preview-color: "#4a4a4a"        # hex color (when using custom mode)
 ---
 ```
+
+**Note**: URL display is automatic—cards show small editable URL, bubbles hide URL entirely.
 
 ## Common Mistakes
 

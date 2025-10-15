@@ -191,7 +191,7 @@ img[alt="inline-link-preview-icon"] {
 	text-decoration: none !important;
 }
 
-/* Small URL styling for small-url-and-preview mode - remove ALL underlines */
+/* Small URL styling for card previews - remove ALL underlines */
 /* Target the mark decoration wrapper */
 .cm-line .inline-url-preview-small-url,
 .cm-content .inline-url-preview-small-url,

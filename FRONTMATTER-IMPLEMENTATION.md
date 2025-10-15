@@ -29,13 +29,14 @@ Implemented comprehensive frontmatter support for per-page configuration overrid
 |----------|------|--------|-------------|
 | `preview-style` | string | `bubble`, `card` | Preview style |
 | `preview-display` | string | `inline`, `block` | Display mode |
-| `max-card-length` | number | 100-1000 | Max chars for cards |
-| `max-bubble-length` | number | 50-500 | Max chars for bubbles |
+| `max-card-length` | number | 100-5000 | Max chars for cards |
+| `max-bubble-length` | number | 50-5000 | Max chars for bubbles |
 | `show-favicon` | boolean | `true`, `false` | Show/hide favicons |
 | `include-description` | boolean | `true`, `false` | Include descriptions |
-| `url-display-mode` | string | `url-and-preview`, `preview-only`, `small-url-and-preview` | URL display |
 | `preview-color-mode` | string | `none`, `grey`, `custom` | Background color mode |
 | `custom-preview-color` | string | Hex color | Custom color value |
+
+**Note**: URL display is automatic—cards show small editable URL, bubbles hide URL entirely.
 
 **Implementation Details**:
 
@@ -44,8 +45,8 @@ Implemented comprehensive frontmatter support for per-page configuration overrid
    - Imported `PreviewColorMode` type
 
 2. **Enhanced parsePageConfig() function**:
-   - Parses all new frontmatter properties with validation
-   - Number ranges validated (max-card-length: 100-1000, max-bubble-length: 50-500)
+   - Parses all frontmatter properties with validation
+   - Number ranges validated (max-card-length: 100-5000, max-bubble-length: 50-5000)
    - Boolean values parsed from "true"/"false" strings
    - Hex color validation for custom-preview-color (#RRGGBB format)
    - Case-insensitive parsing for all properties
@@ -105,11 +106,11 @@ preview-display: block
 max-card-length: 400
 show-favicon: true
 include-description: true
-url-display-mode: small-url-and-preview
 preview-color-mode: grey
 ---
 
 This page will use card-style previews with a maximum length of 400 characters.
+Cards will show a small editable URL with the preview.
 ```
 
 ## Future Enhancements

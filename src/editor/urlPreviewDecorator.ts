@@ -3,7 +3,7 @@ import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetTy
 import { RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import type { InlineLinkPreviewSettings, UrlDisplayMode, PreviewStyle, DisplayMode, PreviewColorMode } from "../settings";
+import type { InlineLinkPreviewSettings, PreviewStyle, DisplayMode, PreviewColorMode } from "../settings";
 import { sanitizeTextContent } from "../utils/text";
 
 // StateEffect to trigger decoration refresh when settings change
@@ -31,7 +31,6 @@ interface PageConfig {
 	maxBubbleLength?: number;
 	showFavicon?: boolean;
 	includeDescription?: boolean;
-	urlDisplayMode?: UrlDisplayMode;
 	previewColorMode?: PreviewColorMode;
 	customPreviewColor?: string;
 }
@@ -122,15 +121,6 @@ function parsePageConfig(text: string): PageConfig {
 			}
 		}
 		
-		// URL display mode
-		const urlDisplayMatch = line.match(/^url-display-mode:\s*(.+)$/i);
-		if (urlDisplayMatch) {
-			const value = urlDisplayMatch[1].trim().toLowerCase();
-			if (value === 'url-and-preview' || value === 'preview-only' || value === 'small-url-and-preview') {
-				config.urlDisplayMode = value;
-			}
-		}
-		
 		// Preview color mode
 		const colorModeMatch = line.match(/^preview-color-mode:\s*(.+)$/i);
 		if (colorModeMatch) {
@@ -206,7 +196,6 @@ class UrlPreviewWidget extends WidgetType {
 		private description: string | null,
 		private faviconUrl: string | null,
 		private isLoading: boolean,
-		private urlDisplayMode: UrlDisplayMode,
 		private previewStyle: PreviewStyle,
 		private displayMode: DisplayMode,
 		private maxLength: number
@@ -410,7 +399,6 @@ class UrlPreviewWidget extends WidgetType {
 			other.description === this.description &&
 			other.faviconUrl === this.faviconUrl &&
 			other.isLoading === this.isLoading &&
-			other.urlDisplayMode === this.urlDisplayMode &&
 			other.previewStyle === this.previewStyle &&
 			other.displayMode === this.displayMode
 		);
@@ -502,7 +490,6 @@ export function createUrlPreviewDecorator(
 			const maxBubbleLength = pageConfig.maxBubbleLength ?? settings.maxBubbleLength;
 			const showFavicon = pageConfig.showFavicon ?? settings.showFavicon;
 			const includeDescription = pageConfig.includeDescription ?? settings.includeDescription;
-			const urlDisplayMode = pageConfig.urlDisplayMode ?? settings.urlDisplayMode;
 			const keepEmoji = settings.keepEmoji; // Not exposed to frontmatter
 			
 			// Debug: Log merged settings
@@ -512,8 +499,7 @@ export function createUrlPreviewDecorator(
 				maxCardLength,
 				maxBubbleLength,
 				showFavicon,
-				includeDescription,
-				urlDisplayMode
+				includeDescription
 			});
 			
 			// Get syntax tree for markdown context detection
@@ -657,46 +643,37 @@ export function createUrlPreviewDecorator(
 
 						faviconUrl = showFavicon ? metadata.favicon : null;
 					} else if (this.pendingUpdates.has(url)) {
-						isLoading = true;
-					}
-
-					// Only show preview if we have metadata or are loading
-					if (isLoading || title) {
-						
-						if (urlDisplayMode === "preview-only") {
-							// Hide the URL completely and show only the preview
-							const replacementWidget = Decoration.replace({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode, limit),
-							});
-							builder.add(urlStart, urlEnd, replacementWidget);
-						} else if (urlDisplayMode === "small-url-and-preview") {
-							// Replace URL with small styled version
-							const smallUrlWidget = Decoration.replace({
-								widget: new SmallUrlWidget(url),
-							});
-							builder.add(urlStart, urlEnd, smallUrlWidget);
-							
-							// Add preview widget after URL
-							const widget = Decoration.widget({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode, limit),
-								side: 1,
-							});
-							builder.add(urlEnd, urlEnd, widget);
-						} else {
-							// Show preview after URL (url-and-preview)
-							const widget = Decoration.widget({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode, limit),
-								side: 1, // Display after the URL
-							});
-							builder.add(urlEnd, urlEnd, widget);
-						}
-					}
+					isLoading = true;
 				}
 
-				return builder.finish();
+				// Only show preview if we have metadata or are loading
+				if (isLoading || title) {
+					
+					if (previewStyle === "bubble") {
+						// Bubbles: Hide the URL completely and show only the preview
+						const replacementWidget = Decoration.replace({
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
+						});
+						builder.add(urlStart, urlEnd, replacementWidget);
+					} else {
+						// Cards: Replace URL with small styled version and show card after
+						const smallUrlWidget = Decoration.replace({
+							widget: new SmallUrlWidget(url),
+						});
+						builder.add(urlStart, urlEnd, smallUrlWidget);
+						
+						// Add card preview widget after URL
+						const widget = Decoration.widget({
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
+							side: 1,
+						});
+						builder.add(urlEnd, urlEnd, widget);
+					}
+				}
 			}
 
-			private queueMetadataFetch(url: string, view: EditorView): void {
+			return builder.finish();
+		}			private queueMetadataFetch(url: string, view: EditorView): void {
 				if (this.pendingUpdates.has(url)) {
 					return;
 				}

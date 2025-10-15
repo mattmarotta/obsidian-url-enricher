@@ -72,21 +72,6 @@ The Inline Link Preview plugin supports per-page configuration through frontmatt
   ---
   ```
 
-### URL Display
-
-**`url-display-mode`**
-- **Values**: `url-and-preview`, `preview-only`, or `small-url-and-preview`
-- **Description**: Control how URLs are displayed alongside previews
-  - `url-and-preview`: Show full-sized URL with preview
-  - `preview-only`: Hide URL, show only the preview
-  - `small-url-and-preview`: Show subtle, non-intrusive URL with preview
-- **Example**:
-  ```yaml
-  ---
-  url-display-mode: preview-only
-  ---
-  ```
-
 ### Preview Color (Advanced)
 
 **`preview-color-mode`**
@@ -123,15 +108,23 @@ preview-display: block
 max-card-length: 350
 show-favicon: true
 include-description: true
-url-display-mode: small-url-and-preview
 ---
 
 # My Research Notes
 
 This page will show card-style previews on new lines, with a maximum length of 350 characters.
 
-https://example.com - This will show as a small URL with a card preview below
+Card previews will show a small, subtle URL that can be edited, while bubble previews hide the URL entirely.
 ```
+
+## URL Display Behavior
+
+The plugin automatically determines how URLs are displayed based on the preview style:
+
+- **Card previews**: URL is replaced with a small, subtle version and the card appears after it (editable)
+- **Bubble previews**: URL is completely hidden and replaced with the bubble preview
+
+This behavior cannot be customized per-page—it's determined by the `preview-style` setting.
 
 ## Settings Hierarchy
 

@@ -20,15 +20,14 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
 
 - **100% Non-Destructive**: URLs remain as plain text in your markdown. All previews are rendered dynamically in Live Preview mode only.
 - **Two Preview Styles**:
-  - **Bubble**: Compact, subtle inline preview that flows with your text
-  - **Card**: Prominent card-style preview with more visual weight and detail
+  - **Bubble**: Compact, subtle inline preview that flows with your text (hides the URL)
+  - **Card**: Prominent card-style preview with more visual weight and detail (shows small editable URL)
 - **Flexible Display Modes**:
   - **Inline**: Previews flow with surrounding text on the same line
   - **Block**: Previews appear on their own line for better separation
-- **Three URL Display Modes**:
-  - **URL + Preview**: Show full-sized URL with preview bubble
-  - **Preview Only**: Hide URL completely, show only the clickable preview
-  - **Small URL + Preview**: Show subtle, faded URL with preview (recommended)
+- **Automatic URL Display**:
+  - **Cards**: Show a small, subtle URL (editable) with the card preview
+  - **Bubbles**: Hide the URL completely and replace it with the bubble preview
 - **Page-Level Configuration**: Override global settings using frontmatter:
   ```yaml
   ---
@@ -69,9 +68,10 @@ preview-display: inline          # Keep previews inline with text
 max-card-length: 400             # Maximum characters for card previews
 show-favicon: true               # Show/hide favicons
 include-description: true        # Include/exclude descriptions
-url-display-mode: preview-only   # Hide URLs, show only previews
 ---
 ```
+
+**Note**: URL display is automatic based on preview style—cards show a small editable URL, bubbles hide the URL entirely.
 
 These settings override your global preferences for that specific page only. For a complete list of available frontmatter properties and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md).
 
@@ -87,7 +87,7 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 - **Hybrid approach**: Choose between automatic conversion (URLs replaced with markdown) or dynamic preview mode (URLs stay intact but show live previews in Live Preview).
 - Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
 - **Dynamic preview mode**: When enabled, bare URLs show inline previews in Live Preview without modifying your markdown source.
-  - **Three display modes**: URL + Preview, Preview Only, or Small URL + Preview (recommended)
+  - **Automatic URL display**: Cards show small editable URLs, bubbles hide URLs entirely
   - **Clickable preview bubbles**: Click any preview bubble to open the URL in a new tab
   - **Real-time settings updates**: Changes apply immediately without page navigation
   - **Flexible description length**: Control how much metadata is shown with natural word-wrapping
@@ -141,11 +141,9 @@ Open **Settings → Community plugins → Inline link preview** to configure:
 - **Display mode** – Choose whether previews appear:
   - **Inline**: Flows with surrounding text on the same line
   - **Block**: Appears on its own line (default)
-- **URL display mode** – Choose how URLs themselves are shown:
-  - **URL + Preview**: Full-sized URL with preview bubble
-  - **Preview Only**: URL hidden, only preview visible (clickable)
-  - **Small URL + Preview**: Subtle, faded URL with preview (recommended)
 - **Preview background color** – Customize background color for both bubbles and cards (none, grey, or custom)
+
+**Note**: URL display is automatic—cards show a small editable URL, bubbles hide the URL entirely.
 
 ### Preview Content
 - **Include description** – Show page description after the title
@@ -169,13 +167,14 @@ max-card-length: 400             # 100-5000
 max-bubble-length: 200           # 50-5000
 show-favicon: true               # or false
 include-description: true        # or false
-url-display-mode: preview-only   # or url-and-preview, small-url-and-preview
 preview-color-mode: grey         # or none, custom
 custom-preview-color: "#4a4a4a"  # hex color when using custom mode
 ---
 ```
 
-**Note**: Minimum values (100 for cards, 50 for bubbles) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
+**Notes**: 
+- Minimum values (100 for cards, 50 for bubbles) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
+- URL display is automatic: Cards show a small editable URL, bubbles hide the URL entirely.
 
 For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md).
 
