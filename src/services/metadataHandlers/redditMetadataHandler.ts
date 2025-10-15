@@ -112,13 +112,8 @@ export class RedditMetadataHandler implements MetadataHandler {
 				description = `§REDDIT_CARD§${rawTitle}`;
 				
 				if (normalizedDescription) {
-					// Cards: longer content preview (uses cardDescriptionLength setting)
-					// Bubbles: shorter content preview (uses bubbleDescriptionLength setting)
-					const cardLength = context.settings.cardDescriptionLength || 200;
-					const truncatedContent = normalizedDescription.length > cardLength
-						? normalizedDescription.substring(0, cardLength) + "..."
-						: normalizedDescription;
-					description += `§REDDIT_CONTENT§${truncatedContent}`;
+					// Store full content - decorator will handle truncation based on maxCardLength/maxBubbleLength
+					description += `§REDDIT_CONTENT§${normalizedDescription}`;
 				}
 			} else if (subredditName) {
 				title = `r/${subredditName}`;

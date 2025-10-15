@@ -48,12 +48,12 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	updateBubbleColorCSS(): void {
 		let color: string;
 
-		switch (this.settings.bubbleColorMode) {
+		switch (this.settings.previewColorMode) {
 			case "none":
 				color = "transparent";
 				break;
 			case "custom":
-				color = this.settings.customBubbleColor;
+				color = this.settings.customPreviewColor;
 				break;
 			case "grey":
 			default:
@@ -101,15 +101,15 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	}
 
 	private normalizeSettings(): void {
-		const numericCardLength = Number(this.settings.cardDescriptionLength);
-		this.settings.cardDescriptionLength = Number.isFinite(numericCardLength)
-			? Math.max(0, Math.round(numericCardLength))
-			: DEFAULT_SETTINGS.cardDescriptionLength;
+		const numericCardLength = Number(this.settings.maxCardLength);
+		this.settings.maxCardLength = Number.isFinite(numericCardLength)
+			? Math.min(5000, Math.max(100, Math.round(numericCardLength)))
+			: DEFAULT_SETTINGS.maxCardLength;
 
-		const numericBubbleLength = Number(this.settings.bubbleDescriptionLength);
-		this.settings.bubbleDescriptionLength = Number.isFinite(numericBubbleLength)
-			? Math.max(0, Math.round(numericBubbleLength))
-			: DEFAULT_SETTINGS.bubbleDescriptionLength;
+		const numericBubbleLength = Number(this.settings.maxBubbleLength);
+		this.settings.maxBubbleLength = Number.isFinite(numericBubbleLength)
+			? Math.min(5000, Math.max(50, Math.round(numericBubbleLength)))
+			: DEFAULT_SETTINGS.maxBubbleLength;
 
 		const numericTimeout = Number(this.settings.requestTimeoutMs);
 		this.settings.requestTimeoutMs = Number.isFinite(numericTimeout)

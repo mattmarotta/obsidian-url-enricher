@@ -3,7 +3,7 @@ import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetTy
 import { RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import type { InlineLinkPreviewSettings, UrlDisplayMode, PreviewStyle, DisplayMode } from "../settings";
+import type { InlineLinkPreviewSettings, UrlDisplayMode, PreviewStyle, DisplayMode, PreviewColorMode } from "../settings";
 import { sanitizeTextContent } from "../utils/text";
 
 // StateEffect to trigger decoration refresh when settings change
@@ -27,6 +27,13 @@ function stripEmoji(value: string): string {
 interface PageConfig {
 	previewStyle?: PreviewStyle;
 	displayMode?: DisplayMode;
+	maxCardLength?: number;
+	maxBubbleLength?: number;
+	showFavicon?: boolean;
+	includeDescription?: boolean;
+	urlDisplayMode?: UrlDisplayMode;
+	previewColorMode?: PreviewColorMode;
+	customPreviewColor?: string;
 }
 
 /**
@@ -56,15 +63,21 @@ function parsePageConfig(text: string): PageConfig {
 	
 	// Parse frontmatter lines
 	const frontmatter = lines.slice(1, endIndex);
+	
+	// Debug: Log frontmatter parsing
+	console.log('[Inline Link Preview] Parsing frontmatter:', frontmatter);
+	
 	for (const line of frontmatter) {
-		const match = line.match(/^preview-style:\s*(.+)$/i);
-		if (match) {
-			const value = match[1].trim().toLowerCase();
+		// Preview style
+		const styleMatch = line.match(/^preview-style:\s*(.+)$/i);
+		if (styleMatch) {
+			const value = styleMatch[1].trim().toLowerCase();
 			if (value === 'bubble' || value === 'card') {
 				config.previewStyle = value;
 			}
 		}
 		
+		// Display mode
 		const displayMatch = line.match(/^preview-display:\s*(.+)$/i);
 		if (displayMatch) {
 			const value = displayMatch[1].trim().toLowerCase();
@@ -72,7 +85,74 @@ function parsePageConfig(text: string): PageConfig {
 				config.displayMode = value;
 			}
 		}
+		
+		// Max card length
+		const maxCardMatch = line.match(/^max-card-length:\s*(\d+)$/i);
+		if (maxCardMatch) {
+			const value = parseInt(maxCardMatch[1], 10);
+			if (value >= 100 && value <= 5000) {
+				config.maxCardLength = value;
+			}
+		}
+		
+		// Max bubble length
+		const maxBubbleMatch = line.match(/^max-bubble-length:\s*(\d+)$/i);
+		if (maxBubbleMatch) {
+			const value = parseInt(maxBubbleMatch[1], 10);
+			if (value >= 50 && value <= 5000) {
+				config.maxBubbleLength = value;
+			}
+		}
+		
+		// Show favicon
+		const faviconMatch = line.match(/^show-favicon:\s*(.+)$/i);
+		if (faviconMatch) {
+			const value = faviconMatch[1].trim().toLowerCase();
+			if (value === 'true' || value === 'false') {
+				config.showFavicon = value === 'true';
+			}
+		}
+		
+		// Include description
+		const descMatch = line.match(/^include-description:\s*(.+)$/i);
+		if (descMatch) {
+			const value = descMatch[1].trim().toLowerCase();
+			if (value === 'true' || value === 'false') {
+				config.includeDescription = value === 'true';
+			}
+		}
+		
+		// URL display mode
+		const urlDisplayMatch = line.match(/^url-display-mode:\s*(.+)$/i);
+		if (urlDisplayMatch) {
+			const value = urlDisplayMatch[1].trim().toLowerCase();
+			if (value === 'url-and-preview' || value === 'preview-only' || value === 'small-url-and-preview') {
+				config.urlDisplayMode = value;
+			}
+		}
+		
+		// Preview color mode
+		const colorModeMatch = line.match(/^preview-color-mode:\s*(.+)$/i);
+		if (colorModeMatch) {
+			const value = colorModeMatch[1].trim().toLowerCase();
+			if (value === 'none' || value === 'grey' || value === 'custom') {
+				config.previewColorMode = value;
+			}
+		}
+		
+		// Custom preview color
+		const customColorMatch = line.match(/^custom-preview-color:\s*(.+)$/i);
+		if (customColorMatch) {
+			const value = customColorMatch[1].trim();
+			// Basic hex color validation
+			if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+				config.customPreviewColor = value;
+			}
+		}
 	}
+	
+	// Debug: Log parsed config
+	console.log('[Inline Link Preview] Parsed config:', config);
 	
 	return config;
 }
@@ -128,7 +208,8 @@ class UrlPreviewWidget extends WidgetType {
 		private isLoading: boolean,
 		private urlDisplayMode: UrlDisplayMode,
 		private previewStyle: PreviewStyle,
-		private displayMode: DisplayMode
+		private displayMode: DisplayMode,
+		private maxLength: number
 	) {
 		super();
 	}
@@ -224,7 +305,21 @@ class UrlPreviewWidget extends WidgetType {
 				const parts = this.description.split("§REDDIT_CARD§");
 				const titleAndContent = parts[1] || "";
 				const [postTitle, ...contentParts] = titleAndContent.split("§REDDIT_CONTENT§");
-				const postContent = contentParts.join("§REDDIT_CONTENT§");
+				let postContent = contentParts.join("§REDDIT_CONTENT§");
+				
+				// Calculate total length and truncate if needed
+				// Format: "r/Subreddit" (title) + "Post Title" + content
+				const totalLength = (this.title?.length || 0) + postTitle.length + postContent.length;
+				if (totalLength > this.maxLength) {
+					// Calculate remaining space for content after title and post title
+					const usedLength = (this.title?.length || 0) + postTitle.length + 6; // +6 for separators
+					const remainingLength = this.maxLength - usedLength;
+					if (remainingLength > 20) {
+						postContent = postContent.substring(0, remainingLength) + "...";
+					} else {
+						postContent = "";
+					}
+				}
 				
 				// Post title (below subreddit/favicon)
 				if (postTitle) {
@@ -388,57 +483,81 @@ export function createUrlPreviewDecorator(
 			const isLivePreview = view.state.field(editorLivePreviewField);
 			if (!isLivePreview) {
 				return Decoration.none;
-			}				const builder = new RangeSetBuilder<Decoration>();
-				const doc = view.state.doc;
-				const text = doc.toString();
+			}
+			
+			console.log('[Inline Link Preview] buildDecorations called');
+			
+			const builder = new RangeSetBuilder<Decoration>();
+			const doc = view.state.doc;
+			const text = doc.toString();
+			
+			// Parse page-level configuration from frontmatter
+			// Parse page-level configuration from frontmatter
+			const pageConfig = parsePageConfig(text);
+			
+			// Merge frontmatter config with global settings (frontmatter takes precedence)
+			const previewStyle = pageConfig.previewStyle ?? settings.previewStyle;
+			const displayMode = pageConfig.displayMode ?? settings.displayMode;
+			const maxCardLength = pageConfig.maxCardLength ?? settings.maxCardLength;
+			const maxBubbleLength = pageConfig.maxBubbleLength ?? settings.maxBubbleLength;
+			const showFavicon = pageConfig.showFavicon ?? settings.showFavicon;
+			const includeDescription = pageConfig.includeDescription ?? settings.includeDescription;
+			const urlDisplayMode = pageConfig.urlDisplayMode ?? settings.urlDisplayMode;
+			const keepEmoji = settings.keepEmoji; // Not exposed to frontmatter
+			
+			// Debug: Log merged settings
+			console.log('[Inline Link Preview] Merged settings:', {
+				previewStyle,
+				displayMode,
+				maxCardLength,
+				maxBubbleLength,
+				showFavicon,
+				includeDescription,
+				urlDisplayMode
+			});
+			
+			// Get syntax tree for markdown context detection
+			const tree = syntaxTree(view.state);
+
+			// Match bare URLs (not already in markdown link syntax)
+			// This regex looks for URLs that are NOT preceded by ]( and followed by )
+			const urlRegex = /(?<!\]\()(?:https?:\/\/[^\s)\]]+)(?!\))/g;
+			let match;
+
+			const processedRanges = new Set<string>();
+
+			while ((match = urlRegex.exec(text)) !== null) {
+				const url = match[0];
+				const urlStart = match.index;
+				const urlEnd = urlStart + url.length;
+				const rangeKey = `${urlStart}-${urlEnd}`;
+
+				// Skip if we've already processed this range
+				if (processedRanges.has(rangeKey)) {
+					continue;
+				}
+				processedRanges.add(rangeKey);
+
+				// Check if URL is inside markdown link syntax using text analysis
+				// Live Preview doesn't provide full markdown structure in syntax tree,
+				// so we need to check the actual text context
 				
-				// Parse page-level configuration from frontmatter
-				const pageConfig = parsePageConfig(text);
-				const previewStyle = pageConfig.previewStyle ?? settings.previewStyle;
-				const displayMode = pageConfig.displayMode ?? settings.displayMode;
+				// Look backwards to find if there's a ]( before this URL
+				let isInMarkdownLink = false;
+				const searchStart = Math.max(0, urlStart - 1000); // Look back up to 1000 chars
+				const beforeText = text.slice(searchStart, urlStart);
 				
-				// Get syntax tree for markdown context detection
-				const tree = syntaxTree(view.state);
-
-				// Match bare URLs (not already in markdown link syntax)
-				// This regex looks for URLs that are NOT preceded by ]( and followed by )
-				const urlRegex = /(?<!\]\()(?:https?:\/\/[^\s)\]]+)(?!\))/g;
-				let match;
-
-				const processedRanges = new Set<string>();
-
-				while ((match = urlRegex.exec(text)) !== null) {
-					const url = match[0];
-					const urlStart = match.index;
-					const urlEnd = urlStart + url.length;
-					const rangeKey = `${urlStart}-${urlEnd}`;
-
-					// Skip if we've already processed this range
-					if (processedRanges.has(rangeKey)) {
-						continue;
-					}
-					processedRanges.add(rangeKey);
-
-					// Check if URL is inside markdown link syntax using text analysis
-					// Live Preview doesn't provide full markdown structure in syntax tree,
-					// so we need to check the actual text context
+				// Find the last occurrence of ]( before our URL
+				const lastLinkStart = beforeText.lastIndexOf('](');
+				
+				if (lastLinkStart !== -1) {
+					// Check if there's a closing ) after our URL without any [ in between
+					const afterUrlPos = urlEnd;
+					const searchEnd = Math.min(text.length, afterUrlPos + 100);
+					const afterText = text.slice(afterUrlPos, searchEnd);
 					
-					// Look backwards to find if there's a ]( before this URL
-					let isInMarkdownLink = false;
-					const searchStart = Math.max(0, urlStart - 1000); // Look back up to 1000 chars
-					const beforeText = text.slice(searchStart, urlStart);
-					
-					// Find the last occurrence of ]( before our URL
-					const lastLinkStart = beforeText.lastIndexOf('](');
-					
-					if (lastLinkStart !== -1) {
-						// Check if there's a closing ) after our URL without any [ in between
-						const afterUrlPos = urlEnd;
-						const searchEnd = Math.min(text.length, afterUrlPos + 100);
-						const afterText = text.slice(afterUrlPos, searchEnd);
-						
-						// Find first ) after URL
-						const nextParen = afterText.indexOf(')');
+					// Find first ) after URL
+					const nextParen = afterText.indexOf(')');
 						
 						if (nextParen !== -1) {
 							// Check if there's no [ between ]( and )
@@ -487,14 +606,29 @@ export function createUrlPreviewDecorator(
 					let description: string | null = null;
 					let faviconUrl: string | null = null;
 					let isLoading = false;
+					
+					// Calculate max length based on preview style
+					const maxLength = (previewStyle === "card" 
+						? maxCardLength 
+						: maxBubbleLength) as unknown;
+					let maxLengthValue: number;
+					if (typeof maxLength === "string") {
+						maxLengthValue = Number(maxLength);
+					} else if (typeof maxLength === "number") {
+						maxLengthValue = maxLength;
+					} else {
+						// Default: 300 for cards, 150 for bubbles
+						maxLengthValue = previewStyle === "card" ? 300 : 150;
+					}
+					const limit = Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? 300 : 150);
 
 					if (metadata) {
 						title = metadata.title
-							? sanitizeLinkText(metadata.title, settings.keepEmoji)
+							? sanitizeLinkText(metadata.title, keepEmoji)
 							: deriveTitleFromUrl(url);
 
 						description = metadata.description
-							? sanitizeLinkText(metadata.description, settings.keepEmoji)
+							? sanitizeLinkText(metadata.description, keepEmoji)
 							: null;
 
 						// Remove description if it's the same as title
@@ -502,22 +636,8 @@ export function createUrlPreviewDecorator(
 							description = null;
 						}
 
-						// Truncate description based on preview style (card vs bubble)
-						// Cards use cardDescriptionLength, bubbles use bubbleDescriptionLength
-						const limitInput = (previewStyle === "card" 
-							? settings.cardDescriptionLength 
-							: settings.bubbleDescriptionLength) as unknown;
-						let limitValue: number;
-						if (typeof limitInput === "string") {
-							limitValue = Number(limitInput);
-						} else if (typeof limitInput === "number") {
-							limitValue = limitInput;
-						} else {
-							// Default: 200 for cards, 100 for bubbles
-							limitValue = previewStyle === "card" ? 200 : 100;
-						}
-						const limit = Number.isFinite(limitValue) ? Math.max(0, Math.round(limitValue)) : (previewStyle === "card" ? 200 : 100);
-
+						// Truncate to fit within maximum length for preview style
+						// limit was calculated above based on maxCardLength or maxBubbleLength
 						if (description && limit > 0) {
 							const combined = `${title} — ${description}`;
 							if (combined.length > limit) {
@@ -531,23 +651,22 @@ export function createUrlPreviewDecorator(
 							}
 						}
 
-						if (!settings.includeDescription || limit === 0) {
+						if (!includeDescription || limit === 0) {
 							description = null;
 						}
 
-						faviconUrl = settings.showFavicon ? metadata.favicon : null;
+						faviconUrl = showFavicon ? metadata.favicon : null;
 					} else if (this.pendingUpdates.has(url)) {
 						isLoading = true;
 					}
 
 					// Only show preview if we have metadata or are loading
 					if (isLoading || title) {
-						const urlDisplayMode = settings.urlDisplayMode;
 						
 						if (urlDisplayMode === "preview-only") {
 							// Hide the URL completely and show only the preview
 							const replacementWidget = Decoration.replace({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode),
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode, limit),
 							});
 							builder.add(urlStart, urlEnd, replacementWidget);
 						} else if (urlDisplayMode === "small-url-and-preview") {
@@ -559,14 +678,14 @@ export function createUrlPreviewDecorator(
 							
 							// Add preview widget after URL
 							const widget = Decoration.widget({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode),
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode, limit),
 								side: 1,
 							});
 							builder.add(urlEnd, urlEnd, widget);
 						} else {
 							// Show preview after URL (url-and-preview)
 							const widget = Decoration.widget({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode),
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode, limit),
 								side: 1, // Display after the URL
 							});
 							builder.add(urlEnd, urlEnd, widget);

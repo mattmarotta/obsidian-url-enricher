@@ -64,12 +64,16 @@ Add frontmatter to your note to customize preview appearance:
 
 ```yaml
 ---
-preview-style: card         # Use prominent card style instead of bubble
-preview-display: inline     # Keep previews inline with text
+preview-style: card              # Use prominent card style instead of bubble
+preview-display: inline          # Keep previews inline with text
+max-card-length: 400             # Maximum characters for card previews
+show-favicon: true               # Show/hide favicons
+include-description: true        # Include/exclude descriptions
+url-display-mode: preview-only   # Hide URLs, show only previews
 ---
 ```
 
-These settings override your global preferences for that specific page only.
+These settings override your global preferences for that specific page only. For a complete list of available frontmatter properties and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md).
 
 ## Settings
 
@@ -141,7 +145,7 @@ Open **Settings → Community plugins → Inline link preview** to configure:
   - **URL + Preview**: Full-sized URL with preview bubble
   - **Preview Only**: URL hidden, only preview visible (clickable)
   - **Small URL + Preview**: Subtle, faded URL with preview (recommended)
-- **Preview bubble background** – Customize background color (none, grey, or custom)
+- **Preview background color** – Customize background color for both bubbles and cards (none, grey, or custom)
 
 ### Preview Content
 - **Include description** – Show page description after the title
@@ -155,14 +159,25 @@ Open **Settings → Community plugins → Inline link preview** to configure:
 - Clear favicon cache if needed
 
 ### Per-Page Overrides
-Global settings can be overridden per-page using frontmatter:
+Global settings can be overridden per-page using frontmatter. Supported properties include:
 
 ```yaml
 ---
-preview-style: card      # or bubble
-preview-display: inline  # or block
+preview-style: card              # or bubble
+preview-display: inline          # or block
+max-card-length: 400             # 100-5000
+max-bubble-length: 200           # 50-5000
+show-favicon: true               # or false
+include-description: true        # or false
+url-display-mode: preview-only   # or url-and-preview, small-url-and-preview
+preview-color-mode: grey         # or none, custom
+custom-preview-color: "#4a4a4a"  # hex color when using custom mode
 ---
 ```
+
+**Note**: Minimum values (100 for cards, 50 for bubbles) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
+
+For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md).
 
 Changes apply immediately to future previews and when you navigate between notes.
 
