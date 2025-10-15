@@ -2,9 +2,9 @@
 
 ## Project overview
 
-This plugin adds Trello- and Notion-style link cards to Obsidian. It provides two main modes:
-1. **Conversion mode**: Automatically replaces pasted URLs with markdown-formatted inline previews `[Title — Description](url)`
-2. **Dynamic preview mode**: Shows live preview "bubbles" next to bare URLs in Live Preview without modifying the markdown source
+This plugin adds rich, dynamic link previews to Obsidian. It is **completely non-destructive** — all previews are rendered dynamically in Live Preview mode without modifying markdown source files.
+
+**Key principle**: URLs remain as plain text in your notes. The plugin enhances them with live preview bubbles or cards showing page metadata (title, description, favicon) in the editor view only.
 
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript)
 - Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian
@@ -58,19 +58,9 @@ npm run build
   src/
     main.ts                    # Plugin entry point, lifecycle management
     settings.ts                # Settings interface, defaults, and UI
-    commands/
-      index.ts                 # Command registration
     editor/
-      faviconDecorator.ts      # Live Preview favicon rendering
-      urlPreviewDecorator.ts   # Dynamic URL preview bubbles (key component)
-      pastePreviewHandler.ts   # Paste event handler for conversion mode
-      urlListConverter.ts      # Batch URL conversion logic
-    linkPreview/
-      previewBuilder.ts        # Markdown preview generation
-      previewFormatter.ts      # Title/description formatting
-    modals/
-      bulkConversionModal.ts   # UI for bulk conversion scope selection
-      fileSuggest.ts           # File picker component
+      faviconDecorator.ts      # (Legacy - not used in non-destructive mode)
+      urlPreviewDecorator.ts   # Dynamic URL preview bubbles/cards (key component)
     services/
       linkPreviewService.ts    # Core metadata fetching service
       faviconCache.ts          # Persistent favicon cache with expiration
@@ -80,10 +70,6 @@ npm run build
         metadataHandler.ts
         googleSearchMetadataHandler.ts
         redditMetadataHandler.ts
-    status/
-      progressStatusManager.ts # Floating progress indicator
-    updater/
-      bulkLinkPreviewUpdater.ts # Vault-wide conversion logic
     utils/
       editorHelpers.ts         # CodeMirror utilities
       markdown.ts              # Markdown parsing helpers
@@ -92,7 +78,6 @@ npm run build
       url.ts                   # URL validation and normalization
       vault.ts                 # Vault file operations
   tests/
-    previewFormatter.spec.ts   # Unit tests
     run-tests.mjs              # Test runner
     stubs/
       obsidian.ts              # Obsidian API mocks
@@ -106,13 +91,32 @@ npm run build
 ### CodeMirror 6 Decorations
 This plugin uses CodeMirror 6's ViewPlugin and Decoration APIs to add visual enhancements to Live Preview mode:
 
-- **faviconDecorator**: Adds favicon images before links using `Decoration.widget()`
-- **urlPreviewDecorator**: Shows preview "bubbles" next to bare URLs with title/description using `Decoration.widget()`, `Decoration.replace()`, and `Decoration.mark()`
+- **urlPreviewDecorator**: Shows preview "bubbles" or "cards" next to bare URLs with title/description using `Decoration.widget()`, `Decoration.replace()`, and `Decoration.mark()`
 
-Both decorators:
-- Use `StateEffect` to trigger reactive updates when settings change
-- Implement context-aware detection to avoid decorating inappropriate locations
-- Support three display modes: URL + Preview, Preview Only, Small URL + Preview
+The decorator:
+- Uses `StateEffect` to trigger reactive updates when settings change
+- Implements context-aware detection to avoid decorating inappropriate locations (markdown links, code blocks, etc.)
+- Supports two preview styles: bubble (compact) and card (prominent)
+- Supports two display modes: inline (flows with text, can wrap across lines) and block (appears on new line)
+- Supports three URL display modes: URL + Preview, Preview Only, Small URL + Preview
+
+## Core technical approaches
+
+### Dynamic Preview Rendering with CodeMirror 6
+The plugin uses **CodeMirror 6's decoration API** (`@codemirror/view`) to render live previews:
+
+- `ViewPlugin.fromClass()` creates a stateful decorator that manages decorations
+- `Decoration.widget()` inserts custom DOM elements (preview bubbles/cards) after URLs
+- `Decoration.replace()` hides/replaces URLs in "preview-only" and "small-url-and-preview" modes
+- Decorations rebuild on: document changes, viewport changes, or explicit refresh effects
+- **Non-destructive**: Source markdown never changes; decorations are view-only
+
+Key capabilities:
+- Two preview styles: compact "bubble" or prominent "card"
+- Two display modes: "inline" (flows with text) or "block" (new line)
+- Three URL display modes: full URL, hidden URL, or small URL
+- Frontmatter support for per-page style/display overrides
+- Clickable previews open URLs in new tab
 
 ### Context Detection
 The urlPreviewDecorator uses a **hybrid detection approach** to determine when to show preview bubbles:
@@ -123,6 +127,40 @@ The urlPreviewDecorator uses a **hybrid detection approach** to determine when t
 **Why text analysis?** Live Preview mode doesn't expose full markdown structure in the syntax tree. Both bare URLs and URLs inside markdown links appear with parent type "Document", making syntax-only detection impossible.
 
 **Performance**: The hybrid approach analyzes ~1100 chars maximum per URL. Typical performance: ~0.02ms per URL, ~0.3ms for a note with 15 URLs.
+
+### Frontmatter Configuration
+Page-level settings can override global preferences using frontmatter:
+
+```yaml
+---
+preview-style: card      # or bubble
+preview-display: inline  # or block
+---
+```
+
+The decorator parses frontmatter on each render pass using simple regex:
+- Checks if document starts with `---`
+- Finds closing `---`
+- Extracts `preview-style:` and `preview-display:` keys
+- Falls back to global settings if not specified
+
+Configuration hierarchy: `frontmatter > global settings`
+
+### Material Design Card Styling
+Card previews follow **Google's Material Design** principles:
+
+- **Elevation system**: Multi-layer shadows (level 1 at rest, level 4 on hover)
+- **Motion**: Smooth transitions using Material's standard easing `cubic-bezier(0.4, 0, 0.2, 1)`
+- **Typography**: Optimized letter-spacing, line-height, and font weights for hierarchy
+- **Spacing**: Based on 8dp grid system (padding: 16dp, 20dp)
+- **Surface**: 12px border radius with subtle border and shadow
+- **Interaction feedback**: Transform and shadow changes on hover/active states
+
+**Reddit card enhancements:**
+- Post title displayed prominently at top (font-weight: 600, 1.15em)
+- Subreddit shown as caption-style label (0.85em, medium weight, muted color)
+- Content preview below with proper line-height (1.6) and muted text
+- Structured layout parses `r/Subreddit • Content` format for clean display
 
 ### Settings Reactivity
 Settings changes trigger immediate updates across all open editor tabs:
@@ -165,21 +203,76 @@ Handlers run in sequence; first match wins.
 - Cache statistics available in settings UI
 - Falls back to Google's favicon service (32x32) for reliable coverage
 
-### Conversion Modes
-The plugin supports two operating modes:
+### Settings Reactivity
+Settings changes trigger immediate updates across all open editor tabs:
 
-**Conversion mode** (default):
-- Listens to `editor-paste` events
-- Fetches metadata immediately
-- Replaces URL text with `[Title — Description](url)` markdown
-- Shows floating progress indicator for multi-link pastes
+```typescript
+// In main.ts
+refreshDecorations(): void {
+  this.app.workspace.iterateAllLeaves((leaf) => {
+    const cm = leaf.view.editor?.cm;
+    if (cm) {
+      cm.dispatch({
+        effects: [
+          faviconRefreshEffect.of(null),
+          urlPreviewRefreshEffect.of(null)
+        ]
+      });
+    }
+  });
+}
+```
 
-**Dynamic preview mode**:
-- Leaves markdown source unchanged
-- Decorates URLs in Live Preview only
-- Clickable preview bubbles
-- Three display modes for different levels of visual prominence
-- Customizable bubble colors (none/grey/custom)
+Each decorator's ViewPlugin listens for its StateEffect and rebuilds decorations when triggered.
+
+### Metadata Enrichment Pipeline
+The `LinkPreviewService` uses a handler chain pattern for domain-specific metadata extraction:
+
+- **Base handler**: Generic HTML meta tag parsing (Open Graph, Twitter Cards, standard meta tags)
+- **Wikipedia handler**: Fetches article descriptions via Wikipedia API
+  - Extracts article title from URL path
+  - Queries Wikipedia API for extract (intro, 2 sentences)
+  - Falls back to short description if available
+  - Truncates long extracts to ~200 characters
+- **Google Search handler**: Extracts search query from URL parameters for cleaner titles
+- **Reddit handler**: Custom formatting for Reddit posts with structured preview data:
+  - **Title**: Shows actual post title (not subreddit)
+  - **Description**: Formats as `r/Subreddit • Content preview` with ~150 char truncation
+  - **Smart rendering**: Card style parses description to show subreddit label separately
+- **Extensible**: Additional handlers can be registered via `registerMetadataHandler()`
+
+Handlers run in sequence; first match wins.
+
+**Wikipedia-specific enhancements:**
+- Uses MediaWiki API (`/w/api.php?action=query`)
+- Extracts clean, plain-text introductory content (3 sentences)
+- Prioritizes full extract over short description for richer previews
+- Allows up to 300 characters for comprehensive context
+- Handles URL encoding for article titles
+
+**Reddit-specific enhancements:**
+- Fetches Reddit JSON API (`/comments/.../post.json`)
+- Extracts: post title, subreddit name, selftext content
+- Uses special marker format for structured data encoding
+- **Card view**: Subreddit in header (beside favicon) → Post title (bold) → Content preview (200 chars)
+- **Bubble view**: `r/Subreddit — Post Title` (compact, 100 chars)
+- Separate length limits optimize for each display mode
+
+**Favicon quality:**
+- Requests 128px favicons from Google's service for high-DPI displays
+- Uses Chromium's default `image-rendering: auto` for optimal quality
+- GPU acceleration with `transform: translateZ(0)` prevents subpixel blur
+- Card mode shows 2em favicons, bubble mode shows 1em
+- High-resolution source ensures crisp display at all sizes
+
+### Favicon Caching
+`FaviconCache` provides persistent storage for favicons:
+
+- Uses Obsidian's `loadData()`/`saveData()` for persistence
+- 30-day expiration per domain
+- Automatic flushing on plugin unload
+- Cache statistics available in settings UI
+- Falls back to Google's favicon service (32x32) for reliable coverage
 
 ## Manifest rules (`manifest.json`)
 
@@ -205,10 +298,10 @@ The plugin supports two operating modes:
 
 ## Commands & settings
 
-- Any user-facing commands should be added via `this.addCommand(...)`.
-- If the plugin has configuration, provide a settings tab and sensible defaults.
+- The plugin is non-destructive and does not provide any commands that modify markdown source.
+- All configuration is done through the settings tab.
 - Persist settings using `this.loadData()` / `this.saveData()`.
-- Use stable command IDs; avoid renaming once released.
+- Settings changes trigger immediate decoration refresh across all open editors.
 
 ## Versioning & releases
 
@@ -438,6 +531,56 @@ this.linkPreviewService.registerMetadataHandler(myDomainMetadataHandler);
 - Commands not appearing: verify `addCommand` runs after `onload` and IDs are unique.
 - Settings not persisting: ensure `loadData`/`saveData` are awaited and you re-render the UI after changes.
 - Mobile-only issues: confirm you're not using desktop-only APIs; check `isDesktopOnly` and adjust.
+
+### Testing Changes and Cache Management
+
+**CRITICAL**: This plugin caches metadata (titles, descriptions) and favicons for 30 days to improve performance and reduce network requests. When testing changes to metadata extraction or favicon handling:
+
+1. **Always clear the cache** before testing:
+   - Go to **Settings → Community plugins → Inline Link Preview**
+   - Scroll to **Cache Management** section
+   - Click **Clear cache** button
+   - This clears both metadata and favicon caches
+
+2. **When to clear cache**:
+   - After modifying metadata handlers (Reddit, Wikipedia, etc.)
+   - After changing favicon fetching logic
+   - After updating CSS that affects rendering
+   - When testing improvements to title/description extraction
+   - If you're not seeing expected changes after a rebuild
+
+3. **Cache behavior**:
+   - Metadata is cached per URL (titles, descriptions)
+   - Favicons are cached per domain for 30 days
+   - Cache persists across Obsidian restarts
+   - Cached data won't update until cache is cleared or expires
+
+4. **Proper testing workflow**:
+   ```bash
+   # 1. Make code changes
+   npm run build
+   
+   # 2. Reload plugin in Obsidian
+   # Ctrl+P (Cmd+P) → "Reload app without saving"
+   
+   # 3. Clear cache in settings
+   # Settings → Inline Link Preview → Clear cache
+   
+   # 4. Test with URLs
+   # Create/view notes with target URLs
+   ```
+
+5. **Agent guidance**:
+   - When making changes to metadata extraction, favicon handling, or preview rendering
+   - Always remind the user to clear the cache before testing
+   - Explain that cached data will prevent them from seeing changes
+   - This applies to: metadata handlers, favicon logic, service layer changes
+
+**Example agent message after making changes:**
+> "I've updated the [feature]. Please clear the cache to test the changes:
+> 1. Open Settings → Inline Link Preview
+> 2. Click 'Clear cache' button
+> 3. Test with a fresh URL or one you haven't previewed recently"
 
 ## References
 

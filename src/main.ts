@@ -1,23 +1,13 @@
-import { Editor, Plugin } from "obsidian";
-import { registerCommands } from "./commands";
-import { PastePreviewHandler } from "./editor/pastePreviewHandler";
-import { createFaviconDecorator, refreshDecorationsEffect as faviconRefreshEffect } from "./editor/faviconDecorator";
+import { Plugin } from "obsidian";
 import { createUrlPreviewDecorator, refreshDecorationsEffect as urlPreviewRefreshEffect } from "./editor/urlPreviewDecorator";
-import { LinkPreviewBuilder } from "./linkPreview/previewBuilder";
-import { BulkLinkPreviewUpdater } from "./updater/bulkLinkPreviewUpdater";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
-import { LinkProcessingStatusManager } from "./status/progressStatusManager";
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
 	linkPreviewService!: LinkPreviewService;
 	faviconCache!: FaviconCache;
-	previewBuilder!: LinkPreviewBuilder;
-	pasteHandler!: PastePreviewHandler;
-	bulkUpdater!: BulkLinkPreviewUpdater;
-	processingStatus!: LinkProcessingStatusManager;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -26,19 +16,11 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// Apply bubble color CSS
 		this.updateBubbleColorCSS();
 
-		this.registerEvent(
-			this.app.workspace.on("editor-paste", async (event: ClipboardEvent, editor: Editor, info) => {
-				await this.pasteHandler.handlePaste(event, editor, info);
-			}),
-		);
-
-		// Register the favicon decorator and URL preview decorator for Live Preview
+		// Register the URL preview decorator for Live Preview (favicon decorator removed - non-destructive mode only)
 		this.registerEditorExtension([
-			createFaviconDecorator(this.linkPreviewService, () => this.settings),
 			createUrlPreviewDecorator(this.linkPreviewService, () => this.settings)
 		]);
 
-		registerCommands(this);
 		this.addSettingTab(new InlineLinkPreviewSettingTab(this.app, this));
 	}
 
@@ -60,6 +42,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		this.linkPreviewService.updateOptions({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
 		});
+		this.linkPreviewService.updateSettings(this.settings);
 	}
 
 	updateBubbleColorCSS(): void {
@@ -91,10 +74,9 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 				const cm = view.editor?.cm;
 				
 				if (cm) {
-					// Dispatch both refresh effects to trigger decoration rebuild
+					// Dispatch refresh effect to trigger decoration rebuild
 					cm.dispatch({
 						effects: [
-							faviconRefreshEffect.of(null),
 							urlPreviewRefreshEffect.of(null)
 						]
 					});
@@ -114,25 +96,20 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// Initialize link preview service
 		this.linkPreviewService = new LinkPreviewService({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
-		});
+		}, this.settings);
 		this.linkPreviewService.setPersistentFaviconCache(this.faviconCache);
-
-		this.previewBuilder = new LinkPreviewBuilder(this.linkPreviewService, () => this.settings);
-		this.processingStatus = new LinkProcessingStatusManager(this);
-		this.pasteHandler = new PastePreviewHandler(
-			this.app,
-			this.previewBuilder,
-			() => this.settings,
-			this.processingStatus,
-		);
-		this.bulkUpdater = new BulkLinkPreviewUpdater(this.app, this.previewBuilder);
 	}
 
 	private normalizeSettings(): void {
-		const numericDescription = Number(this.settings.maxDescriptionLength);
-		this.settings.maxDescriptionLength = Number.isFinite(numericDescription)
-			? Math.max(0, Math.round(numericDescription))
-			: DEFAULT_SETTINGS.maxDescriptionLength;
+		const numericCardLength = Number(this.settings.cardDescriptionLength);
+		this.settings.cardDescriptionLength = Number.isFinite(numericCardLength)
+			? Math.max(0, Math.round(numericCardLength))
+			: DEFAULT_SETTINGS.cardDescriptionLength;
+
+		const numericBubbleLength = Number(this.settings.bubbleDescriptionLength);
+		this.settings.bubbleDescriptionLength = Number.isFinite(numericBubbleLength)
+			? Math.max(0, Math.round(numericBubbleLength))
+			: DEFAULT_SETTINGS.bubbleDescriptionLength;
 
 		const numericTimeout = Number(this.settings.requestTimeoutMs);
 		this.settings.requestTimeoutMs = Number.isFinite(numericTimeout)

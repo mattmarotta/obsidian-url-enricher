@@ -7,6 +7,7 @@ import {
 } from "./metadataHandlers";
 import { decodeHtmlEntities, sanitizeTextContent } from "../utils/text";
 import { FaviconCache } from "./faviconCache";
+import type { InlineLinkPreviewSettings } from "../settings";
 
 export type { LinkMetadata } from "./types";
 
@@ -23,17 +24,23 @@ interface ParsedMetadata {
 export class LinkPreviewService {
 	private cache = new Map<string, LinkMetadata>();
 	private options: LinkPreviewServiceOptions;
+	private settings: InlineLinkPreviewSettings;
 	private readonly metadataHandlers: MetadataHandler[];
 	private persistentFaviconCache: FaviconCache | null = null;
 	private faviconValidationCache = new Map<string, string | null>();
 
-	constructor(options: LinkPreviewServiceOptions, metadataHandlers: MetadataHandler[] = createDefaultMetadataHandlers()) {
+	constructor(options: LinkPreviewServiceOptions, settings: InlineLinkPreviewSettings, metadataHandlers: MetadataHandler[] = createDefaultMetadataHandlers()) {
 		this.options = { ...options };
+		this.settings = settings;
 		this.metadataHandlers = metadataHandlers;
 	}
 
 	setPersistentFaviconCache(cache: FaviconCache): void {
 		this.persistentFaviconCache = cache;
+	}
+
+	updateSettings(settings: InlineLinkPreviewSettings): void {
+		this.settings = settings;
 	}
 
 	updateOptions(options: Partial<LinkPreviewServiceOptions>): void {
@@ -460,6 +467,7 @@ export class LinkPreviewService {
 			metadata,
 			request: (request: RequestUrlParam) => this.performRequest(request),
 			sanitizeText: (value: string | null | undefined) => this.sanitizeText(value),
+			settings: this.settings,
 		};
 
 		for (const handler of this.metadataHandlers) {
@@ -526,11 +534,11 @@ export class LinkPreviewService {
 			return null;
 		}
 
-		// Request larger size (32x32) for better quality on high-DPI displays
-		// CSS will scale it down to 1em while maintaining crispness
+		// Request 128px for high quality display in cards and on retina displays
+		// Google's service provides crisp icons at this size
 		const params = new URLSearchParams({ 
 			domain: host,
-			sz: "32"
+			sz: "128"
 		});
 		return `https://www.google.com/s2/favicons?${params.toString()}`;
 	}

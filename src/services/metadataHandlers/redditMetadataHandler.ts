@@ -97,8 +97,34 @@ export class RedditMetadataHandler implements MetadataHandler {
 					: "";
 
 			const normalizedDescription = descriptionSource.replace(/\s+/g, " ").trim();
-			const title = subredditName ? `r/${subredditName}` : rawTitle;
-			const description = normalizedDescription || rawTitle;
+			
+			// Special format for cards vs bubbles
+			// Cards: subreddit | post title | content (using special markers)
+			// Bubbles: r/Subreddit — Post Title
+			
+			let title = "";
+			let description = "";
+			
+			if (subredditName && rawTitle) {
+				// For cards: Store structured data with special markers
+				// Format: "r/Subreddit §REDDIT_CARD§ Post Title §REDDIT_CONTENT§ Content"
+				title = `r/${subredditName}`;
+				description = `§REDDIT_CARD§${rawTitle}`;
+				
+				if (normalizedDescription) {
+					// Cards: longer content preview (uses cardDescriptionLength setting)
+					// Bubbles: shorter content preview (uses bubbleDescriptionLength setting)
+					const cardLength = context.settings.cardDescriptionLength || 200;
+					const truncatedContent = normalizedDescription.length > cardLength
+						? normalizedDescription.substring(0, cardLength) + "..."
+						: normalizedDescription;
+					description += `§REDDIT_CONTENT§${truncatedContent}`;
+				}
+			} else if (subredditName) {
+				title = `r/${subredditName}`;
+			} else if (rawTitle) {
+				title = rawTitle;
+			}
 
 			return {
 				title: title || undefined,

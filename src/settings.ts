@@ -3,29 +3,33 @@ import type InlineLinkPreviewPlugin from "./main";
 
 export type UrlDisplayMode = "url-and-preview" | "preview-only" | "small-url-and-preview";
 export type BubbleColorMode = "none" | "grey" | "custom";
+export type PreviewStyle = "bubble" | "card";
+export type DisplayMode = "inline" | "block";
 
 export interface InlineLinkPreviewSettings {
-	autoPreviewOnPaste: boolean;
 	includeDescription: boolean;
-	maxDescriptionLength: number;
+	cardDescriptionLength: number;
+	bubbleDescriptionLength: number;
 	requestTimeoutMs: number;
 	showFavicon: boolean;
 	keepEmoji: boolean;
-	dynamicPreviewMode: boolean;
+	previewStyle: PreviewStyle;
+	displayMode: DisplayMode;
 	urlDisplayMode: UrlDisplayMode;
 	bubbleColorMode: BubbleColorMode;
 	customBubbleColor: string;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
-	autoPreviewOnPaste: true,
 	includeDescription: true,
-	maxDescriptionLength: 60,
+	cardDescriptionLength: 200,
+	bubbleDescriptionLength: 100,
 	requestTimeoutMs: 7000,
 	showFavicon: true,
 	keepEmoji: true,
-	dynamicPreviewMode: false,
-	urlDisplayMode: "url-and-preview",
+	previewStyle: "bubble",
+	displayMode: "block",
+	urlDisplayMode: "small-url-and-preview",
 	bubbleColorMode: "grey",
 	customBubbleColor: "#4a4a4a",
 };
@@ -69,26 +73,18 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		// Apply bubble color on display
 		this.updateBubbleColorCSS();
 
-		new Setting(containerEl)
-			.setName("Convert links on paste")
-			.setDesc("Automatically replace pasted URLs with inline link previews.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.autoPreviewOnPaste)
-					.onChange(async (value) => {
-						this.plugin.settings.autoPreviewOnPaste = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+		containerEl.createEl("h3", { text: "Preview Appearance" });
 
 		new Setting(containerEl)
-			.setName("Include description")
-			.setDesc("Add the page description (when available) after the page title.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.includeDescription)
+			.setName("Preview style")
+			.setDesc("Choose between compact bubble style or prominent card style.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("bubble", "Bubble — Compact inline style")
+					.addOption("card", "Card — Prominent card style with more details")
+					.setValue(settings.previewStyle)
 					.onChange(async (value) => {
-						this.plugin.settings.includeDescription = value;
+						this.plugin.settings.previewStyle = value as PreviewStyle;
 						await this.plugin.saveSettings();
 						// Trigger decoration refresh
 						this.plugin.refreshDecorations();
@@ -96,58 +92,15 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Description length")
-			.setDesc("Maximum number of characters to keep from the description.")
-			.addText((text) => {
-				text.setValue(String(settings.maxDescriptionLength));
-				text.inputEl.type = "number";
-				text.inputEl.min = "0";
-				text.onChange(async (value) => {
-					const parsed = Number(value);
-					if (!Number.isFinite(parsed) || parsed < 0) {
-						return;
-					}
-					this.plugin.settings.maxDescriptionLength = Math.round(parsed);
-					await this.plugin.saveSettings();
-					// Trigger decoration refresh
-					this.plugin.refreshDecorations();
-				});
-			});
-
-		new Setting(containerEl)
-			.setName("Show favicons")
-			.setDesc("Include the site favicon before the preview text.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.showFavicon)
+			.setName("Display mode")
+			.setDesc("Choose whether previews appear inline with text or on a new line. Can be overridden per-page using frontmatter: 'preview-display: inline' or 'preview-display: block'.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("inline", "Inline — Flows with surrounding text")
+					.addOption("block", "New line — Appears on its own line")
+					.setValue(settings.displayMode)
 					.onChange(async (value) => {
-						this.plugin.settings.showFavicon = value;
-						await this.plugin.saveSettings();
-						// Trigger decoration refresh
-						this.plugin.refreshDecorations();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Keep emoji")
-			.setDesc("Preserve emoji characters pulled from the page title or description.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.keepEmoji)
-					.onChange(async (value) => {
-						this.plugin.settings.keepEmoji = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Dynamic preview mode")
-			.setDesc("Show titles and descriptions for bare URLs dynamically in Live Preview without modifying the markdown. URLs stay as plain text but render with metadata.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.dynamicPreviewMode)
-					.onChange(async (value) => {
-						this.plugin.settings.dynamicPreviewMode = value;
+						this.plugin.settings.displayMode = value as DisplayMode;
 						await this.plugin.saveSettings();
 						// Trigger decoration refresh
 						this.plugin.refreshDecorations();
@@ -204,6 +157,88 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 				);
 		}
 
+		containerEl.createEl("h3", { text: "Preview Content" });
+
+		new Setting(containerEl)
+			.setName("Include description")
+			.setDesc("Add the page description (when available) after the page title.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(settings.includeDescription)
+					.onChange(async (value) => {
+						this.plugin.settings.includeDescription = value;
+						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Card description length")
+			.setDesc("Maximum characters for descriptions in card-style previews. Cards have more space for context.")
+			.addText((text) => {
+				text.setValue(String(settings.cardDescriptionLength));
+				text.inputEl.type = "number";
+				text.inputEl.min = "50";
+				text.inputEl.max = "500";
+				text.onChange(async (value) => {
+					const parsed = Number(value);
+					if (!Number.isFinite(parsed) || parsed < 50) {
+						return;
+					}
+					this.plugin.settings.cardDescriptionLength = Math.round(parsed);
+					await this.plugin.saveSettings();
+					// Trigger decoration refresh
+					this.plugin.refreshDecorations();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName("Bubble description length")
+			.setDesc("Maximum characters for descriptions in bubble-style previews. Bubbles are compact and inline.")
+			.addText((text) => {
+				text.setValue(String(settings.bubbleDescriptionLength));
+				text.inputEl.type = "number";
+				text.inputEl.min = "30";
+				text.inputEl.max = "200";
+				text.onChange(async (value) => {
+					const parsed = Number(value);
+					if (!Number.isFinite(parsed) || parsed < 30) {
+						return;
+					}
+					this.plugin.settings.bubbleDescriptionLength = Math.round(parsed);
+					await this.plugin.saveSettings();
+					// Trigger decoration refresh
+					this.plugin.refreshDecorations();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName("Show favicons")
+			.setDesc("Include the site favicon before the preview text.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(settings.showFavicon)
+					.onChange(async (value) => {
+						this.plugin.settings.showFavicon = value;
+						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Keep emoji")
+			.setDesc("Preserve emoji characters pulled from the page title or description.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(settings.keepEmoji)
+					.onChange(async (value) => {
+						this.plugin.settings.keepEmoji = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
 		new Setting(containerEl)
 			.setName("Request timeout")
 			.setDesc("Stop fetching metadata if the request takes too long (milliseconds).")
@@ -242,7 +277,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Clear cached previews")
-			.setDesc("Remove all stored metadata and favicons from memory and disk. Previews will be rebuilt on the next paste or view.")
+			.setDesc("Remove all stored metadata and favicons from memory and disk. Previews will be rebuilt on the next paste or view. Use this if you're not seeing updated previews after changes.")
 			.addButton((button) =>
 				button
 					.setButtonText("Clear cache")

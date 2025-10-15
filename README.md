@@ -1,9 +1,79 @@
 # Inline Link Preview
 
-Inline Link Preview adds Trello- and Notion-style link cards to Obsidian. Whenever you paste a URL, the plugin fetches the page title and description and replaces the raw link with an inline preview such as:
+Inline Link Preview adds Trello- and Notion-style link cards to Obsidian. Whenever you paste a URL, the plugin fetches the page title and description and rep## Development
+
+- `npm install` – install dependencies.
+- `npm run dev` – watch mode with incremental builds.
+- `npm run build` – type-check and create a production bundle.
+- `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
+
+Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules. The plugin is designed to be completely non-destructive, so any new features must respect this principle and not modify markdown source files. raw link with an inline preview such as:
 
 ```
-[![](https://trello.com/favicon.ico) Trello – Boards to organize anything — Plan your day better](https://trello.com/)
+# Inline Link Preview
+
+Inline Link Preview adds rich, live preview bubbles or cards for URLs in Obsidian. This plugin is **completely non-destructive** — your markdown source stays unchanged while URLs are enhanced with metadata previews in Live Preview mode.
+
+When you have a bare URL in your notes like `https://trello.com`, the plugin automatically fetches the page title, description, and favicon, displaying them as an inline preview bubble or prominent card right in your editor — all without modifying your source markdown.
+
+## Features
+
+- **100% Non-Destructive**: URLs remain as plain text in your markdown. All previews are rendered dynamically in Live Preview mode only.
+- **Two Preview Styles**:
+  - **Bubble**: Compact, subtle inline preview that flows with your text
+  - **Card**: Prominent card-style preview with more visual weight and detail
+- **Flexible Display Modes**:
+  - **Inline**: Previews flow with surrounding text on the same line
+  - **Block**: Previews appear on their own line for better separation
+- **Three URL Display Modes**:
+  - **URL + Preview**: Show full-sized URL with preview bubble
+  - **Preview Only**: Hide URL completely, show only the clickable preview
+  - **Small URL + Preview**: Show subtle, faded URL with preview (recommended)
+- **Page-Level Configuration**: Override global settings using frontmatter:
+  ```yaml
+  ---
+  preview-style: card    # or bubble
+  preview-display: inline # or block
+  ---
+  ```
+- **Rich Metadata Display**:
+  - Site favicons displayed at emoji size for crisp quality
+  - Page titles and descriptions
+  - Emoji preservation (optional)
+  - Customizable description length with natural word-wrapping
+  - Domain-aware enrichments for Google Search and Reddit links
+- **Real-Time Updates**: Settings changes apply immediately without page navigation
+- **Clickable Previews**: All preview bubbles and cards are clickable to open URLs
+- **Smart Context Detection**: Automatically skips URLs in:
+  - Markdown links `[text](url)`
+  - Image embeds `![alt](url)`
+  - Code blocks and inline code
+- **Persistent Caching**: Favicons cached for 30 days to minimize network requests
+- **YouTube-Friendly**: Treats YouTube links as standard previews, avoiding unwanted embeds
+
+## Usage
+
+### Basic Usage
+1. Paste or type a bare URL in your note: `https://github.com`
+2. In Live Preview mode, the URL automatically gains a rich preview showing the page title, description, and favicon
+3. Click the preview bubble/card to open the URL in a new tab
+4. Your markdown source remains untouched — the URL is still just plain text
+
+### Per-Page Configuration
+Add frontmatter to your note to customize preview appearance:
+
+```yaml
+---
+preview-style: card         # Use prominent card style instead of bubble
+preview-display: inline     # Keep previews inline with text
+---
+```
+
+These settings override your global preferences for that specific page only.
+
+## Settings
+
+Open **Settings → Community plugins → Inline link preview** to configure:
 ```
 
 Emoji in titles or descriptions are preserved (unless you turn them off), so Reddit headlines and other rich text sources keep their flair. The favicon is rendered at emoji size for a Trello-style look.
@@ -55,43 +125,54 @@ The floating progress banner tracks how many notes remain and highlights the one
 
 ## Settings
 
-Open **Settings → Community plugins → Inline link preview** to tune:
+Open **Settings → Community plugins → Inline link preview** to configure:
 
-- **Convert links on paste** – enable or disable automatic conversion.
-- **Dynamic preview mode** – when enabled, bare URLs show inline previews in Live Preview mode without modifying the markdown source. Great for keeping notes portable while still seeing rich link information.
-- **URL display mode** – choose how previews appear in dynamic mode:
-  - **URL + Preview**: Show the full URL in standard link style with preview bubble
-  - **Preview Only**: Hide the URL completely, show only the preview (clickable bubble)
-  - **Small URL + Preview**: Show a subtle, faded, smaller URL with preview (recommended - least intrusive)
-- **Include description** – decide whether to append the description after the title.
-- **Description length** – limit how many characters of the description are kept (default 60). Higher values enable word-wrapping for multi-line previews.
-- **Show favicons** – toggle whether the preview starts with the site icon.
-- **Keep emoji** – remove emoji if you prefer simpler text.
-- **Request timeout** – abort metadata fetches that take too long (milliseconds).
-- **Cache management** – view cache statistics (number of cached domains, oldest entry date) and clear the favicon cache if needed.
+### Core Settings
+- **Dynamic preview mode** – Enable or disable the plugin entirely. When enabled, bare URLs show rich previews in Live Preview mode.
 
-Changes apply immediately to future conversions.
+### Preview Appearance
+- **Preview style** – Choose between:
+  - **Bubble**: Compact, subtle inline style (default)
+  - **Card**: Prominent card style with more visual weight
+- **Display mode** – Choose whether previews appear:
+  - **Inline**: Flows with surrounding text on the same line
+  - **Block**: Appears on its own line (default)
+- **URL display mode** – Choose how URLs themselves are shown:
+  - **URL + Preview**: Full-sized URL with preview bubble
+  - **Preview Only**: URL hidden, only preview visible (clickable)
+  - **Small URL + Preview**: Subtle, faded URL with preview (recommended)
+- **Preview bubble background** – Customize background color (none, grey, or custom)
 
-### Dynamic vs. Conversion Modes
+### Preview Content
+- **Include description** – Show page description after the title
+- **Description length** – Maximum characters for descriptions (default: 60)
+- **Show favicons** – Display site icons before preview text
+- **Keep emoji** – Preserve emoji from page titles and descriptions
+- **Request timeout** – Network timeout in milliseconds (default: 7000)
 
-**Conversion mode** (default): When you paste a URL, it's automatically replaced with `[Title — Description](url)` in your markdown source. This creates a permanent, readable link in your notes.
+### Cache Management
+- View cache statistics (cached domains, oldest entry)
+- Clear favicon cache if needed
 
-**Dynamic preview mode**: URLs remain as plain text in your markdown source (e.g., `https://example.com`), but in Live Preview they appear with an inline preview bubble showing the title, description, and favicon. The source stays clean and portable, while you still get rich visual feedback.
+### Per-Page Overrides
+Global settings can be overridden per-page using frontmatter:
 
-The **URL display mode** setting controls how dynamic previews appear:
-- **URL + Preview**: Best when you want standard link styling (blue/purple, underlined)
-- **Preview Only**: Best for the cleanest reading experience - URLs are completely hidden but preview bubbles are clickable
-- **Small URL + Preview** (recommended): Best for most users - URLs appear subtle and non-intrusive (75% size, faded, no underline) while remaining fully visible, clickable, and editable
+```yaml
+---
+preview-style: card      # or bubble
+preview-display: inline  # or block
+---
+```
 
-All preview bubbles are clickable and will open the URL in a new tab. Settings changes apply immediately without needing to navigate away from your current note.
-
-You can use both conversion and dynamic modes together or switch between them based on your workflow.
+Changes apply immediately to future previews and when you navigate between notes.
 
 ## Privacy and network usage
 
-To build a preview the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 32x32 resolution for consistent, high-quality icons across all sites. URLs you paste are sent directly to their target domains; no additional third-party metadata service is used. 
+To build a preview, the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 32x32 resolution for consistent, high-quality icons across all sites. URLs are sent directly to their target domains; no additional third-party metadata service is used.
 
-Favicon URLs are cached on disk for 30 days to improve performance and reduce network requests. The cache stores only the mapping between domains and their favicon URLs (e.g., `reddit.com → https://www.google.com/s2/favicons?domain=reddit.com`), not the actual images or page content. If a site is private or requires authentication, the plugin keeps the original URL.
+Favicon URLs are cached on disk for 30 days to improve performance and reduce network requests. The cache stores only the mapping between domains and their favicon URLs (e.g., `reddit.com → https://www.google.com/s2/favicons?domain=reddit.com`), not the actual images or page content. If a site is private or requires authentication, the plugin will not be able to fetch metadata.
+
+**The plugin is completely non-destructive**: It never modifies your markdown source files. All previews are rendered dynamically in Live Preview mode only.
 
 ## Installation
 

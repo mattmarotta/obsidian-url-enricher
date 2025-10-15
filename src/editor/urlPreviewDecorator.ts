@@ -3,7 +3,7 @@ import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate, WidgetTy
 import { RangeSetBuilder, StateEffect } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import type { InlineLinkPreviewSettings, UrlDisplayMode } from "../settings";
+import type { InlineLinkPreviewSettings, UrlDisplayMode, PreviewStyle, DisplayMode } from "../settings";
 import { sanitizeTextContent } from "../utils/text";
 
 // StateEffect to trigger decoration refresh when settings change
@@ -22,6 +22,59 @@ const emojiRegex = (() => {
 
 function stripEmoji(value: string): string {
 	return value.replace(emojiRegex, "").replace(/\s+/g, " ").trim();
+}
+
+interface PageConfig {
+	previewStyle?: PreviewStyle;
+	displayMode?: DisplayMode;
+}
+
+/**
+ * Parse frontmatter from the document to extract page-level preview configuration
+ */
+function parsePageConfig(text: string): PageConfig {
+	const config: PageConfig = {};
+	
+	// Check if document starts with frontmatter
+	if (!text.startsWith('---')) {
+		return config;
+	}
+	
+	// Find the closing ---
+	const lines = text.split('\n');
+	let endIndex = -1;
+	for (let i = 1; i < lines.length; i++) {
+		if (lines[i].trim() === '---') {
+			endIndex = i;
+			break;
+		}
+	}
+	
+	if (endIndex === -1) {
+		return config;
+	}
+	
+	// Parse frontmatter lines
+	const frontmatter = lines.slice(1, endIndex);
+	for (const line of frontmatter) {
+		const match = line.match(/^preview-style:\s*(.+)$/i);
+		if (match) {
+			const value = match[1].trim().toLowerCase();
+			if (value === 'bubble' || value === 'card') {
+				config.previewStyle = value;
+			}
+		}
+		
+		const displayMatch = line.match(/^preview-display:\s*(.+)$/i);
+		if (displayMatch) {
+			const value = displayMatch[1].trim().toLowerCase();
+			if (value === 'inline' || value === 'block') {
+				config.displayMode = value;
+			}
+		}
+	}
+	
+	return config;
 }
 
 class SmallUrlWidget extends WidgetType {
@@ -73,23 +126,37 @@ class UrlPreviewWidget extends WidgetType {
 		private description: string | null,
 		private faviconUrl: string | null,
 		private isLoading: boolean,
-		private displayMode: UrlDisplayMode
+		private urlDisplayMode: UrlDisplayMode,
+		private previewStyle: PreviewStyle,
+		private displayMode: DisplayMode
 	) {
 		super();
 	}
 
 	toDOM(): HTMLElement {
-		// Create a container with a line break before it
+		// Create a wrapper container
 		const wrapper = document.createElement("span");
+		wrapper.style.display = "contents"; // Allows children to participate in parent's layout
 		
-		// Add line break before the preview bubble (except for preview-only mode)
-		if (this.displayMode !== "preview-only") {
+		// Add line break for block display mode
+		if (this.displayMode === "block") {
 			const br = document.createElement("br");
 			wrapper.appendChild(br);
 		}
 		
 		const container = document.createElement("span");
-		container.className = "inline-url-preview";
+		
+		// Apply style classes
+		if (this.previewStyle === "card") {
+			container.className = "inline-url-preview inline-url-preview--card";
+		} else {
+			// Bubble style with display mode
+			if (this.displayMode === "block") {
+				container.className = "inline-url-preview inline-url-preview--bubble inline-url-preview--bubble-block";
+			} else {
+				container.className = "inline-url-preview inline-url-preview--bubble inline-url-preview--bubble-inline";
+			}
+		}
 
 		if (this.isLoading) {
 			container.className += " inline-url-preview--loading";
@@ -112,29 +179,127 @@ class UrlPreviewWidget extends WidgetType {
 			favicon.src = this.faviconUrl;
 			favicon.className = "inline-url-preview__favicon";
 			favicon.alt = "";
-			container.appendChild(favicon);
+			
+			// For cards, wrap favicon and title in a header row
+			if (this.previewStyle === "card") {
+				const headerRow = document.createElement("div");
+				headerRow.className = "inline-url-preview__header";
+				headerRow.style.cssText = `
+					display: flex;
+					align-items: center;
+					margin-bottom: 0.75em;
+				`.replace(/\s+/g, ' ').trim();
+				headerRow.appendChild(favicon);
+				
+				// Add title next to favicon for cards
+				if (this.title) {
+					const titleSpan = document.createElement("span");
+					titleSpan.className = "inline-url-preview__title";
+					titleSpan.textContent = this.title;
+					titleSpan.style.cssText = `
+						flex: 1;
+						margin: 0;
+					`.replace(/\s+/g, ' ').trim();
+					headerRow.appendChild(titleSpan);
+				}
+				
+				container.appendChild(headerRow);
+			} else {
+				// For bubbles, keep favicon inline
+				container.appendChild(favicon);
+			}
 		}
 
 		// Title and description
 		const textContainer = document.createElement("span");
 		textContainer.className = "inline-url-preview__text";
 
-		if (this.title) {
-			const titleSpan = document.createElement("span");
-			titleSpan.className = "inline-url-preview__title";
-			titleSpan.textContent = this.title;
-			textContainer.appendChild(titleSpan);
+		// Check if this is Reddit content with special markers
+		const isReddit = this.description && this.description.includes("§REDDIT_CARD§");
+		
+		if (this.previewStyle === "card") {
+			// Card layout
+			if (isReddit && this.description) {
+				// Reddit card: parse structured format
+				const parts = this.description.split("§REDDIT_CARD§");
+				const titleAndContent = parts[1] || "";
+				const [postTitle, ...contentParts] = titleAndContent.split("§REDDIT_CONTENT§");
+				const postContent = contentParts.join("§REDDIT_CONTENT§");
+				
+				// Post title (below subreddit/favicon)
+				if (postTitle) {
+					const postTitleDiv = document.createElement("div");
+					postTitleDiv.className = "inline-url-preview__post-title";
+					postTitleDiv.textContent = postTitle.trim();
+					postTitleDiv.style.cssText = `
+						font-size: 1.05em;
+						font-weight: 600;
+						line-height: 1.35;
+						color: var(--text-normal);
+						margin-bottom: 0.5em;
+					`.replace(/\s+/g, ' ').trim();
+					textContainer.appendChild(postTitleDiv);
+				}
+				
+				// Post content preview (below post title)
+				if (postContent) {
+					const contentDiv = document.createElement("div");
+					contentDiv.className = "inline-url-preview__description";
+					contentDiv.textContent = postContent.trim();
+					textContainer.appendChild(contentDiv);
+				}
+			} else if (this.description) {
+				// Standard card: description below title
+				const descDiv = document.createElement("div");
+				descDiv.className = "inline-url-preview__description";
+				descDiv.textContent = this.description;
+				textContainer.appendChild(descDiv);
+			}
+		} else {
+			// Bubble layout
+			if (isReddit && this.description) {
+				// Reddit bubble: "r/Subreddit — Post Title"
+				const parts = this.description.split("§REDDIT_CARD§");
+				const titlePart = parts[1] ? parts[1].split("§REDDIT_CONTENT§")[0] : "";
+				
+				if (this.title) {
+					const titleSpan = document.createElement("span");
+					titleSpan.className = "inline-url-preview__title";
+					titleSpan.textContent = this.title; // r/Subreddit
+					textContainer.appendChild(titleSpan);
+				}
+				
+				if (titlePart) {
+					const separator = document.createElement("span");
+					separator.className = "inline-url-preview__separator";
+					separator.textContent = " — ";
+					textContainer.appendChild(separator);
+					
+					const descSpan = document.createElement("span");
+					descSpan.className = "inline-url-preview__description";
+					descSpan.textContent = titlePart.trim();
+					textContainer.appendChild(descSpan);
+				}
+			} else {
+				// Standard bubble format
+				if (this.title) {
+					const titleSpan = document.createElement("span");
+					titleSpan.className = "inline-url-preview__title";
+					titleSpan.textContent = this.title;
+					textContainer.appendChild(titleSpan);
 
-			if (this.description) {
-				const separator = document.createElement("span");
-				separator.className = "inline-url-preview__separator";
-				separator.textContent = " — ";
-				textContainer.appendChild(separator);
+					if (this.description) {
+						const separator = document.createElement("span");
+						separator.className = "inline-url-preview__separator";
+						separator.textContent = " — ";
+						textContainer.appendChild(separator);
 
-				const descSpan = document.createElement("span");
-				descSpan.className = "inline-url-preview__description";
-				descSpan.textContent = this.description;
-				textContainer.appendChild(descSpan);
+						const descSpan = document.createElement("span");
+						descSpan.className = "inline-url-preview__description";
+						descSpan.textContent = this.description;
+						textContainer.appendChild(descSpan);
+					}
+				}
 			}
 		}
 
@@ -150,6 +315,8 @@ class UrlPreviewWidget extends WidgetType {
 			other.description === this.description &&
 			other.faviconUrl === this.faviconUrl &&
 			other.isLoading === this.isLoading &&
+			other.urlDisplayMode === this.urlDisplayMode &&
+			other.previewStyle === this.previewStyle &&
 			other.displayMode === this.displayMode
 		);
 	}
@@ -214,23 +381,21 @@ export function createUrlPreviewDecorator(
 				}
 			}
 
-			buildDecorations(view: EditorView): DecorationSet {
-				const settings = getSettings();
-				
-				// Only decorate if dynamic preview mode is enabled
-				if (!settings.dynamicPreviewMode) {
-					return Decoration.none;
-				}
+		buildDecorations(view: EditorView): DecorationSet {
+			const settings = getSettings();
 
-				// Only show in Live Preview mode
-				const isLivePreview = view.state.field(editorLivePreviewField);
-				if (!isLivePreview) {
-					return Decoration.none;
-				}
-
-				const builder = new RangeSetBuilder<Decoration>();
+			// Only show in Live Preview mode
+			const isLivePreview = view.state.field(editorLivePreviewField);
+			if (!isLivePreview) {
+				return Decoration.none;
+			}				const builder = new RangeSetBuilder<Decoration>();
 				const doc = view.state.doc;
 				const text = doc.toString();
+				
+				// Parse page-level configuration from frontmatter
+				const pageConfig = parsePageConfig(text);
+				const previewStyle = pageConfig.previewStyle ?? settings.previewStyle;
+				const displayMode = pageConfig.displayMode ?? settings.displayMode;
 				
 				// Get syntax tree for markdown context detection
 				const tree = syntaxTree(view.state);
@@ -337,17 +502,21 @@ export function createUrlPreviewDecorator(
 							description = null;
 						}
 
-						// Truncate description if needed
-						const limitInput = settings.maxDescriptionLength as unknown;
+						// Truncate description based on preview style (card vs bubble)
+						// Cards use cardDescriptionLength, bubbles use bubbleDescriptionLength
+						const limitInput = (previewStyle === "card" 
+							? settings.cardDescriptionLength 
+							: settings.bubbleDescriptionLength) as unknown;
 						let limitValue: number;
 						if (typeof limitInput === "string") {
 							limitValue = Number(limitInput);
 						} else if (typeof limitInput === "number") {
 							limitValue = limitInput;
 						} else {
-							limitValue = 60;
+							// Default: 200 for cards, 100 for bubbles
+							limitValue = previewStyle === "card" ? 200 : 100;
 						}
-						const limit = Number.isFinite(limitValue) ? Math.max(0, Math.round(limitValue)) : 60;
+						const limit = Number.isFinite(limitValue) ? Math.max(0, Math.round(limitValue)) : (previewStyle === "card" ? 200 : 100);
 
 						if (description && limit > 0) {
 							const combined = `${title} — ${description}`;
@@ -373,15 +542,15 @@ export function createUrlPreviewDecorator(
 
 					// Only show preview if we have metadata or are loading
 					if (isLoading || title) {
-						const displayMode = settings.urlDisplayMode;
+						const urlDisplayMode = settings.urlDisplayMode;
 						
-						if (displayMode === "preview-only") {
+						if (urlDisplayMode === "preview-only") {
 							// Hide the URL completely and show only the preview
 							const replacementWidget = Decoration.replace({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, displayMode),
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode),
 							});
 							builder.add(urlStart, urlEnd, replacementWidget);
-						} else if (displayMode === "small-url-and-preview") {
+						} else if (urlDisplayMode === "small-url-and-preview") {
 							// Replace URL with small styled version
 							const smallUrlWidget = Decoration.replace({
 								widget: new SmallUrlWidget(url),
@@ -390,14 +559,14 @@ export function createUrlPreviewDecorator(
 							
 							// Add preview widget after URL
 							const widget = Decoration.widget({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, displayMode),
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode),
 								side: 1,
 							});
 							builder.add(urlEnd, urlEnd, widget);
 						} else {
 							// Show preview after URL (url-and-preview)
 							const widget = Decoration.widget({
-								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, displayMode),
+								widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, urlDisplayMode, previewStyle, displayMode),
 								side: 1, // Display after the URL
 							});
 							builder.add(urlEnd, urlEnd, widget);
@@ -420,15 +589,13 @@ export function createUrlPreviewDecorator(
 				}
 
 				const promise = service.getMetadata(url).then(() => {
-					// Use a short timeout to batch updates
-					if (this.updateTimeout !== null) {
-						clearTimeout(this.updateTimeout);
-					}
-					this.updateTimeout = setTimeout(() => {
-						this.decorations = this.buildDecorations(view);
-						view.requestMeasure();
-						this.updateTimeout = null;
-					}, 100);
+					// Rebuild decorations immediately after metadata is fetched
+					this.decorations = this.buildDecorations(view);
+					
+					// Force a full viewport update to ensure the view re-renders
+					view.dispatch({
+						effects: []
+					});
 				}).catch(() => {
 					// Silently ignore errors - no preview will be shown
 				}).finally(() => {
