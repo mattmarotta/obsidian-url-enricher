@@ -68,8 +68,8 @@ img[alt="inline-link-preview-icon"] {
 /* Card Style - Material Design inspired card preview */
 .inline-url-preview--card {
 	display: block;
-	padding: 1.25em 1.5em;
-	margin: 0.75em 0;
+	padding: 0.875em 1em;
+	margin: 0.5em 0;
 	background: var(--inline-preview-bg, var(--background-primary));
 	border-radius: 8px;
 	border: 1px solid var(--background-modifier-border);
@@ -97,7 +97,7 @@ img[alt="inline-link-preview-icon"] {
 .inline-url-preview--card .inline-url-preview__favicon {
 	width: 2em;
 	height: 2em;
-	margin-right: 0.75em;
+	margin-right: 0.6em;
 	border-radius: 6px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 	/* Let Chromium handle scaling with default high-quality algorithm */
@@ -134,9 +134,7 @@ img[alt="inline-link-preview-icon"] {
 
 /* Card URL footer - shown at bottom of card */
 .inline-url-preview--card .inline-url-preview__url-footer {
-	margin-top: 0.75em;
-	padding-top: 0.5em;
-	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 0.5em;
 	font-size: 0.75em;
 	color: var(--text-faint);
 	opacity: 0.7;
@@ -155,14 +153,14 @@ img[alt="inline-link-preview-icon"] {
 	font-weight: 600;
 	line-height: 1.35;
 	color: var(--text-normal);
-	margin-bottom: 0.5em;
+	margin-bottom: 0.4em;
 }
 
 /* Header row for cards (favicon + title side by side) */
 .inline-url-preview--card .inline-url-preview__header {
 	display: flex;
 	align-items: center;
-	margin-bottom: 0.75em;
+	margin-bottom: 0.5em;
 }
 
 /* Reddit-specific card styling */

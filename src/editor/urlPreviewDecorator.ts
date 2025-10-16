@@ -257,7 +257,7 @@ class UrlPreviewWidget extends WidgetType {
 				headerRow.style.cssText = `
 					display: flex;
 					align-items: center;
-					margin-bottom: 0.75em;
+					margin-bottom: 0.5em;
 				`.replace(/\s+/g, ' ').trim();
 				headerRow.appendChild(favicon);
 				
@@ -320,7 +320,7 @@ class UrlPreviewWidget extends WidgetType {
 						font-weight: 600;
 						line-height: 1.35;
 						color: var(--text-normal);
-						margin-bottom: 0.5em;
+						margin-bottom: 0.4em;
 					`.replace(/\s+/g, ' ').trim();
 					textContainer.appendChild(postTitleDiv);
 				}
@@ -395,9 +395,7 @@ class UrlPreviewWidget extends WidgetType {
 			urlFooter.className = "inline-url-preview__url-footer";
 			urlFooter.textContent = this.url;
 			urlFooter.style.cssText = `
-				margin-top: 0.75em;
-				padding-top: 0.5em;
-				border-top: 1px solid var(--background-modifier-border);
+				margin-top: 0.5em;
 				font-size: 0.75em;
 				color: var(--text-faint);
 				opacity: 0.7;
