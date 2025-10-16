@@ -132,6 +132,23 @@ img[alt="inline-link-preview-icon"] {
 	letter-spacing: 0.005em;
 }
 
+/* Card URL footer - shown at bottom of card */
+.inline-url-preview--card .inline-url-preview__url-footer {
+	margin-top: 0.75em;
+	padding-top: 0.5em;
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: 0.75em;
+	color: var(--text-faint);
+	opacity: 0.7;
+	word-break: break-all;
+	line-height: 1.4;
+	transition: opacity 0.15s ease;
+}
+
+.inline-url-preview--card:hover .inline-url-preview__url-footer {
+	opacity: 0.9;
+}
+
 /* Reddit post title in cards */
 .inline-url-preview--card .inline-url-preview__post-title {
 	font-size: 1.05em;

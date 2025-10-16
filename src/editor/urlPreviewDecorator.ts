@@ -388,6 +388,24 @@ class UrlPreviewWidget extends WidgetType {
 		}
 
 		container.appendChild(textContainer);
+		
+		// Add URL at bottom for card style only
+		if (this.previewStyle === "card") {
+			const urlFooter = document.createElement("div");
+			urlFooter.className = "inline-url-preview__url-footer";
+			urlFooter.textContent = this.url;
+			urlFooter.style.cssText = `
+				margin-top: 0.75em;
+				padding-top: 0.5em;
+				border-top: 1px solid var(--background-modifier-border);
+				font-size: 0.75em;
+				color: var(--text-faint);
+				opacity: 0.7;
+				word-break: break-all;
+			`.replace(/\s+/g, ' ').trim();
+			container.appendChild(urlFooter);
+		}
+		
 		wrapper.appendChild(container);
 		return wrapper;
 	}
@@ -656,18 +674,11 @@ export function createUrlPreviewDecorator(
 						});
 						builder.add(urlStart, urlEnd, replacementWidget);
 					} else {
-						// Cards: Replace URL with small styled version and show card after
-						const smallUrlWidget = Decoration.replace({
-							widget: new SmallUrlWidget(url),
-						});
-						builder.add(urlStart, urlEnd, smallUrlWidget);
-						
-						// Add card preview widget after URL
-						const widget = Decoration.widget({
+						// Cards: Hide the URL and show card with URL inside at bottom
+						const replacementWidget = Decoration.replace({
 							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
-							side: 1,
 						});
-						builder.add(urlEnd, urlEnd, widget);
+						builder.add(urlStart, urlEnd, replacementWidget);
 					}
 				}
 			}
