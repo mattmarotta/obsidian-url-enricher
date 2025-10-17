@@ -180,6 +180,28 @@ For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTE
 
 Changes apply immediately to future previews and when you navigate between notes.
 
+## Known Limitations
+
+### Typing After URL Previews
+
+Due to a fundamental limitation in CodeMirror's decoration system, typing text immediately after a URL preview (without first pressing Enter or Space) may cause that text to become part of the URL in your markdown source.
+
+**Example of the issue:**
+1. You paste a URL: `https://example.com`
+2. The preview appears in Live Preview mode
+3. You position your cursor after the preview and start typing `more text`
+4. Result: Your markdown source becomes `https://example.commore text` (URL corrupted)
+
+**Best practice to avoid this:**
+- **Always press Enter or Space after pasting a URL** before typing additional content
+- This ensures proper separation between the URL and following text
+
+**If you encounter corrupted URLs:**
+- Switch to Source mode and manually separate the URL from the following text with a space or newline
+- The preview will then render correctly
+
+This is not a bug in the plugin—it's an inherent behavior of CodeMirror's block-level decoration system, which is designed for features like code folding rather than content replacement. The plugin remains completely non-destructive (never modifies your files automatically), so you always have full control over your markdown source.
+
 ## Privacy and network usage
 
 To build a preview, the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 32x32 resolution for consistent, high-quality icons across all sites. URLs are sent directly to their target domains; no additional third-party metadata service is used.
