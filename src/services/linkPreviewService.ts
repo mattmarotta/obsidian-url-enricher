@@ -83,8 +83,15 @@ export class LinkPreviewService {
 	private async fetchMetadata(url: string): Promise<LinkMetadata> {
 		try {
 			const response = await this.requestWithTimeout(url);
+			
+			// HTTP errors (403, 404, 500, etc.) - only flag if setting is enabled
 			if (response.status >= 400) {
-				throw new Error(`HTTP ${response.status}`);
+				const httpError = `HTTP ${response.status}`;
+				if (this.settings.showHttpErrorWarnings) {
+					throw new Error(httpError);
+				}
+				// Setting is off - don't treat as error, use fallback metadata
+				console.log(`[inline-link-preview] ${httpError} for ${url}, but HTTP error warnings are disabled`);
 			}
 
 			const contentType = this.getHeader(response, "content-type") ?? "";
@@ -94,24 +101,44 @@ export class LinkPreviewService {
 					: this.parseHtmlMetadata(this.getHeader(response, "x-final-url") ?? url, response.text);
 
 			// Check for "soft 404s" - pages that return 200 but show error content
-			if (contentType.toLowerCase().includes("html") && this.isSoft404(response.text, metadata, url)) {
-				throw new Error("Page not found");
+			// Only check if the setting is enabled
+			if (this.settings.showHttpErrorWarnings && 
+				contentType.toLowerCase().includes("html") && 
+				this.isSoft404(response.text, metadata, url)) {
+				throw new Error("Soft 404");
 			}
 
 			return this.finalizeMetadata(url, metadata);
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
-			console.warn(
-				"[inline-link-preview] Failed to fetch metadata for URL",
-				url,
-				errorMessage,
-			);
-			// Return metadata with error flag
-			const fallbackMetadata = this.buildFallbackMetadata(url);
-			return {
-				...this.finalizeMetadata(url, fallbackMetadata),
-				error: errorMessage
-			};
+			
+			// Determine error type
+			// HTTP errors: "HTTP 404", "Request failed, status 404", "Soft 404"
+			// Network errors: "Request timed out", "net::ERR_NAME_NOT_RESOLVED", etc.
+			const isHttpError = errorMessage.startsWith("HTTP ") || 
+			                    errorMessage.includes("status 4") || 
+			                    errorMessage.includes("status 5") || 
+			                    errorMessage === "Soft 404";
+			const isNetworkError = !isHttpError;
+			
+			// Always show network errors, only show HTTP errors if setting is enabled
+			if (isNetworkError || this.settings.showHttpErrorWarnings) {
+				console.warn(
+					"[inline-link-preview] Failed to fetch metadata for URL",
+					url,
+					errorMessage,
+				);
+				// Return metadata with error flag
+				const fallbackMetadata = this.buildFallbackMetadata(url);
+				return {
+					...this.finalizeMetadata(url, fallbackMetadata),
+					error: isNetworkError ? `network:${errorMessage}` : `http:${errorMessage}`
+				};
+			}
+			
+			// HTTP error but warnings disabled - return normal fallback
+			console.log(`[inline-link-preview] HTTP error for ${url}, but warnings are disabled`);
+			return this.finalizeMetadata(url, this.buildFallbackMetadata(url));
 		}
 	}
 

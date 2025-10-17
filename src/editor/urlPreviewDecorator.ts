@@ -189,6 +189,41 @@ class SmallUrlWidget extends WidgetType {
 	}
 }
 
+class ErrorIndicatorWidget extends WidgetType {
+	constructor(private errorType: string) {
+		super();
+	}
+
+	toDOM(): HTMLElement {
+		const span = document.createElement("span");
+		span.className = "inline-url-preview-error-indicator";
+		span.textContent = " ⚠️";
+		
+		// Different tooltip based on error type
+		if (this.errorType.startsWith("network:")) {
+			span.title = "Network error at URL. Cannot generate preview.";
+		} else {
+			span.title = "HTTP error (403/404). Disable warnings in settings.";
+		}
+		
+		span.style.cssText = `
+			font-size: 0.85em;
+			opacity: 0.6;
+			margin-left: 0.25em;
+			cursor: default;
+		`.replace(/\s+/g, ' ').trim();
+		return span;
+	}
+
+	eq(other: ErrorIndicatorWidget): boolean {
+		return other.errorType === this.errorType;
+	}
+
+	ignoreEvent(): boolean {
+		return true;
+	}
+}
+
 class UrlPreviewWidget extends WidgetType {
 	constructor(
 		private url: string,
@@ -636,8 +671,15 @@ export function createUrlPreviewDecorator(
 				}
 
 				// Only show preview if we have metadata or are loading
-				// If there's an error, skip decoration entirely - leave as plain editable URL
-				if (!error && (isLoading || title)) {
+				// If there's an error, add a small warning indicator after the URL
+				if (error) {
+					// Add error indicator widget after the URL
+					const errorWidget = Decoration.widget({
+						widget: new ErrorIndicatorWidget(error),
+						side: 1 // Place after the URL
+					});
+					decorationsToAdd.push({ from: linkEnd, to: linkEnd, decoration: errorWidget });
+				} else if (isLoading || title) {
 					// Collect decoration instead of adding directly to builder
 					const replacementWidget = Decoration.replace({
 						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
@@ -811,8 +853,15 @@ export function createUrlPreviewDecorator(
 				}
 
 				// Only show preview if we have metadata or are loading
-				// If there's an error, skip decoration entirely - leave as plain editable URL
-				if (!error && (isLoading || title)) {
+				// If there's an error, add a small warning indicator after the URL
+				if (error) {
+					// Add error indicator widget after the URL
+					const errorWidget = Decoration.widget({
+						widget: new ErrorIndicatorWidget(error),
+						side: 1 // Place after the URL
+					});
+					decorationsToAdd.push({ from: urlEnd, to: urlEnd, decoration: errorWidget });
+				} else if (isLoading || title) {
 					// Collect decoration instead of adding directly to builder
 					const replacementWidget = Decoration.replace({
 						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),

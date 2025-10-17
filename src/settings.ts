@@ -16,6 +16,7 @@ export interface InlineLinkPreviewSettings {
 	displayMode: DisplayMode;
 	previewColorMode: PreviewColorMode;
 	customPreviewColor: string;
+	showHttpErrorWarnings: boolean;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
@@ -29,6 +30,7 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	displayMode: "block",
 	previewColorMode: "grey",
 	customPreviewColor: "#4a4a4a",
+	showHttpErrorWarnings: true,
 };
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
@@ -216,6 +218,22 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.keepEmoji = value;
 						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("HTTP error warnings")
+			.setDesc("Show a warning indicator (⚠️) for URLs that return HTTP errors (403 Forbidden, 404 Not Found, soft 404s like 'Video Unavailable'). When disabled, only network failures will show warnings.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(settings.showHttpErrorWarnings)
+					.onChange(async (value) => {
+						this.plugin.settings.showHttpErrorWarnings = value;
+						await this.plugin.saveSettings();
+						// Clear cache so detection changes apply immediately
+						this.plugin.linkPreviewService.clearCache();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
 					}),
 			);
 

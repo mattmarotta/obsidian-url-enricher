@@ -202,6 +202,42 @@ Due to a fundamental limitation in CodeMirror's decoration system, typing text i
 
 This is not a bug in the plugin—it's an inherent behavior of CodeMirror's block-level decoration system, which is designed for features like code folding rather than content replacement. The plugin remains completely non-destructive (never modifies your files automatically), so you always have full control over your markdown source.
 
+### URL Error Detection
+
+The plugin detects and flags broken URLs with a small warning indicator (⚠️). URLs with errors remain fully visible and editable—they are not replaced with previews.
+
+**Types of errors detected:**
+
+1. **HTTP Errors** (controllable via "HTTP Error Warnings" setting):
+   - **403 Forbidden** - Site blocks automated requests (common for e-commerce sites with bot protection)
+   - **404 Not Found** - Page doesn't exist or URL is incorrect
+   - **500 Server Error** - Website server encountered an error
+   - **Soft 404s** - Page returns 200 OK but shows error content:
+     - Reddit: "page not found", "this community doesn't exist"
+     - YouTube: "video unavailable", "video has been removed"
+     - Generic pages with titles like "404 Not Found"
+
+2. **Network Errors** (always shown):
+   - **DNS resolution failure** - Domain doesn't exist
+   - **Connection timeout** - Can't reach the server
+   - **SSL/TLS errors** - Certificate problems
+   - **No internet connection** - You're offline
+
+**Controlling error warnings:**
+
+Go to **Settings → Inline Link Preview → Preview Content → HTTP Error Warnings**:
+- **Enabled (default)**: Show ⚠️ for both HTTP errors and network failures
+- **Disabled**: Only show ⚠️ for network failures; HTTP errors will attempt to show previews with fallback titles
+
+**Error indicator tooltips:**
+- HTTP errors: "Check URL. Cannot generate preview. Disable with HTTP Error Warnings setting."
+- Network errors: "Check URL. Cannot generate preview due to network error."
+
+**When to disable HTTP error warnings:**
+- Sites that block bots (403 Forbidden) but you know the URL is correct
+- You prefer to see fallback previews even for potentially broken pages
+- You want to manually verify which URLs are actually broken
+
 ## Privacy and network usage
 
 To build a preview, the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 32x32 resolution for consistent, high-quality icons across all sites. URLs are sent directly to their target domains; no additional third-party metadata service is used.
