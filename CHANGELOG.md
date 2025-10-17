@@ -7,7 +7,8 @@ All notable changes to the Inline Link Preview plugin will be documented in this
 ### Breaking Changes
 - **Removed all conversion/paste functionality** - The plugin is now 100% non-destructive
 - **Removed favicon decorator** - No longer adds favicons to `[text](url)` markdown links (only decorates bare URLs)
-- **Removed URL display mode setting** - URL display is now automatic: cards show small editable URLs, bubbles hide URLs entirely
+- **Removed URL display mode setting** - URL display is now automatic: cards show small editable URLs below the card, bubbles hide URLs entirely
+- **Card layout change** - URLs now appear below the card preview as editable text, not inside the card footer
 - Removed "Convert links on paste" setting
 - Removed command palette commands:
   - "Convert selection to inline preview"
@@ -62,6 +63,10 @@ All notable changes to the Inline Link Preview plugin will be documented in this
 
 ### Fixed
 - **Blurry favicons completely resolved** - Removed interfering CSS properties, using Chromium's default high-quality scaling
+- **Card URLs now appear below the card** - Card preview appears above, URL below as editable text with same styling as previous footer
+- **URLs are fully editable in card mode** - Users can click and modify URLs directly below the card
+- **Better visual hierarchy** - Clear separation between preview (card) and source (URL)
+- **Click behavior fixed** - Clicking cards/bubbles now opens URLs instead of editing them; clicking URL text allows editing
 - **Wikipedia shows full context** - Now displays 3-sentence extracts (300 chars) instead of short descriptions
 - **Reddit bubble format** - Now shows `r/Subreddit — Post Title` (subreddit first for context)
 - **Reddit card layout** - Structured layout with subreddit in header, post title, then content
