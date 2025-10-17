@@ -198,7 +198,8 @@ class UrlPreviewWidget extends WidgetType {
 		private isLoading: boolean,
 		private previewStyle: PreviewStyle,
 		private displayMode: DisplayMode,
-		private maxLength: number
+		private maxLength: number,
+		private error: string | null = null
 	) {
 		super();
 	}
@@ -416,7 +417,8 @@ class UrlPreviewWidget extends WidgetType {
 			other.faviconUrl === this.faviconUrl &&
 			other.isLoading === this.isLoading &&
 			other.previewStyle === this.previewStyle &&
-			other.displayMode === this.displayMode
+			other.displayMode === this.displayMode &&
+			other.error === this.error
 		);
 	}
 
@@ -571,6 +573,7 @@ export function createUrlPreviewDecorator(
 				let description: string | null = null;
 				let faviconUrl: string | null = null;
 				let isLoading = false;
+				let error: string | null = null;
 				
 				// Calculate max length based on preview style
 				const maxLength = (previewStyle === "card" 
@@ -627,15 +630,17 @@ export function createUrlPreviewDecorator(
 					}
 
 					faviconUrl = showFavicon ? metadata.favicon : null;
+					error = metadata.error || null;
 				} else if (this.pendingUpdates.has(url)) {
 					isLoading = true;
 				}
 
 				// Only show preview if we have metadata or are loading
-				if (isLoading || title) {
+				// If there's an error, skip decoration entirely - leave as plain editable URL
+				if (!error && (isLoading || title)) {
 					// Collect decoration instead of adding directly to builder
 					const replacementWidget = Decoration.replace({
-						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
+						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 					});
 					decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: replacementWidget });
 				}
@@ -646,16 +651,10 @@ export function createUrlPreviewDecorator(
 			const urlRegex = /https?:\/\/[^\s)\]]+/g;
 			let match;
 
-			console.log('[Inline Link Preview] Starting bare URL pass, already processed ranges:', Array.from(processedRanges));
-
 			while ((match = urlRegex.exec(text)) !== null) {
 				const url = match[0];
 				const urlStart = match.index;
 				const urlEnd = urlStart + url.length;
-				
-				console.log('[Inline Link Preview] Found URL:', url, 'at', urlStart, '-', urlEnd);
-				
-				console.log('[Inline Link Preview] Found URL:', url, 'at', urlStart, '-', urlEnd);
 				
 				// Skip if this URL overlaps with any already-processed range (from markdown links)
 				let overlapsExisting = false;
@@ -664,12 +663,10 @@ export function createUrlPreviewDecorator(
 					// Check if ranges overlap: (start1 < end2) && (start2 < end1)
 					if (urlStart < existingEnd && existingStart < urlEnd) {
 						overlapsExisting = true;
-						console.log('[Inline Link Preview] URL overlaps with processed range:', existingKey);
 						break;
 					}
 				}
 				if (overlapsExisting) {
-					console.log('[Inline Link Preview] Skipping URL due to overlap');
 					continue;
 				}
 				
@@ -757,6 +754,7 @@ export function createUrlPreviewDecorator(
 					let description: string | null = null;
 					let faviconUrl: string | null = null;
 					let isLoading = false;
+					let error: string | null = null;
 					
 					// Calculate max length based on preview style
 					const maxLength = (previewStyle === "card" 
@@ -807,15 +805,17 @@ export function createUrlPreviewDecorator(
 						}
 
 						faviconUrl = showFavicon ? metadata.favicon : null;
+						error = metadata.error || null;
 					} else if (this.pendingUpdates.has(url)) {
 					isLoading = true;
 				}
 
 				// Only show preview if we have metadata or are loading
-				if (isLoading || title) {
+				// If there's an error, skip decoration entirely - leave as plain editable URL
+				if (!error && (isLoading || title)) {
 					// Collect decoration instead of adding directly to builder
 					const replacementWidget = Decoration.replace({
-						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
+						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 					});
 					decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: replacementWidget });
 				}

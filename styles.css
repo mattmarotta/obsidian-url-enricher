@@ -298,3 +298,40 @@ a.inline-url-preview-small-url,
 	white-space: normal;
 	word-wrap: break-word;
 }
+
+/* Error State Styles */
+.inline-url-preview--error {
+	/* Subtle error indication - don't change background dramatically */
+	opacity: 0.85;
+}
+
+.inline-url-preview--error:hover {
+	opacity: 1;
+}
+
+.inline-url-preview__error-indicator {
+	/* Position for card style is set inline */
+	display: inline-block;
+}
+
+/* Card-specific error positioning */
+.inline-url-preview--card.inline-url-preview--error {
+	position: relative;
+}
+
+.inline-url-preview__error-title {
+	font-weight: 600;
+	color: var(--text-error);
+}
+
+.inline-url-preview__error-url {
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	color: var(--text-muted);
+}
+
+.inline-url-preview__error-hint {
+	font-size: 0.75em;
+	color: var(--text-faint);
+	font-style: italic;
+}

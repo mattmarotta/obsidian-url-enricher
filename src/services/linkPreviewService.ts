@@ -93,14 +93,25 @@ export class LinkPreviewService {
 					? this.buildFallbackMetadata(url)
 					: this.parseHtmlMetadata(this.getHeader(response, "x-final-url") ?? url, response.text);
 
+			// Check for "soft 404s" - pages that return 200 but show error content
+			if (contentType.toLowerCase().includes("html") && this.isSoft404(response.text, metadata, url)) {
+				throw new Error("Page not found");
+			}
+
 			return this.finalizeMetadata(url, metadata);
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error);
 			console.warn(
 				"[inline-link-preview] Failed to fetch metadata for URL",
 				url,
-				error instanceof Error ? error.message : error,
+				errorMessage,
 			);
-			return this.finalizeMetadata(url, this.buildFallbackMetadata(url));
+			// Return metadata with error flag
+			const fallbackMetadata = this.buildFallbackMetadata(url);
+			return {
+				...this.finalizeMetadata(url, fallbackMetadata),
+				error: errorMessage
+			};
 		}
 	}
 
@@ -164,6 +175,61 @@ export class LinkPreviewService {
 			}
 		}
 		return undefined;
+	}
+
+	/**
+	 * Detects "soft 404s" - pages that return 200 OK but show error content
+	 * Common patterns:
+	 * - Reddit: "page not found", "this community doesn't exist"
+	 * - YouTube: "video unavailable", "this video isn't available"
+	 * - Generic: "404", "not found", "page not found", etc.
+	 */
+	private isSoft404(html: string, metadata: ParsedMetadata, url: string): boolean {
+		const lowerHtml = html.toLowerCase();
+		const title = (metadata.title || "").toLowerCase();
+		const description = (metadata.description || "").toLowerCase();
+		
+		// Reddit-specific patterns
+		if (url.includes("reddit.com")) {
+			if (title.includes("page not found") || 
+				title.includes("this community doesn't exist") ||
+				description.includes("page not found") ||
+				lowerHtml.includes("sorry, nobody on reddit goes by that name")) {
+				return true;
+			}
+		}
+		
+		// YouTube-specific patterns
+		if (url.includes("youtube.com") || url.includes("youtu.be")) {
+			if (title.includes("video unavailable") ||
+				description.includes("video isn't available") ||
+				description.includes("video has been removed") ||
+				lowerHtml.includes("this video isn't available")) {
+				return true;
+			}
+		}
+		
+		// Generic patterns - only check title to avoid false positives
+		// Must be very specific to avoid catching legitimate pages
+		const titleErrorPatterns = [
+			"404",
+			"not found",
+			"page not found",
+			"404 error"
+		];
+		
+		// Only flag as error if title EXACTLY matches or STARTS WITH these patterns
+		for (const pattern of titleErrorPatterns) {
+			if (title === pattern || 
+				title.startsWith(pattern + " ") || 
+				title.startsWith(pattern + "|") ||
+				title.startsWith(pattern + "-") ||
+				title.startsWith(pattern + ":")) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 	private async performRequest(request: RequestUrlParam): Promise<RequestUrlResponse> {
