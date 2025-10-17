@@ -521,17 +521,157 @@ export function createUrlPreviewDecorator(
 			// Get syntax tree for markdown context detection
 			const tree = syntaxTree(view.state);
 
-			// Match bare URLs (not already in markdown link syntax)
-			// This regex looks for URLs that are NOT preceded by ]( and followed by )
-			const urlRegex = /(?<!\]\()(?:https?:\/\/[^\s)\]]+)(?!\))/g;
+			// Collect all decorations first, then sort them before adding to builder
+			// This is required because RangeSetBuilder needs decorations in sorted order
+			const decorationsToAdd: Array<{ from: number; to: number; decoration: Decoration }> = [];
+			const processedRanges = new Set<string>();
+
+			// First pass: Match markdown links like [url](url) or [text](url)
+			// Pattern: [anything](http://... or https://...)
+			const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+			let markdownMatch;
+
+			while ((markdownMatch = markdownLinkRegex.exec(text)) !== null) {
+				const fullMatch = markdownMatch[0]; // e.g., "[text](url)"
+				const linkText = markdownMatch[1]; // e.g., "text" or "url"
+				const url = markdownMatch[2]; // e.g., "https://example.com"
+				const linkStart = markdownMatch.index;
+				const linkEnd = linkStart + fullMatch.length;
+				
+				const rangeKey = `${linkStart}-${linkEnd}`;
+				if (processedRanges.has(rangeKey)) {
+					continue;
+				}
+				processedRanges.add(rangeKey);
+				
+				// Check for image syntax ![alt](url) - skip images
+				if (linkStart > 0 && text[linkStart - 1] === '!') {
+					continue;
+				}
+				
+				// Check for inline code context using syntax tree
+				const node = tree.resolveInner(linkStart, 1);
+				if (node.type.name === "InlineCode" || node.parent?.type.name === "InlineCode") {
+					continue;
+				}
+				
+				// Check for code block
+				if (node.type.name === "CodeText" || node.parent?.type.name === "FencedCode") {
+					continue;
+				}
+
+				// Queue metadata fetch for the URL
+				this.queueMetadataFetch(url, view);
+
+				// Try to get cached metadata
+				const cache = (service as any).cache as Map<string, any> | undefined;
+				const metadata = cache?.get(url);
+
+				let title: string | null = null;
+				let description: string | null = null;
+				let faviconUrl: string | null = null;
+				let isLoading = false;
+				
+				// Calculate max length based on preview style
+				const maxLength = (previewStyle === "card" 
+					? maxCardLength 
+					: maxBubbleLength) as unknown;
+				let maxLengthValue: number;
+				if (typeof maxLength === "string") {
+					maxLengthValue = Number(maxLength);
+				} else if (typeof maxLength === "number") {
+					maxLengthValue = maxLength;
+				} else {
+					// Default: 300 for cards, 150 for bubbles
+					maxLengthValue = previewStyle === "card" ? 300 : 150;
+				}
+				const limit = Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? 300 : 150);
+
+				if (metadata) {
+					// Use custom link text if it's not the same as the URL
+					if (linkText !== url) {
+						// Custom text provided - use it as title
+						title = sanitizeLinkText(linkText, keepEmoji);
+					} else {
+						// linkText is the URL - use metadata title
+						title = metadata.title
+							? sanitizeLinkText(metadata.title, keepEmoji)
+							: deriveTitleFromUrl(url);
+					}
+
+					description = metadata.description
+						? sanitizeLinkText(metadata.description, keepEmoji)
+						: null;
+
+					// Remove description if it's the same as title
+					if (description && equalsIgnoreCase(description, title)) {
+						description = null;
+					}
+
+					// Truncate to fit within maximum length for preview style
+					if (description && limit > 0) {
+						const combined = `${title} — ${description}`;
+						if (combined.length > limit) {
+							const titleLength = title.length + 3; // " — "
+							const remainingLength = limit - titleLength;
+							if (remainingLength > 10) {
+								description = truncate(description, remainingLength);
+							} else {
+								description = null;
+							}
+						}
+					}
+
+					if (!includeDescription || limit === 0) {
+						description = null;
+					}
+
+					faviconUrl = showFavicon ? metadata.favicon : null;
+				} else if (this.pendingUpdates.has(url)) {
+					isLoading = true;
+				}
+
+				// Only show preview if we have metadata or are loading
+				if (isLoading || title) {
+					// Collect decoration instead of adding directly to builder
+					const replacementWidget = Decoration.replace({
+						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
+					});
+					decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: replacementWidget });
+				}
+			}
+
+			// Second pass: Match bare URLs (not already in markdown link syntax)
+			// Simple regex to find all HTTP/HTTPS URLs - we'll filter out markdown links with our overlap check
+			const urlRegex = /https?:\/\/[^\s)\]]+/g;
 			let match;
 
-			const processedRanges = new Set<string>();
+			console.log('[Inline Link Preview] Starting bare URL pass, already processed ranges:', Array.from(processedRanges));
 
 			while ((match = urlRegex.exec(text)) !== null) {
 				const url = match[0];
 				const urlStart = match.index;
 				const urlEnd = urlStart + url.length;
+				
+				console.log('[Inline Link Preview] Found URL:', url, 'at', urlStart, '-', urlEnd);
+				
+				console.log('[Inline Link Preview] Found URL:', url, 'at', urlStart, '-', urlEnd);
+				
+				// Skip if this URL overlaps with any already-processed range (from markdown links)
+				let overlapsExisting = false;
+				for (const existingKey of processedRanges) {
+					const [existingStart, existingEnd] = existingKey.split('-').map(Number);
+					// Check if ranges overlap: (start1 < end2) && (start2 < end1)
+					if (urlStart < existingEnd && existingStart < urlEnd) {
+						overlapsExisting = true;
+						console.log('[Inline Link Preview] URL overlaps with processed range:', existingKey);
+						break;
+					}
+				}
+				if (overlapsExisting) {
+					console.log('[Inline Link Preview] Skipping URL due to overlap');
+					continue;
+				}
 				
 				// Only decorate URLs that are properly bounded (start of line, or preceded by whitespace)
 				if (urlStart > 0) {
@@ -543,7 +683,7 @@ export function createUrlPreviewDecorator(
 				
 				const rangeKey = `${urlStart}-${urlEnd}`;
 
-				// Skip if we've already processed this range
+				// Skip if we've already processed this exact range
 				if (processedRanges.has(rangeKey)) {
 					continue;
 				}
@@ -673,21 +813,20 @@ export function createUrlPreviewDecorator(
 
 				// Only show preview if we have metadata or are loading
 				if (isLoading || title) {
-					
-					if (previewStyle === "bubble") {
-						// Bubbles: Hide the URL completely and show only the preview
-						const replacementWidget = Decoration.replace({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
-						});
-						builder.add(urlStart, urlEnd, replacementWidget);
-					} else {
-						// Cards: Hide the URL and show card with URL inside at bottom
-						const replacementWidget = Decoration.replace({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
-						});
-						builder.add(urlStart, urlEnd, replacementWidget);
-					}
+					// Collect decoration instead of adding directly to builder
+					const replacementWidget = Decoration.replace({
+						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit),
+					});
+					decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: replacementWidget });
 				}
+			}
+
+			// Sort decorations by position (required by RangeSetBuilder)
+			decorationsToAdd.sort((a, b) => a.from - b.from);
+
+			// Add all decorations to builder in sorted order
+			for (const { from, to, decoration } of decorationsToAdd) {
+				builder.add(from, to, decoration);
 			}
 
 			return builder.finish();
