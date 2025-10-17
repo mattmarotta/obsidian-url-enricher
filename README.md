@@ -211,7 +211,7 @@ The plugin detects and flags broken URLs with a small warning indicator (⚠️)
 1. **HTTP Errors** (controllable via "HTTP Error Warnings" setting):
    - **403 Forbidden** - Site blocks automated requests (common for e-commerce sites with bot protection)
    - **404 Not Found** - Page doesn't exist or URL is incorrect
-   - **500 Server Error** - Website server encountered an error
+   - **500+ Server Error** - Website server encountered an error
    - **Soft 404s** - Page returns 200 OK but shows error content:
      - Reddit: "page not found", "this community doesn't exist"
      - YouTube: "video unavailable", "video has been removed"
@@ -227,16 +227,16 @@ The plugin detects and flags broken URLs with a small warning indicator (⚠️)
 
 Go to **Settings → Inline Link Preview → Preview Content → HTTP Error Warnings**:
 - **Enabled (default)**: Show ⚠️ for both HTTP errors and network failures
-- **Disabled**: Only show ⚠️ for network failures; HTTP errors will attempt to show previews with fallback titles
+- **Disabled**: Only show ⚠️ for network failures; HTTP errors will show fallback previews without warnings
 
 **Error indicator tooltips:**
-- HTTP errors: "Check URL. Cannot generate preview. Disable with HTTP Error Warnings setting."
-- Network errors: "Check URL. Cannot generate preview due to network error."
+- **HTTP errors**: "HTTP error (403/404). Disable warnings in settings."
+- **Network errors**: "Network error at URL. Cannot generate preview."
 
 **When to disable HTTP error warnings:**
-- Sites that block bots (403 Forbidden) but you know the URL is correct
+- Sites that block bots (403 Forbidden) but you know the URL is valid
 - You prefer to see fallback previews even for potentially broken pages
-- You want to manually verify which URLs are actually broken
+- You want to reduce visual clutter and manually verify broken URLs yourself
 
 ## Privacy and network usage
 
