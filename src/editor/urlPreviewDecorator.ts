@@ -511,8 +511,13 @@ export function createUrlPreviewDecorator(
 			}
 
 			update(update: ViewUpdate): void {
-				// Rebuild if doc changed, viewport changed, OR if we received a refresh effect
-				if (update.docChanged || update.viewportChanged || update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))) {
+				// Check if Live Preview mode changed
+				const wasLivePreview = update.startState.field(editorLivePreviewField);
+				const isLivePreview = update.state.field(editorLivePreviewField);
+				const modeChanged = wasLivePreview !== isLivePreview;
+				
+				// Rebuild if doc changed, viewport changed, mode changed, OR if we received a refresh effect
+				if (update.docChanged || update.viewportChanged || modeChanged || update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))) {
 					this.decorations = this.buildDecorations(update.view);
 				}
 			}
