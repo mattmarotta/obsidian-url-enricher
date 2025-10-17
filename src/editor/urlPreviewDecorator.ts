@@ -516,8 +516,11 @@ export function createUrlPreviewDecorator(
 				const isLivePreview = update.state.field(editorLivePreviewField);
 				const modeChanged = wasLivePreview !== isLivePreview;
 				
-				// Rebuild if doc changed, viewport changed, mode changed, OR if we received a refresh effect
-				if (update.docChanged || update.viewportChanged || modeChanged || update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))) {
+				// Check if selection (cursor position) changed
+				const selectionChanged = update.selectionSet;
+				
+				// Rebuild if doc changed, viewport changed, mode changed, selection changed, OR if we received a refresh effect
+				if (update.docChanged || update.viewportChanged || modeChanged || selectionChanged || update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))) {
 					this.decorations = this.buildDecorations(update.view);
 				}
 			}
@@ -568,7 +571,125 @@ export function createUrlPreviewDecorator(
 			const decorationsToAdd: Array<{ from: number; to: number; decoration: Decoration }> = [];
 			const processedRanges = new Set<string>();
 
-			// First pass: Match markdown links like [url](url) or [text](url)
+			// First pass: Match wikilink-formatted URLs like [[https://...]]
+			// Only match if there's an actual URL inside the brackets (not page names)
+			const wikilinkUrlRegex = /\[\[(https?:\/\/[^\]]+)\]\]/g;
+			let wikilinkMatch;
+
+			while ((wikilinkMatch = wikilinkUrlRegex.exec(text)) !== null) {
+				const fullMatch = wikilinkMatch[0]; // e.g., "[[https://example.com]]"
+				const url = wikilinkMatch[1]; // e.g., "https://example.com"
+				const linkStart = wikilinkMatch.index;
+				const linkEnd = linkStart + fullMatch.length;
+				
+				const rangeKey = `${linkStart}-${linkEnd}`;
+				if (processedRanges.has(rangeKey)) {
+					continue;
+				}
+				processedRanges.add(rangeKey);
+				
+				// Skip if cursor is inside this wikilink (user is actively editing)
+				const cursorPos = view.state.selection.main.head;
+				if (cursorPos >= linkStart && cursorPos <= linkEnd) {
+					continue;
+				}
+				
+				// Check for inline code context using syntax tree
+				const node = tree.resolveInner(linkStart, 1);
+				if (node.type.name === "InlineCode" || node.parent?.type.name === "InlineCode") {
+					continue;
+				}
+				
+				// Check for code block
+				if (node.type.name === "CodeText" || node.parent?.type.name === "FencedCode") {
+					continue;
+				}
+
+				// Queue metadata fetch for the URL
+				this.queueMetadataFetch(url, view);
+
+				// Try to get cached metadata
+				const cache = (service as any).cache as Map<string, any> | undefined;
+				const metadata = cache?.get(url);
+
+				let title: string | null = null;
+				let description: string | null = null;
+				let faviconUrl: string | null = null;
+				let isLoading = false;
+				let error: string | null = null;
+				
+				// Calculate max length based on preview style
+				const maxLength = (previewStyle === "card" 
+					? maxCardLength 
+					: maxBubbleLength) as unknown;
+				let maxLengthValue: number;
+				if (typeof maxLength === "string") {
+					maxLengthValue = Number(maxLength);
+				} else if (typeof maxLength === "number") {
+					maxLengthValue = maxLength;
+				} else {
+					// Default: 300 for cards, 150 for bubbles
+					maxLengthValue = previewStyle === "card" ? 300 : 150;
+				}
+				const limit = Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? 300 : 150);
+
+				if (metadata) {
+					title = metadata.title
+						? sanitizeLinkText(metadata.title, keepEmoji)
+						: deriveTitleFromUrl(url);
+
+					description = metadata.description
+						? sanitizeLinkText(metadata.description, keepEmoji)
+						: null;
+
+					// Remove description if it's the same as title
+					if (description && equalsIgnoreCase(description, title)) {
+						description = null;
+					}
+
+					// Truncate to fit within maximum length for preview style
+					if (description && limit > 0) {
+						const combined = `${title} — ${description}`;
+						if (combined.length > limit) {
+							const titleLength = title.length + 3; // " — "
+							const remainingLength = limit - titleLength;
+							if (remainingLength > 10) {
+								description = truncate(description, remainingLength);
+							} else {
+								description = null;
+							}
+						}
+					}
+
+					if (!includeDescription || limit === 0) {
+						description = null;
+					}
+
+					faviconUrl = showFavicon ? metadata.favicon : null;
+					error = metadata.error || null;
+				} else if (this.pendingUpdates.has(url)) {
+					isLoading = true;
+				}
+
+				// Only show preview if we have metadata or are loading
+				// If there's an error, add a small warning indicator after the URL
+				if (error) {
+					// Add error indicator widget after the URL
+					const errorWidget = Decoration.widget({
+						widget: new ErrorIndicatorWidget(error),
+						side: 1 // Place after the URL
+					});
+					decorationsToAdd.push({ from: linkEnd, to: linkEnd, decoration: errorWidget });
+				} else if (isLoading || title) {
+					// Collect decoration instead of adding directly to builder
+					const replacementWidget = Decoration.replace({
+						widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+					});
+					decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: replacementWidget });
+				}
+			}
+
+			// Second pass: Match markdown links like [url](url) or [text](url)
 			// Pattern: [anything](http://... or https://...)
 			const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
 			let markdownMatch;
@@ -585,6 +706,12 @@ export function createUrlPreviewDecorator(
 					continue;
 				}
 				processedRanges.add(rangeKey);
+				
+				// Skip if cursor is inside this markdown link (user is actively editing)
+				const cursorPos = view.state.selection.main.head;
+				if (cursorPos >= linkStart && cursorPos <= linkEnd) {
+					continue;
+				}
 				
 				// Check for image syntax ![alt](url) - skip images
 				if (linkStart > 0 && text[linkStart - 1] === '!') {
@@ -693,7 +820,7 @@ export function createUrlPreviewDecorator(
 				}
 			}
 
-			// Second pass: Match bare URLs (not already in markdown link syntax)
+			// Third pass: Match bare URLs (not already in markdown link syntax)
 			// Simple regex to find all HTTP/HTTPS URLs - we'll filter out markdown links with our overlap check
 			const urlRegex = /https?:\/\/[^\s)\]]+/g;
 			let match;
@@ -703,7 +830,7 @@ export function createUrlPreviewDecorator(
 				const urlStart = match.index;
 				const urlEnd = urlStart + url.length;
 				
-				// Skip if this URL overlaps with any already-processed range (from markdown links)
+				// Skip if this URL overlaps with any already-processed range (from wikilinks or markdown links)
 				let overlapsExisting = false;
 				for (const existingKey of processedRanges) {
 					const [existingStart, existingEnd] = existingKey.split('-').map(Number);
@@ -714,6 +841,12 @@ export function createUrlPreviewDecorator(
 					}
 				}
 				if (overlapsExisting) {
+					continue;
+				}
+				
+				// Skip if cursor is inside this bare URL (user is actively typing)
+				const cursorPos = view.state.selection.main.head;
+				if (cursorPos >= urlStart && cursorPos <= urlEnd) {
 					continue;
 				}
 				

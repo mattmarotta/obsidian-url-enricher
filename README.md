@@ -43,14 +43,31 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
   - Domain-aware enrichments for Google Search and Reddit links
 - **Real-Time Updates**: Settings changes apply immediately without page navigation
 - **Clickable Previews**: All preview bubbles and cards are clickable to open URLs
-- **Smart Context Detection**: Automatically skips URLs in:
-  - Markdown links `[text](url)`
+- **Cursor-Aware Previews**: Previews instantly hide when cursor is inside a URL, preventing accidental edits and providing clear visual feedback during editing
+- **Smart Context Detection**: Automatically generates previews for:
+  - Bare URLs: `https://example.com`
+  - Markdown links: `[text](https://example.com)` or `[https://example.com](https://example.com)`
+  - Wikilinks with URLs: `[[https://example.com]]` (URL only, not page names like `[[My Page]]`)
+  
+  And skips URLs in:
   - Image embeds `![alt](url)`
   - Code blocks and inline code
 - **Persistent Caching**: Favicons cached for 30 days to minimize network requests
 - **YouTube-Friendly**: Treats YouTube links as standard previews, avoiding unwanted embeds
 
 ## Usage
+
+### Supported URL Formats
+The plugin automatically generates previews for URLs in these formats:
+
+1. **Bare URLs**: `https://example.com`
+2. **Markdown links**: 
+   - `[text](https://example.com)` - uses "text" as the title
+   - `[https://example.com](https://example.com)` - fetches metadata title
+3. **Wikilinks with URLs**: `[[https://example.com]]`
+   - ⚠️ **Important**: Only URLs are supported, not Obsidian page names
+   - ✅ Works: `[[https://github.com]]` (actual URL)
+   - ❌ Doesn't work: `[[My Page]]` (page name - normal wikilink behavior)
 
 ### Basic Usage
 1. Paste or type a bare URL in your note: `https://github.com`
@@ -180,27 +197,51 @@ For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTE
 
 Changes apply immediately to future previews and when you navigate between notes.
 
-## Known Limitations
+## Cursor-Aware Previews
 
-### Typing After URL Previews
+One of the plugin's most powerful UX features is **cursor-aware preview rendering**. Previews automatically hide when you position your cursor inside a URL, giving you instant visual feedback that you're editing the raw URL.
 
-Due to a fundamental limitation in CodeMirror's decoration system, typing text immediately after a URL preview (without first pressing Enter or Space) may cause that text to become part of the URL in your markdown source.
+### How It Works
 
-**Example of the issue:**
-1. You paste a URL: `https://example.com`
-2. The preview appears in Live Preview mode
-3. You position your cursor after the preview and start typing `more text`
-4. Result: Your markdown source becomes `https://example.commore text` (URL corrupted)
+**When cursor is outside a URL:**
+- URL shows rich preview with title, description, and favicon
+- `https://github.com` → 🎨 **GitHub Preview Card**
 
-**Best practice to avoid this:**
-- **Always press Enter or Space after pasting a URL** before typing additional content
-- This ensures proper separation between the URL and following text
+**When cursor is inside a URL:**
+- Preview instantly disappears, showing raw URL
+- `https://github.com|` ← Raw URL visible, ready to edit
 
-**If you encounter corrupted URLs:**
-- Switch to Source mode and manually separate the URL from the following text with a space or newline
-- The preview will then render correctly
+**When cursor moves away:**
+- Preview automatically returns
+- `https://github.com` → 🎨 **GitHub Preview Card**
 
-This is not a bug in the plugin—it's an inherent behavior of CodeMirror's block-level decoration system, which is designed for features like code folding rather than content replacement. The plugin remains completely non-destructive (never modifies your files automatically), so you always have full control over your markdown source.
+### Why This Matters for UX
+
+1. **Prevents Accidental Edits**
+   - You can't accidentally modify a URL without seeing it first
+   - Clear visual distinction between "viewing" and "editing" states
+
+2. **No URL Corruption**
+   - When cursor is at the end of a URL, you immediately see the raw URL
+   - Prevents typing text that accidentally becomes part of the URL
+   - No need to guess if you're about to edit the URL or type after it
+
+3. **Familiar Editing Pattern**
+   - Works like inline code, LaTeX, or other "expandable" elements in many editors
+   - Click to edit, click away to see preview
+   - Intuitive for users familiar with modern editing tools
+
+4. **Uninterrupted Typing**
+   - Type `[[https://www.amaz` without previews appearing mid-typing
+   - Preview only appears when you move cursor away
+   - No jarring visual changes while composing
+
+5. **Easy URL Corrections**
+   - Click anywhere in a preview to instantly see and edit the raw URL
+   - Make changes, move cursor away → preview updates automatically
+   - Fast iteration when fixing typos or updating links
+
+This behavior applies to all URL formats: bare URLs, markdown links `[text](url)`, and wikilinks `[[url]]`.
 
 ### URL Error Detection
 
