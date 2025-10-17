@@ -532,6 +532,15 @@ export function createUrlPreviewDecorator(
 				const url = match[0];
 				const urlStart = match.index;
 				const urlEnd = urlStart + url.length;
+				
+				// Only decorate URLs that are properly bounded (start of line, or preceded by whitespace)
+				if (urlStart > 0) {
+					const charBefore = text[urlStart - 1];
+					if (charBefore && !/[\s\n\r\t]/.test(charBefore)) {
+						continue; // Skip URLs not preceded by whitespace
+					}
+				}
+				
 				const rangeKey = `${urlStart}-${urlEnd}`;
 
 				// Skip if we've already processed this range
