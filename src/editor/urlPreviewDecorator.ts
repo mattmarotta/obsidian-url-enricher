@@ -192,6 +192,7 @@ class UrlPreviewWidget extends WidgetType {
 		private previewStyle: PreviewStyle,
 		private displayMode: DisplayMode,
 		private maxLength: number,
+		private siteName: string | null = null,
 		private error: string | null = null
 	) {
 		super();
@@ -391,6 +392,50 @@ class UrlPreviewWidget extends WidgetType {
 
 		container.appendChild(textContainer);
 		
+		// Add site name footer for card mode
+		if (this.previewStyle === "card") {
+			let siteName = this.siteName; // Try metadata first
+			
+			// Fallback to extracting from URL if metadata doesn't provide site name
+			if (!siteName) {
+				try {
+					const parsed = new URL(this.url);
+					siteName = parsed.hostname;
+					
+					// Remove www. prefix if present
+					if (siteName.startsWith('www.')) {
+						siteName = siteName.substring(4);
+					}
+					
+					// Extract the main domain name (before the TLD)
+					// For example: anthropic.com -> ANTHROPIC, reddit.com -> REDDIT
+					const parts = siteName.split('.');
+					if (parts.length >= 2) {
+						siteName = parts[0]; // Take first part (main domain)
+					}
+				} catch (e) {
+					// If URL parsing fails, skip the footer
+					siteName = null;
+				}
+			}
+			
+			if (siteName) {
+				const footer = document.createElement("div");
+				footer.className = "inline-url-preview__footer";
+				footer.textContent = siteName.toUpperCase();
+				footer.style.cssText = `
+					font-size: 0.7em;
+					color: var(--text-muted);
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-top: 0.6em;
+					opacity: 0.6;
+				`.replace(/\s+/g, ' ').trim();
+				
+				container.appendChild(footer);
+			}
+		}
+		
 		// Note: URL footer removed - URL now appears below card as editable text
 		
 		wrapper.appendChild(container);
@@ -406,6 +451,7 @@ class UrlPreviewWidget extends WidgetType {
 			other.isLoading === this.isLoading &&
 			other.previewStyle === this.previewStyle &&
 			other.displayMode === this.displayMode &&
+			other.siteName === this.siteName &&
 			other.error === this.error
 		);
 	}
@@ -571,6 +617,7 @@ export function createUrlPreviewDecorator(
 				let title: string | null = null;
 				let description: string | null = null;
 				let faviconUrl: string | null = null;
+				let siteName: string | null = null;
 				let isLoading = false;
 				let error: string | null = null;
 				
@@ -622,6 +669,7 @@ export function createUrlPreviewDecorator(
 					}
 
 					faviconUrl = showFavicon ? metadata.favicon : null;
+					siteName = metadata.siteName || null;
 					error = metadata.error || null;
 				} else if (this.pendingUpdates.has(url)) {
 					isLoading = true;
@@ -640,7 +688,7 @@ export function createUrlPreviewDecorator(
 					if (previewStyle === "card") {
 						// Card mode: Show card ABOVE the URL, leave URL as-is
 						const cardWidget = Decoration.widget({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, siteName, error),
 							side: -1, // Place widget BEFORE the URL
 							block: displayMode === "block"
 						});
@@ -662,7 +710,7 @@ export function createUrlPreviewDecorator(
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, siteName, error),
 						});
 						decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: replacementWidget });
 					}
@@ -720,6 +768,7 @@ export function createUrlPreviewDecorator(
 				let title: string | null = null;
 				let description: string | null = null;
 				let faviconUrl: string | null = null;
+				let siteName: string | null = null;
 				let isLoading = false;
 				let error: string | null = null;
 				
@@ -778,6 +827,7 @@ export function createUrlPreviewDecorator(
 					}
 
 					faviconUrl = showFavicon ? metadata.favicon : null;
+					siteName = metadata.siteName || null;
 					error = metadata.error || null;
 				} else if (this.pendingUpdates.has(url)) {
 					isLoading = true;
@@ -796,7 +846,7 @@ export function createUrlPreviewDecorator(
 					if (previewStyle === "card") {
 						// Card mode: Show card ABOVE the URL, leave URL as-is
 						const cardWidget = Decoration.widget({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, siteName, error),
 							side: -1, // Place widget BEFORE the URL
 							block: displayMode === "block"
 						});
@@ -818,7 +868,7 @@ export function createUrlPreviewDecorator(
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, siteName, error),
 						});
 						decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: replacementWidget });
 					}
@@ -939,6 +989,7 @@ export function createUrlPreviewDecorator(
 					let title: string | null = null;
 					let description: string | null = null;
 					let faviconUrl: string | null = null;
+					let siteName: string | null = null;
 					let isLoading = false;
 					let error: string | null = null;
 					
@@ -991,6 +1042,7 @@ export function createUrlPreviewDecorator(
 						}
 
 						faviconUrl = showFavicon ? metadata.favicon : null;
+						siteName = metadata.siteName || null;
 						error = metadata.error || null;
 					} else if (this.pendingUpdates.has(url)) {
 					isLoading = true;
@@ -1009,7 +1061,7 @@ export function createUrlPreviewDecorator(
 					if (previewStyle === "card") {
 						// Card mode: Show card ABOVE the URL, leave URL as-is
 						const cardWidget = Decoration.widget({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, siteName, error),
 							side: -1, // Place widget BEFORE the URL
 							block: displayMode === "block"
 						});
@@ -1031,7 +1083,7 @@ export function createUrlPreviewDecorator(
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
-							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
+							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, siteName, error),
 						});
 						decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: replacementWidget });
 					}

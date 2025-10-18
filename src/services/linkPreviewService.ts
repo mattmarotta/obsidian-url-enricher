@@ -19,6 +19,7 @@ interface ParsedMetadata {
 	title?: string | null;
 	description?: string | null;
 	favicon?: string | null;
+	siteName?: string | null;
 }
 
 export class LinkPreviewService {
@@ -303,7 +304,8 @@ export class LinkPreviewService {
 		const title = this.ensureTitle(parsed?.title, url);
 		const description = this.sanitizeText(parsed?.description);
 		const favicon = parsed?.favicon ?? this.deriveFaviconFromUrl(url);
-		return { title, description, favicon };
+		const siteName = this.sanitizeText(parsed?.siteName);
+		return { title, description, favicon, siteName };
 	}
 
 	private parseWithDomParser(html: string, baseUrl: string): ParsedMetadata {
@@ -324,6 +326,11 @@ export class LinkPreviewService {
 			doc.querySelector<HTMLMetaElement>("meta[name='description']")?.content,
 		];
 
+		const siteNameCandidates = [
+			doc.querySelector<HTMLMetaElement>("meta[property='og:site_name']")?.content,
+			doc.querySelector<HTMLMetaElement>("meta[name='application-name']")?.content,
+		];
+
 		const jsonLd = this.extractJsonLdMetadata(doc);
 		if (jsonLd.title) {
 			titleCandidates.push(jsonLd.title);
@@ -342,6 +349,7 @@ export class LinkPreviewService {
 			title: this.pickFirstNonEmpty(titleCandidates),
 			description: this.pickFirstNonEmpty(descriptionCandidates),
 			favicon: this.resolveFaviconCandidate(faviconCandidates, baseUrl),
+			siteName: this.pickFirstNonEmpty(siteNameCandidates),
 		};
 	}
 
@@ -358,6 +366,13 @@ export class LinkPreviewService {
 		const metaMatch = html.match(metaRegex);
 		if (metaMatch) {
 			result.description = decodeHtmlEntities(metaMatch[1]);
+		}
+
+		const siteNameRegex =
+			/<meta\s+[^>]*?(?:name|property)=["'](?:og:site_name|application-name)["'][^>]*content=["']([^"']+)["'][^>]*>/i;
+		const siteNameMatch = html.match(siteNameRegex);
+		if (siteNameMatch) {
+			result.siteName = decodeHtmlEntities(siteNameMatch[1]);
 		}
 
 		const faviconRegex =
