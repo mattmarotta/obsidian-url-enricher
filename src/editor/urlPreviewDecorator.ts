@@ -424,12 +424,15 @@ class UrlPreviewWidget extends WidgetType {
 				footer.className = "inline-url-preview__footer";
 				footer.textContent = siteName.toUpperCase();
 				footer.style.cssText = `
-					font-size: 0.7em;
+					font-size: 0.68em;
+					font-weight: 500;
 					color: var(--text-muted);
 					text-transform: uppercase;
-					letter-spacing: 0.05em;
-					margin-top: 0.6em;
-					opacity: 0.6;
+					letter-spacing: 0.1em;
+					margin-top: 0.9em;
+					padding-top: 0.8em;
+					border-top: 1px solid var(--background-modifier-border);
+					opacity: 0.45;
 				`.replace(/\s+/g, ' ').trim();
 				
 				container.appendChild(footer);

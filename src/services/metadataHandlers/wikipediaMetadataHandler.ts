@@ -19,6 +19,9 @@ export class WikipediaMetadataHandler implements MetadataHandler {
 	async enrich(context: MetadataHandlerContext): Promise<void> {
 		const { url, metadata, request } = context;
 
+		// Set site name to "Wikipedia" instead of language code
+		metadata.siteName = "Wikipedia";
+
 		// Only fetch if we don't have a description
 		if (metadata.description) {
 			return;

@@ -68,17 +68,17 @@ img[alt="inline-link-preview-icon"] {
 /* Card Style - Material Design inspired card preview */
 .inline-url-preview--card {
 	display: block;
-	padding: 0.875em 1em;
-	margin: 0.5em 0;
+	padding: 1em 1.25em;
+	margin: 0.75em 0;
 	background: var(--inline-preview-bg, var(--background-primary));
-	border-radius: 8px;
+	border-radius: 10px;
 	border: 1px solid var(--background-modifier-border);
 	font-size: 1em;
 	color: var(--text-normal);
-	/* Subtle shadow for depth */
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+	/* More subtle shadow for cleaner look */
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
 	max-width: 650px;
-	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	position: relative;
 	overflow: hidden;
 	/* Better text rendering */
@@ -87,19 +87,19 @@ img[alt="inline-link-preview-icon"] {
 }
 
 .inline-url-preview--card:hover {
-	/* More prominent elevation on hover */
-	transform: translateY(-1px);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.12);
+	/* Subtle lift on hover */
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
 	border-color: var(--background-modifier-border-hover);
 }
 
 /* Card header with favicon */
 .inline-url-preview--card .inline-url-preview__favicon {
-	width: 2em;
-	height: 2em;
-	margin-right: 0.6em;
-	border-radius: 6px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+	width: 1.75em;
+	height: 1.75em;
+	margin-right: 0.75em;
+	border-radius: 5px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 	/* Let Chromium handle scaling with default high-quality algorithm */
 	image-rendering: auto;
 	/* Prevent blurriness from subpixel rendering */
@@ -108,11 +108,11 @@ img[alt="inline-link-preview-icon"] {
 
 /* Card title - now inline with favicon in header */
 .inline-url-preview--card .inline-url-preview__title {
-	font-size: 1em;
+	font-size: 1.05em;
 	font-weight: 600;
-	line-height: 1.35;
+	line-height: 1.4;
 	color: var(--text-normal);
-	letter-spacing: -0.01em;
+	letter-spacing: -0.015em;
 	/* Override block display when in header */
 	display: inline-block;
 	margin: 0;
@@ -125,11 +125,12 @@ img[alt="inline-link-preview-icon"] {
 /* Card description - readable body text */
 .inline-url-preview--card .inline-url-preview__description {
 	display: block;
-	margin-top: 0.5em;
-	font-size: 0.9em;
-	line-height: 1.55;
+	margin-top: 0.6em;
+	font-size: 0.94em;
+	line-height: 1.6;
 	color: var(--text-muted);
-	letter-spacing: 0.005em;
+	letter-spacing: 0.01em;
+	opacity: 0.95;
 }
 
 /* Card URL footer - shown at bottom of card */
@@ -171,7 +172,8 @@ img[alt="inline-link-preview-icon"] {
 .inline-url-preview--card .inline-url-preview__header {
 	display: flex;
 	align-items: center;
-	margin-bottom: 0.5em;
+	margin-bottom: 0.6em;
+	gap: 0.5em;
 }
 
 /* Reddit-specific card styling */
