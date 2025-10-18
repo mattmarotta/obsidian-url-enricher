@@ -36,11 +36,12 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
   ---
   ```
 - **Rich Metadata Display**:
-  - Site favicons displayed at emoji size for crisp quality
+  - Site favicons displayed at high resolution (128px) for crisp quality
   - Page titles and descriptions
+  - Site name labels in card footers (e.g., "WIKIPEDIA", "REDDIT", "OPENAI")
   - Emoji preservation (optional)
   - Customizable description length with natural word-wrapping
-  - Domain-aware enrichments for Google Search and Reddit links
+  - Domain-aware enrichments for Wikipedia, Google Search, and Reddit links
 - **Real-Time Updates**: Settings changes apply immediately without page navigation
 - **Clickable Previews**: All preview bubbles and cards are clickable to open URLs
 - **Cursor-Aware Previews**: Previews instantly hide when cursor is inside a URL, preventing accidental edits and providing clear visual feedback during editing
@@ -154,13 +155,15 @@ Open **Settings → Community plugins → Inline link preview** to configure:
 ### Preview Appearance
 - **Preview style** – Choose between:
   - **Bubble**: Compact, subtle inline style (default)
-  - **Card**: Prominent card style with more visual weight
+  - **Card**: Prominent card style with more visual weight and site name footer
 - **Display mode** – Choose whether previews appear:
   - **Inline**: Flows with surrounding text on the same line
   - **Block**: Appears on its own line (default)
 - **Preview background color** – Customize background color for both bubbles and cards (none, grey, or custom)
 
-**Note**: URL display is automatic—cards show a small editable URL, bubbles hide the URL entirely.
+**Note**: 
+- URL display is automatic—cards show a small editable URL, bubbles hide the URL entirely.
+- Cards display a site name footer (e.g., "WIKIPEDIA", "ANTHROPIC") extracted from page metadata or URL.
 
 ### Preview Content
 - **Include description** – Show page description after the title
@@ -279,11 +282,68 @@ Go to **Settings → Inline Link Preview → Preview Content → HTTP Error Warn
 - You prefer to see fallback previews even for potentially broken pages
 - You want to reduce visual clutter and manually verify broken URLs yourself
 
+## Card Design
+
+Card-style previews follow **Material Design** principles for a clean, professional appearance:
+
+### Visual Features
+- **Clean layout**: Generous padding and spacing for readability
+- **Site branding**: Favicon and site name footer (e.g., "WIKIPEDIA", "REDDIT", "OPENAI")
+- **Visual hierarchy**: Title (1.05em, bold) → Description (0.94em, muted) → Site name (0.68em, uppercase)
+- **Subtle elevation**: Soft shadows that increase on hover for depth
+- **Smooth transitions**: 200ms animations using Material's cubic-bezier easing
+- **High-quality favicons**: 128px resolution for crisp display on retina screens
+
+### Layout Structure
+```
+┌─────────────────────────────────────────┐
+│  [Favicon] Site Title                    │  ← Header (favicon + title)
+│                                          │
+│  Description text with proper line       │  ← Description (muted)
+│  height and spacing for readability...   │
+│                                          │
+│  ─────────────────────────────────────  │  ← Border separator
+│  SITE NAME                               │  ← Footer (uppercase, subtle)
+└─────────────────────────────────────────┘
+https://example.com                          ← Editable URL below card
+```
+
+### Site Name Intelligence
+- **Metadata-first**: Extracts from `og:site_name` or `application-name` meta tags
+- **Smart fallback**: Parses domain if metadata unavailable (e.g., "github.com" → "GITHUB")
+- **Special handling**: Wikipedia always shows "WIKIPEDIA" instead of language codes
+- **Automatic branding**: Respects how sites identify themselves
+
+## Domain-Aware Metadata Enrichment
+
+The plugin includes specialized handlers for specific websites to provide richer, more accurate previews:
+
+### Wikipedia
+- Fetches article descriptions via Wikipedia API
+- Extracts 3-sentence introductory text (up to 300 characters)
+- Always displays "WIKIPEDIA" as site name (not language codes like "EN")
+- Provides comprehensive context for encyclopedia articles
+
+### Reddit
+- Custom formatting optimized for Reddit posts
+- **Card view**: Subreddit name beside favicon → Post title (bold) → Content preview
+- **Bubble view**: Shows `r/Subreddit — Post Title` format
+- Separate length limits: 200 chars for cards, 100 chars for bubbles
+- Fetches actual post titles and content (not just page meta tags)
+
+### Google Search
+- Extracts search query from URL parameters
+- Displays as "Google Search — [your query]" for clearer context
+- More useful than generic "Google" title
+
+### Extensible Handler System
+The metadata enrichment pipeline is extensible—additional domain-specific handlers can be registered to provide custom formatting for other websites.
+
 ## Privacy and network usage
 
-To build a preview, the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 32x32 resolution for consistent, high-quality icons across all sites. URLs are sent directly to their target domains; no additional third-party metadata service is used.
+To build a preview, the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 128px resolution for consistent, high-quality icons across all sites. URLs are sent directly to their target domains; no additional third-party metadata service is used.
 
-Favicon URLs are cached on disk for 30 days to improve performance and reduce network requests. The cache stores only the mapping between domains and their favicon URLs (e.g., `reddit.com → https://www.google.com/s2/favicons?domain=reddit.com`), not the actual images or page content. If a site is private or requires authentication, the plugin will not be able to fetch metadata.
+Favicon URLs are cached on disk for 30 days to improve performance and reduce network requests. The cache stores only the mapping between domains and their favicon URLs (e.g., `reddit.com → https://www.google.com/s2/favicons?sz=128&domain=reddit.com`), not the actual images or page content. If a site is private or requires authentication, the plugin will not be able to fetch metadata.
 
 **The plugin is completely non-destructive**: It never modifies your markdown source files. All previews are rendered dynamically in Live Preview mode only.
 

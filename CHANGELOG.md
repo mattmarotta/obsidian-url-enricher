@@ -2,6 +2,37 @@
 
 All notable changes to the Inline Link Preview plugin will be documented in this file.
 
+## [0.7.0] - 2025-10-17
+
+### Added
+- **Site name footer in cards** - Cards now display the site name (e.g., "WIKIPEDIA", "OPENAI", "REDDIT") at the bottom with a subtle top border separator
+- **Metadata-based site names** - Extracts site names from `og:site_name` or `application-name` meta tags for accurate branding
+- **Fallback site name extraction** - If metadata doesn't provide site name, extracts from URL hostname (e.g., "anthropic.com" → "ANTHROPIC")
+- **Wikipedia site name override** - Wikipedia pages now show "WIKIPEDIA" instead of language codes (e.g., "EN", "ES")
+- DOMParser extraction for `og:site_name` and `application-name` meta tags
+- Regex parser fallback for site name extraction
+
+### Changed
+- **Refined card design** - Cleaner, more polished appearance:
+  - Increased padding: `1em 1.25em` (was `0.875em 1em`)
+  - Larger border radius: `10px` (was `8px`)
+  - More subtle shadows for cleaner look
+  - Better hover effects with `-2px` lift
+- **Better typography**:
+  - Title slightly larger: `1.05em` with improved letter-spacing `-0.015em`
+  - Description more readable: `0.94em` with `line-height: 1.6` and `opacity: 0.95`
+- **Smaller favicons** - Reduced from `2em` to `1.75em` for better proportions
+- **Improved spacing** - More breathing room between all card elements
+- **Refined footer** - Site name footer styling:
+  - Smaller text: `0.68em` with `font-weight: 500`
+  - Lower opacity: `0.45` for less visual competition
+  - More letter-spacing: `0.1em` for cleaner uppercase
+  - Top border separator for clear visual boundary
+  - More spacing: `margin-top: 0.9em` with `padding-top: 0.8em`
+
+### Fixed
+- Wikipedia pages now correctly show "WIKIPEDIA" as site name instead of language code ("EN")
+
 ## [0.5.0] - Unreleased
 
 ### Breaking Changes
