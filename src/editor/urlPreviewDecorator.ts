@@ -156,17 +156,20 @@ class SmallUrlWidget extends WidgetType {
 		const span = document.createElement("span");
 		span.className = "inline-url-preview-small-url-widget";
 		span.textContent = this.url;
-		// Use inline styles to override everything
+		// Use inline styles to match card footer URL appearance
 		span.style.cssText = `
 			font-size: 0.75em !important;
 			color: var(--text-faint) !important;
-			opacity: 0.6 !important;
+			opacity: 0.7 !important;
+			font-family: var(--font-monospace) !important;
+			word-break: break-all !important;
 			cursor: pointer !important;
 			text-decoration: none !important;
 			border-bottom: none !important;
 			background: none !important;
 			padding: 0 !important;
 			margin: 0 !important;
+			display: inline !important;
 		`.replace(/\s+/g, ' ').trim();
 		
 		// Prevent mousedown from interfering
@@ -842,7 +845,7 @@ export function createUrlPreviewDecorator(
 					decorationsToAdd.push({ from: linkEnd, to: linkEnd, decoration: errorWidget });
 				} else if (isLoading || title) {
 					if (previewStyle === "card") {
-						// Card mode: Show card ABOVE the URL, keep URL visible and editable
+						// Card mode: Show card ABOVE the URL, keep URL visible and clickable
 						const cardWidget = Decoration.widget({
 							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 							side: -1, // Place widget BEFORE the URL
@@ -850,21 +853,11 @@ export function createUrlPreviewDecorator(
 						});
 						decorationsToAdd.push({ from: linkStart, to: linkStart, decoration: cardWidget });
 						
-						// Style the URL below the card to match previous card footer appearance
-						const urlMark = Decoration.mark({
-							class: "ilp-url-below-card",
-							attributes: {
-								style: `
-									font-size: 0.75em;
-									color: var(--text-faint);
-									opacity: 0.7;
-									font-family: var(--font-monospace);
-									word-break: break-all;
-									display: inline;
-								`.replace(/\s+/g, ' ').trim()
-							}
+						// Replace the URL with a clickable widget to prevent cursor placement
+						const urlWidget = Decoration.replace({
+							widget: new SmallUrlWidget(url)
 						});
-						decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: urlMark });
+						decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: urlWidget });
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
@@ -1056,7 +1049,7 @@ export function createUrlPreviewDecorator(
 					decorationsToAdd.push({ from: urlEnd, to: urlEnd, decoration: errorWidget });
 				} else if (isLoading || title) {
 					if (previewStyle === "card") {
-						// Card mode: Show card ABOVE the URL, keep URL visible and editable
+						// Card mode: Show card ABOVE the URL, keep URL visible and clickable
 						const cardWidget = Decoration.widget({
 							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 							side: -1, // Place widget BEFORE the URL
@@ -1064,21 +1057,11 @@ export function createUrlPreviewDecorator(
 						});
 						decorationsToAdd.push({ from: urlStart, to: urlStart, decoration: cardWidget });
 						
-						// Style the URL below the card to match previous card footer appearance
-						const urlMark = Decoration.mark({
-							class: "ilp-url-below-card",
-							attributes: {
-								style: `
-									font-size: 0.75em;
-									color: var(--text-faint);
-									opacity: 0.7;
-									font-family: var(--font-monospace);
-									word-break: break-all;
-									display: inline;
-								`.replace(/\s+/g, ' ').trim()
-							}
+						// Replace the URL with a clickable widget to prevent cursor placement
+						const urlWidget = Decoration.replace({
+							widget: new SmallUrlWidget(url)
 						});
-						decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: urlMark });
+						decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: urlWidget });
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
@@ -1098,36 +1081,38 @@ export function createUrlPreviewDecorator(
 			}
 
 			return builder.finish();
-		}			private queueMetadataFetch(url: string, view: EditorView): void {
-				if (this.pendingUpdates.has(url)) {
-					return;
-				}
-
-				// Check if already cached
-				const cache = (service as any).cache as Map<string, any> | undefined;
-				if (cache?.has(url)) {
-					return;
-				}
-
-				const promise = service.getMetadata(url).then(() => {
-					// Rebuild decorations immediately after metadata is fetched
-					this.decorations = this.buildDecorations(view);
-					
-					// Force a full viewport update to ensure the view re-renders
-					view.dispatch({
-						effects: []
-					});
-				}).catch(() => {
-					// Silently ignore errors - no preview will be shown
-				}).finally(() => {
-					this.pendingUpdates.delete(url);
-				});
-
-				this.pendingUpdates.set(url, promise);
-			}
-		},
-		{
-			decorations: (v) => v.decorations,
 		}
+		
+		private queueMetadataFetch(url: string, view: EditorView): void {
+			if (this.pendingUpdates.has(url)) {
+				return;
+			}
+
+			// Check if already cached
+			const cache = (service as any).cache as Map<string, any> | undefined;
+			if (cache?.has(url)) {
+				return;
+			}
+
+			const promise = service.getMetadata(url).then(() => {
+				// Rebuild decorations immediately after metadata is fetched
+				this.decorations = this.buildDecorations(view);
+				
+				// Force a full viewport update to ensure the view re-renders
+				view.dispatch({
+					effects: []
+				});
+			}).catch(() => {
+				// Silently ignore errors - no preview will be shown
+			}).finally(() => {
+				this.pendingUpdates.delete(url);
+			});
+
+			this.pendingUpdates.set(url, promise);
+		}
+	},
+	{
+		decorations: (v) => v.decorations,
+	}
 	);
 }
