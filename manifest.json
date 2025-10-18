@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-inline-link-preview",
 	"name": "Inline Link Preview",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"minAppVersion": "0.15.0",
 	"description": "Automatically replace bare URLs with inline previews that show the page title and description.",
 	"author": "Matt Marotta",
