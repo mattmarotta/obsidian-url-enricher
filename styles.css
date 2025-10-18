@@ -346,3 +346,44 @@ a.inline-url-preview-small-url,
 	color: var(--text-faint);
 	font-style: italic;
 }
+
+/* Card mode URL styling - subtle appearance below preview card */
+/* Maximum specificity to override all Obsidian link styles */
+.cm-line .ilp-card-url,
+.ilp-card-url.cm-url,
+.ilp-card-url.cm-link,
+.ilp-card-url.cm-hmd-internal-link,
+span.ilp-card-url,
+.ilp-card-url,
+a.ilp-card-url {
+	font-size: 0.85em !important;
+	color: var(--text-faint) !important;
+	text-decoration: none !important;
+	opacity: 0.7 !important;
+	background: transparent !important;
+	border-bottom: none !important;
+	/* Override link-specific properties */
+	cursor: text !important;
+	pointer-events: auto !important;
+}
+
+.cm-line .ilp-card-url:hover,
+.ilp-card-url.cm-url:hover,
+.ilp-card-url.cm-link:hover,
+.ilp-card-url.cm-hmd-internal-link:hover,
+span.ilp-card-url:hover,
+.ilp-card-url:hover,
+a.ilp-card-url:hover {
+	opacity: 0.9 !important;
+	text-decoration: none !important;
+	color: var(--text-faint) !important;
+}
+
+/* Try to override any parent link styling */
+.cm-line:has(.ilp-card-url) .cm-url.ilp-card-url {
+	all: unset !important;
+	font-size: 0.85em !important;
+	color: var(--text-faint) !important;
+	opacity: 0.7 !important;
+	display: inline !important;
+}

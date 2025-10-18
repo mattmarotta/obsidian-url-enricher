@@ -147,57 +147,6 @@ function parsePageConfig(text: string): PageConfig {
 	return config;
 }
 
-class SmallUrlWidget extends WidgetType {
-	constructor(private url: string) {
-		super();
-	}
-
-	toDOM(): HTMLElement {
-		const span = document.createElement("span");
-		span.className = "inline-url-preview-small-url-widget";
-		span.textContent = this.url;
-		// Use inline styles to match card footer URL appearance
-		span.style.cssText = `
-			font-size: 0.75em !important;
-			color: var(--text-faint) !important;
-			opacity: 0.7 !important;
-			font-family: var(--font-monospace) !important;
-			word-break: break-all !important;
-			cursor: pointer !important;
-			text-decoration: none !important;
-			border-bottom: none !important;
-			background: none !important;
-			padding: 0 !important;
-			margin: 0 !important;
-			display: inline !important;
-		`.replace(/\s+/g, ' ').trim();
-		
-		// Prevent mousedown from interfering
-		span.onmousedown = (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-		};
-		
-		// Make it clickable
-		span.onclick = (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			window.open(this.url, "_blank");
-		};
-		
-		return span;
-	}
-
-	eq(other: SmallUrlWidget): boolean {
-		return other.url === this.url;
-	}
-
-	ignoreEvent(event: Event): boolean {
-		// Ignore mouse events to prevent CodeMirror from handling clicks
-		return event.type === "mousedown" || event.type === "click";
-	}
-}
-
 class ErrorIndicatorWidget extends WidgetType {
 	constructor(private errorType: string) {
 		super();
@@ -595,8 +544,9 @@ export function createUrlPreviewDecorator(
 				processedRanges.add(rangeKey);
 				
 				// Skip if cursor is inside this wikilink (user is actively editing)
+				// Only skip for bubble mode - card mode keeps preview visible while editing
 				const cursorPos = view.state.selection.main.head;
-				if (cursorPos >= linkStart && cursorPos <= linkEnd) {
+				if (previewStyle === "bubble" && cursorPos >= linkStart && cursorPos <= linkEnd) {
 					continue;
 				}
 				
@@ -688,7 +638,7 @@ export function createUrlPreviewDecorator(
 					decorationsToAdd.push({ from: linkEnd, to: linkEnd, decoration: errorWidget });
 				} else if (isLoading || title) {
 					if (previewStyle === "card") {
-						// Card mode: Show card ABOVE the URL, keep URL visible and editable
+						// Card mode: Show card ABOVE the URL, leave URL as-is
 						const cardWidget = Decoration.widget({
 							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 							side: -1, // Place widget BEFORE the URL
@@ -696,17 +646,15 @@ export function createUrlPreviewDecorator(
 						});
 						decorationsToAdd.push({ from: linkStart, to: linkStart, decoration: cardWidget });
 						
-						// Style the URL below the card to match previous card footer appearance
+						// Style the URL to be subtle (small, grey, no underline)
 						const urlMark = Decoration.mark({
-							class: "ilp-url-below-card",
+							class: "ilp-card-url",
 							attributes: {
 								style: `
-									font-size: 0.75em;
+									font-size: 0.85em;
 									color: var(--text-faint);
+									text-decoration: none;
 									opacity: 0.7;
-									font-family: var(--font-monospace);
-									word-break: break-all;
-									display: inline;
 								`.replace(/\s+/g, ' ').trim()
 							}
 						});
@@ -740,8 +688,9 @@ export function createUrlPreviewDecorator(
 				processedRanges.add(rangeKey);
 				
 				// Skip if cursor is inside this markdown link (user is actively editing)
+				// Only skip for bubble mode - card mode keeps preview visible while editing
 				const cursorPos = view.state.selection.main.head;
-				if (cursorPos >= linkStart && cursorPos <= linkEnd) {
+				if (previewStyle === "bubble" && cursorPos >= linkStart && cursorPos <= linkEnd) {
 					continue;
 				}
 				
@@ -845,7 +794,7 @@ export function createUrlPreviewDecorator(
 					decorationsToAdd.push({ from: linkEnd, to: linkEnd, decoration: errorWidget });
 				} else if (isLoading || title) {
 					if (previewStyle === "card") {
-						// Card mode: Show card ABOVE the URL, keep URL visible and clickable
+						// Card mode: Show card ABOVE the URL, leave URL as-is
 						const cardWidget = Decoration.widget({
 							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 							side: -1, // Place widget BEFORE the URL
@@ -853,11 +802,19 @@ export function createUrlPreviewDecorator(
 						});
 						decorationsToAdd.push({ from: linkStart, to: linkStart, decoration: cardWidget });
 						
-						// Replace the URL with a clickable widget to prevent cursor placement
-						const urlWidget = Decoration.replace({
-							widget: new SmallUrlWidget(url)
+						// Style the URL to be subtle (small, grey, no underline)
+						const urlMark = Decoration.mark({
+							class: "ilp-card-url",
+							attributes: {
+								style: `
+									font-size: 0.85em;
+									color: var(--text-faint);
+									text-decoration: none;
+									opacity: 0.7;
+								`.replace(/\s+/g, ' ').trim()
+							}
 						});
-						decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: urlWidget });
+						decorationsToAdd.push({ from: linkStart, to: linkEnd, decoration: urlMark });
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
@@ -893,8 +850,9 @@ export function createUrlPreviewDecorator(
 				}
 				
 				// Skip if cursor is inside this bare URL (user is actively typing)
+				// Only skip for bubble mode - card mode keeps preview visible while editing
 				const cursorPos = view.state.selection.main.head;
-				if (cursorPos >= urlStart && cursorPos <= urlEnd) {
+				if (previewStyle === "bubble" && cursorPos >= urlStart && cursorPos <= urlEnd) {
 					continue;
 				}
 				
@@ -1049,7 +1007,7 @@ export function createUrlPreviewDecorator(
 					decorationsToAdd.push({ from: urlEnd, to: urlEnd, decoration: errorWidget });
 				} else if (isLoading || title) {
 					if (previewStyle === "card") {
-						// Card mode: Show card ABOVE the URL, keep URL visible and clickable
+						// Card mode: Show card ABOVE the URL, leave URL as-is
 						const cardWidget = Decoration.widget({
 							widget: new UrlPreviewWidget(url, title, description, faviconUrl, isLoading, previewStyle, displayMode, limit, error),
 							side: -1, // Place widget BEFORE the URL
@@ -1057,11 +1015,19 @@ export function createUrlPreviewDecorator(
 						});
 						decorationsToAdd.push({ from: urlStart, to: urlStart, decoration: cardWidget });
 						
-						// Replace the URL with a clickable widget to prevent cursor placement
-						const urlWidget = Decoration.replace({
-							widget: new SmallUrlWidget(url)
+						// Style the URL to be subtle (small, grey, no underline)
+						const urlMark = Decoration.mark({
+							class: "ilp-card-url",
+							attributes: {
+								style: `
+									font-size: 0.85em;
+									color: var(--text-faint);
+									text-decoration: none;
+									opacity: 0.7;
+								`.replace(/\s+/g, ' ').trim()
+							}
 						});
-						decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: urlWidget });
+						decorationsToAdd.push({ from: urlStart, to: urlEnd, decoration: urlMark });
 					} else {
 						// Bubble mode: Replace URL with bubble (hide URL)
 						const replacementWidget = Decoration.replace({
