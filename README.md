@@ -119,7 +119,7 @@ Emoji in titles or descriptions are preserved (unless you turn them off), so Red
 - Command palette action to convert the current selection to a preview.
 - Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
 - Adjustable description length limit plus networking timeout controls.
-- Domain-aware metadata enrichments for Google search and Reddit links, with an extensible handler pipeline for additional sites.
+- Domain-aware metadata enrichments for Google Search, Reddit, Wikipedia, and Twitter/X links, with an extensible handler pipeline for additional sites.
 - Floating progress indicator while multiple links are being processed.
 - Persistent favicon cache with 30-day expiration and cache statistics display.
 
@@ -336,6 +336,13 @@ The plugin includes specialized handlers for specific websites to provide richer
 - Displays as "Google Search — [your query]" for clearer context
 - More useful than generic "Google" title
 
+### Twitter/X
+- Fetches tweet content via Twitter's oEmbed API (no authentication required)
+- **Profile URLs**: Shows `@username` as title (e.g., `@ThePrimeagen`)
+- **Tweet URLs**: Shows `@username` as title + tweet text as description
+- Handles both `x.com` and `twitter.com` domains
+- Gracefully degrades when oEmbed fails (network errors, unavailable tweets)
+
 ### Extensible Handler System
 The metadata enrichment pipeline is extensible—additional domain-specific handlers can be registered to provide custom formatting for other websites.
 
@@ -424,7 +431,7 @@ npm run test:coverage
 
 ### Current Test Coverage
 
-**517 tests across 12 test files** covering:
+**556 tests across 12 test files** covering:
 
 - **Utilities** (210 tests, 91% coverage):
   - URL extraction, validation, and markdown link handling ([url.test.ts](tests/utils/url.test.ts) - 67 tests, 98% coverage)
@@ -434,10 +441,10 @@ npm run test:coverage
   - String replacement utilities ([stringReplace.test.ts](tests/utils/stringReplace.test.ts) - 22 tests, 100% coverage)
   - Vault file/folder traversal ([vault.test.ts](tests/utils/vault.test.ts) - 30 tests, 100% coverage)
 
-- **Services** (138 tests, 73% coverage):
+- **Services** (185 tests, 73% coverage):
   - Link preview metadata fetching and caching ([linkPreviewService.test.ts](tests/services/linkPreviewService.test.ts) - 52 tests, 69% coverage)
   - Favicon caching with memory/disk persistence ([faviconCache.test.ts](tests/services/faviconCache.test.ts) - 41 tests, 97% coverage)
-  - Metadata handlers for Wikipedia, Reddit, and Google Search ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts) - 45 tests, 92% coverage)
+  - Metadata handlers for Wikipedia, Reddit, Google Search, and Twitter/X ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts) - 92 tests, 92% coverage)
 
 - **Editor** (95 tests, business logic only):
   - Frontmatter parsing and settings ([urlPreviewDecorator.test.ts](tests/editor/urlPreviewDecorator.test.ts) - 95 tests)

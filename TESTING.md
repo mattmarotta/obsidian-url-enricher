@@ -139,7 +139,7 @@ Test utilities:
 
 ### Current Coverage: 39.63%
 
-**Test Files**: 12 files, 517 tests
+**Test Files**: 12 files, 556 tests
 
 **Fully Tested (90%+ coverage):**
 
@@ -165,10 +165,11 @@ Test utilities:
    - Soft 404 detection (Reddit, YouTube, generic patterns)
    - Settings integration and metadata handler delegation
 
-4. **src/services/metadataHandlers/** (92% coverage, 45 tests)
+4. **src/services/metadataHandlers/** (92% coverage, 92 tests)
    - **Wikipedia Handler** (96%): Fetches Wikipedia article extracts via API
    - **Reddit Handler** (94%): Parses Reddit post metadata with special formatting
    - **Google Search Handler** (95%): Enriches Google search URLs with query text
+   - **Twitter/X Handler** (100%): Fetches tweet content via oEmbed API for rich previews
 
 5. **src/editor/urlPreviewDecorator.ts** (Business logic tested, 95 tests)
    - **parsePageConfig** (33 tests): Frontmatter parsing for all settings (preview-style, display-mode, etc.)
