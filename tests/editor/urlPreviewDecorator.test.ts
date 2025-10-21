@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { sanitizeTextContent } from '../../src/utils/text';
 
 /**
  * Tests for urlPreviewDecorator.ts
@@ -6,6 +7,9 @@ import { describe, it, expect } from 'vitest';
  * Focus: Business logic (frontmatter parsing, settings merging, helper functions)
  * Skip: CodeMirror widget rendering, DOM manipulation
  */
+
+// Helper constants
+const ELLIPSIS = '\u2026';
 
 // We'll need to extract these functions to test them
 // For now, we'll copy the logic here to test it
@@ -494,6 +498,247 @@ preview-style: card
 		it('should trim whitespace from result', () => {
 			const result = stripEmoji('  😀  Hello  😀  ');
 			expect(result).toBe('Hello');
+		});
+	});
+
+	describe('truncate', () => {
+		// Copy function logic for testing
+		function truncate(text: string, maxLength: number): string {
+			if (text.length <= maxLength) {
+				return text;
+			}
+			return text.slice(0, maxLength).trim() + ELLIPSIS;
+		}
+
+		it('should return text unchanged when shorter than max length', () => {
+			const result = truncate('Short text', 50);
+			expect(result).toBe('Short text');
+		});
+
+		it('should return text unchanged when exactly at max length', () => {
+			const text = 'Exactly twenty chars';
+			const result = truncate(text, 20);
+			expect(result).toBe(text);
+		});
+
+		it('should truncate text longer than max length', () => {
+			const result = truncate('This is a very long text that should be truncated', 20);
+			expect(result).toBe('This is a very long' + ELLIPSIS);
+		});
+
+		it('should add ellipsis after truncation', () => {
+			const result = truncate('Long text', 5);
+			expect(result).toContain(ELLIPSIS);
+		});
+
+		it('should trim whitespace before adding ellipsis', () => {
+			const result = truncate('Text with   trailing spaces', 10);
+			expect(result).toBe('Text with' + ELLIPSIS);
+		});
+
+		it('should handle empty string', () => {
+			const result = truncate('', 10);
+			expect(result).toBe('');
+		});
+
+		it('should handle maxLength of 0', () => {
+			const result = truncate('Text', 0);
+			expect(result).toBe(ELLIPSIS);
+		});
+
+		it('should handle maxLength of 1', () => {
+			const result = truncate('Text', 1);
+			expect(result).toBe('T' + ELLIPSIS);
+		});
+
+		it('should handle very long text', () => {
+			const longText = 'A'.repeat(1000);
+			const result = truncate(longText, 50);
+			expect(result.length).toBe(51); // 50 + 1 ellipsis char
+			expect(result.endsWith(ELLIPSIS)).toBe(true);
+		});
+
+		it('should preserve important characters before truncation point', () => {
+			const result = truncate('Important! Details here', 10);
+			expect(result).toBe('Important!' + ELLIPSIS);
+		});
+	});
+
+	describe('deriveTitleFromUrl', () => {
+		// Copy function logic for testing
+		function deriveTitleFromUrl(url: string): string {
+			try {
+				const parsed = new URL(url);
+				return parsed.hostname.replace(/^www\./, '');
+			} catch {
+				return url;
+			}
+		}
+
+		it('should extract hostname from valid URL', () => {
+			const result = deriveTitleFromUrl('https://example.com/path');
+			expect(result).toBe('example.com');
+		});
+
+		it('should remove www prefix from hostname', () => {
+			const result = deriveTitleFromUrl('https://www.example.com');
+			expect(result).toBe('example.com');
+		});
+
+		it('should preserve subdomain that is not www', () => {
+			const result = deriveTitleFromUrl('https://api.example.com');
+			expect(result).toBe('api.example.com');
+		});
+
+		it('should handle URL with port', () => {
+			const result = deriveTitleFromUrl('https://example.com:8080/path');
+			expect(result).toBe('example.com');
+		});
+
+		it('should handle URL with query parameters', () => {
+			const result = deriveTitleFromUrl('https://example.com?foo=bar');
+			expect(result).toBe('example.com');
+		});
+
+		it('should handle URL with fragment', () => {
+			const result = deriveTitleFromUrl('https://example.com#section');
+			expect(result).toBe('example.com');
+		});
+
+		it('should handle URL with path, query, and fragment', () => {
+			const result = deriveTitleFromUrl('https://www.example.com/path?q=1#top');
+			expect(result).toBe('example.com');
+		});
+
+		it('should return original string for invalid URL', () => {
+			const result = deriveTitleFromUrl('not a url');
+			expect(result).toBe('not a url');
+		});
+
+		it('should handle empty string gracefully', () => {
+			const result = deriveTitleFromUrl('');
+			expect(result).toBe('');
+		});
+
+		it('should handle localhost', () => {
+			const result = deriveTitleFromUrl('http://localhost:3000');
+			expect(result).toBe('localhost');
+		});
+
+		it('should handle IP addresses', () => {
+			const result = deriveTitleFromUrl('http://192.168.1.1');
+			expect(result).toBe('192.168.1.1');
+		});
+	});
+
+	describe('equalsIgnoreCase', () => {
+		// Copy function logic for testing
+		function equalsIgnoreCase(a: string, b: string): boolean {
+			return a.toLowerCase() === b.toLowerCase();
+		}
+
+		it('should return true for identical strings', () => {
+			expect(equalsIgnoreCase('test', 'test')).toBe(true);
+		});
+
+		it('should return true for same text different case', () => {
+			expect(equalsIgnoreCase('Test', 'test')).toBe(true);
+		});
+
+		it('should return true for all uppercase vs all lowercase', () => {
+			expect(equalsIgnoreCase('HELLO', 'hello')).toBe(true);
+		});
+
+		it('should return true for mixed case variations', () => {
+			expect(equalsIgnoreCase('HeLLo WoRLd', 'hello world')).toBe(true);
+		});
+
+		it('should return false for different strings', () => {
+			expect(equalsIgnoreCase('hello', 'world')).toBe(false);
+		});
+
+		it('should return false for strings with different lengths', () => {
+			expect(equalsIgnoreCase('hello', 'hello world')).toBe(false);
+		});
+
+		it('should handle empty strings', () => {
+			expect(equalsIgnoreCase('', '')).toBe(true);
+		});
+
+		it('should return false when one string is empty', () => {
+			expect(equalsIgnoreCase('test', '')).toBe(false);
+		});
+
+		it('should handle strings with numbers', () => {
+			expect(equalsIgnoreCase('Test123', 'test123')).toBe(true);
+		});
+
+		it('should handle strings with special characters', () => {
+			expect(equalsIgnoreCase('Hello!', 'hello!')).toBe(true);
+		});
+	});
+
+	describe('sanitizeLinkText', () => {
+		// Copy function logic for testing
+		function sanitizeLinkText(text: string, keepEmoji: boolean): string {
+			const sanitized = sanitizeTextContent(text);
+			if (!sanitized) {
+				return '';
+			}
+			return keepEmoji ? sanitized : stripEmoji(sanitized);
+		}
+
+		it('should sanitize HTML and keep emoji when keepEmoji is true', () => {
+			const result = sanitizeLinkText('<p>Hello 😀 world</p>', true);
+			expect(result).toBe('Hello 😀 world');
+		});
+
+		it('should sanitize HTML and remove emoji when keepEmoji is false', () => {
+			const result = sanitizeLinkText('<p>Hello 😀 world</p>', false);
+			expect(result).toBe('Hello world');
+		});
+
+		it('should handle text without HTML tags', () => {
+			const result = sanitizeLinkText('Plain text 🎉', true);
+			expect(result).toBe('Plain text 🎉');
+		});
+
+		it('should remove emoji from plain text when keepEmoji is false', () => {
+			const result = sanitizeLinkText('Plain text 🎉', false);
+			expect(result).toBe('Plain text');
+		});
+
+		it('should handle text with HTML entities', () => {
+			const result = sanitizeLinkText('Hello &amp; world 😀', true);
+			expect(result).toBe('Hello & world 😀');
+		});
+
+		it('should remove emoji from text with entities when keepEmoji is false', () => {
+			const result = sanitizeLinkText('Hello &amp; world 😀', false);
+			expect(result).toBe('Hello & world');
+		});
+
+		it('should return empty string for empty input', () => {
+			expect(sanitizeLinkText('', true)).toBe('');
+			expect(sanitizeLinkText('', false)).toBe('');
+		});
+
+		it('should return empty string for null/whitespace input', () => {
+			expect(sanitizeLinkText('   ', true)).toBe('');
+			expect(sanitizeLinkText('   ', false)).toBe('');
+		});
+
+		it('should handle complex HTML with emoji', () => {
+			const html = '<div><p>Title 🚀</p><span>Description 🎉</span></div>';
+			const result = sanitizeLinkText(html, true);
+			expect(result).toContain('Title 🚀');
+			expect(result).toContain('Description 🎉');
+		});
+
+		it('should strip emoji from complex HTML when keepEmoji is false', () => {
+			const html = '<div><p>Title 🚀</p></div>';
+			const result = sanitizeLinkText(html, false);
+			expect(result).toBe('Title');
 		});
 	});
 });
