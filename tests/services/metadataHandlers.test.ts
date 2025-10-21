@@ -3,6 +3,7 @@ import type { MetadataHandlerContext } from '../../src/services/metadataHandlers
 import { WikipediaMetadataHandler } from '../../src/services/metadataHandlers/wikipediaMetadataHandler';
 import { RedditMetadataHandler } from '../../src/services/metadataHandlers/redditMetadataHandler';
 import { GoogleSearchMetadataHandler } from '../../src/services/metadataHandlers/googleSearchMetadataHandler';
+import { TwitterMetadataHandler } from '../../src/services/metadataHandlers/twitterMetadataHandler';
 import type { LinkMetadata } from '../../src/services/types';
 
 describe('Metadata Handlers', () => {
@@ -895,6 +896,779 @@ describe('Metadata Handlers', () => {
 				await handler.enrich(context);
 
 				expect(metadata.title).toBe('Google Search — C++');
+			});
+		});
+	});
+
+	describe('TwitterMetadataHandler', () => {
+		let handler: TwitterMetadataHandler;
+		let mockRequest: ReturnType<typeof vi.fn>;
+		let context: MetadataHandlerContext;
+		let metadata: LinkMetadata;
+
+		beforeEach(() => {
+			handler = new TwitterMetadataHandler();
+			mockRequest = vi.fn();
+			metadata = {
+				url: '',
+				title: null,
+				description: null,
+				favicon: null,
+				siteName: null,
+			};
+		});
+
+		describe('matches', () => {
+			it('should match x.com', () => {
+				expect(handler.matches({
+					url: new URL('https://x.com/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should match twitter.com', () => {
+				expect(handler.matches({
+					url: new URL('https://twitter.com/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://twitter.com/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should match www.x.com', () => {
+				expect(handler.matches({
+					url: new URL('https://www.x.com/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://www.x.com/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should match www.twitter.com', () => {
+				expect(handler.matches({
+					url: new URL('https://www.twitter.com/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://www.twitter.com/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should match mobile.twitter.com', () => {
+				expect(handler.matches({
+					url: new URL('https://mobile.twitter.com/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://mobile.twitter.com/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should not match non-Twitter domains', () => {
+				expect(handler.matches({
+					url: new URL('https://example.com'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://example.com',
+					settings: {} as any,
+				})).toBe(false);
+			});
+
+			it('should not match twitter-like domains', () => {
+				expect(handler.matches({
+					url: new URL('https://nottwitter.com'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://nottwitter.com',
+					settings: {} as any,
+				})).toBe(false);
+			});
+		});
+
+		describe('generic title detection', () => {
+			it('should detect "x.com" as generic', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/ThePrimeagen');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/ThePrimeagen',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@ThePrimeagen');
+			});
+
+			it('should detect "twitter.com" as generic', async () => {
+				metadata.title = 'twitter.com';
+				const url = new URL('https://twitter.com/user123');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://twitter.com/user123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user123');
+			});
+
+			it('should detect "X" as generic', async () => {
+				metadata.title = 'X';
+				const url = new URL('https://x.com/test');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/test',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@test');
+			});
+
+			it('should detect "X (FORMERLY TWITTER)" as generic', async () => {
+				metadata.title = 'X (FORMERLY TWITTER)';
+				const url = new URL('https://x.com/someuser');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/someuser',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@someuser');
+			});
+
+			it('should detect "on X" in title as generic', async () => {
+				metadata.title = 'User on X';
+				const url = new URL('https://x.com/username');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/username',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@username');
+			});
+
+			it('should not enrich non-generic titles', async () => {
+				metadata.title = 'Specific Tweet Title';
+				const url = new URL('https://x.com/user/status/123');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('Specific Tweet Title');
+				expect(mockRequest).not.toHaveBeenCalled();
+			});
+		});
+
+		describe('username extraction', () => {
+			it('should extract username from profile URL', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/ThePrimeagen');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/ThePrimeagen',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@ThePrimeagen');
+			});
+
+			it('should extract username from tweet URL', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user_123/status/1953502301173244004');
+				mockRequest.mockResolvedValue({
+					status: 404, // Simulate oEmbed failure for this test
+					text: '',
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user_123/status/1953502301173244004',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user_123');
+			});
+
+			it('should handle usernames with underscores', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/test_user_name');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/test_user_name',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@test_user_name');
+			});
+
+			it('should handle usernames with numbers', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user123abc');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user123abc',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user123abc');
+			});
+
+			it('should handle trailing slash in URL', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/username/');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/username/',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@username');
+			});
+
+			it('should handle URLs with query parameters', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/username?lang=en&ref=home');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/username?lang=en&ref=home',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@username');
+			});
+		});
+
+		describe('tweet detection', () => {
+			it('should detect tweet URLs with /status/ pattern', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123456789');
+				const oembedHtml = '<blockquote class="twitter-tweet"><p>Tweet content here</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({
+						html: oembedHtml,
+						author_name: 'user',
+					}),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123456789',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(mockRequest).toHaveBeenCalledWith({
+					url: 'https://publish.twitter.com/oembed?url=https%3A%2F%2Fx.com%2Fuser%2Fstatus%2F123456789',
+					method: 'GET',
+				});
+			});
+
+			it('should not call oEmbed for profile URLs', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/username');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/username',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(mockRequest).not.toHaveBeenCalled();
+				expect(metadata.title).toBe('@username');
+				expect(metadata.description).toBeNull();
+			});
+		});
+
+		describe('oEmbed API integration', () => {
+			it('should fetch tweet content via oEmbed', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/ThePrimeagen/status/123');
+				const oembedHtml = '<blockquote class="twitter-tweet"><p lang="en">This is a test tweet</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({
+						html: oembedHtml,
+						author_name: 'ThePrimeagen',
+					}),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/ThePrimeagen/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@ThePrimeagen');
+				expect(metadata.description).toBe('This is a test tweet');
+			});
+
+			it('should handle oEmbed HTTP errors gracefully', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/456');
+
+				mockRequest.mockResolvedValue({
+					status: 404,
+					text: '',
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/456',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
+			});
+
+			it('should handle oEmbed network errors gracefully', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/789');
+
+				mockRequest.mockRejectedValue(new Error('Network error'));
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/789',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
+			});
+
+			it('should handle invalid JSON in oEmbed response', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/999');
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: 'Invalid JSON{',
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/999',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
+			});
+
+			it('should handle missing HTML in oEmbed response', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/111');
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({
+						author_name: 'user',
+						// html field missing
+					}),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/111',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
+			});
+		});
+
+		describe('HTML parsing', () => {
+			it('should extract tweet text from blockquote HTML', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Simple tweet text</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.description).toBe('Simple tweet text');
+			});
+
+			it('should decode HTML entities in tweet text', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p>Tweet with &lt;tags&gt; and &amp; symbols &quot;quoted&quot;</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.description).toBe('Tweet with <tags> and & symbols "quoted"');
+			});
+
+			it('should strip HTML tags from tweet text', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p>Tweet with <a href="#">links</a> and <strong>bold</strong> text</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.description).toBe('Tweet with links and bold text');
+			});
+
+			it('should clean up whitespace in tweet text', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p>Tweet   with   extra     whitespace</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.description).toBe('Tweet with extra whitespace');
+			});
+
+			it('should handle tweets with mentions and hashtags', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p>Hey <a href="#">@user</a> check out <a href="#">#hashtag</a>!</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.description).toBe('Hey @user check out #hashtag!');
+			});
+
+			it('should handle malformed HTML gracefully', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote>No p tag here</blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
+			});
+
+			it('should handle empty HTML gracefully', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html: '' }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
+			});
+		});
+
+		describe('edge cases', () => {
+			it('should handle URLs with hash fragments', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user#section');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user#section',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+			});
+
+			it('should handle URLs with both query params and hash', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user?ref=home#top');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user?ref=home#top',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+			});
+
+			it('should handle tweet URLs with additional path segments', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123/analytics');
+				const html = '<blockquote class="twitter-tweet"><p>Tweet text</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/user/status/123/analytics',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBe('Tweet text');
+			});
+
+			it('should handle empty pathname gracefully', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s) => s,
+					originalUrl: 'https://x.com/',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				// Should not crash, but won't have a username
+				expect(metadata.title).toBe('x.com');
+			});
+
+			it('should sanitize tweet text using context.sanitizeText', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p>  Tweet text  </p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				const mockSanitize = vi.fn((s) => s?.trim() || null);
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: mockSanitize,
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(mockSanitize).toHaveBeenCalledWith('Tweet text');
+			});
+
+			it('should handle case where sanitizeText returns null', async () => {
+				metadata.title = 'x.com';
+				const url = new URL('https://x.com/user/status/123');
+				const html = '<blockquote class="twitter-tweet"><p>Tweet</p></blockquote>';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({ html }),
+				});
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: () => null, // Always returns null
+					originalUrl: 'https://x.com/user/status/123',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBeNull();
 			});
 		});
 	});
