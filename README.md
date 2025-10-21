@@ -320,7 +320,7 @@ The plugin includes specialized handlers for specific websites to provide richer
 
 ### Wikipedia
 - Fetches article descriptions via Wikipedia API
-- Extracts 3-sentence introductory text (up to 300 characters)
+- Extracts introductory section text (truncated based on user's max-card-length or max-bubble-length settings)
 - Always displays "WIKIPEDIA" as site name (not language codes like "EN")
 - Provides comprehensive context for encyclopedia articles
 

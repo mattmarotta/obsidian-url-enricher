@@ -38,6 +38,8 @@ Implemented comprehensive frontmatter support for per-page configuration overrid
 
 **Note**: URL display is automatic—cards show small editable URL, bubbles hide URL entirely.
 
+**Important**: The max-card-length and max-bubble-length settings apply consistently to **all websites** (Wikipedia, Reddit, Google Search, etc.). There are no site-specific hardcoded limits—all URLs respect your configured length settings.
+
 **Implementation Details**:
 
 1. **Extended PageConfig interface** (`src/editor/urlPreviewDecorator.ts`):

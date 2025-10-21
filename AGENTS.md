@@ -245,9 +245,8 @@ Handlers run in sequence; first match wins.
 
 **Wikipedia-specific enhancements:**
 - Uses MediaWiki API (`/w/api.php?action=query`)
-- Extracts clean, plain-text introductory content (3 sentences)
+- Extracts clean, plain-text introductory section
 - Prioritizes full extract over short description for richer previews
-- Allows up to 300 characters for comprehensive context
 - Handles URL encoding for article titles
 
 **Reddit-specific enhancements:**

@@ -98,7 +98,7 @@ All notable changes to the Inline Link Preview plugin will be documented in this
 - **URLs are fully editable in card mode** - Users can click and modify URLs directly below the card
 - **Better visual hierarchy** - Clear separation between preview (card) and source (URL)
 - **Click behavior fixed** - Clicking cards/bubbles now opens URLs instead of editing them; clicking URL text allows editing
-- **Wikipedia shows full context** - Now displays 3-sentence extracts (300 chars) instead of short descriptions
+- **Wikipedia shows full context** - Now displays 3-sentence extracts (respects user's max-card-length/max-bubble-length settings) instead of short descriptions
 - **Reddit bubble format** - Now shows `r/Subreddit — Post Title` (subreddit first for context)
 - **Reddit card layout** - Structured layout with subreddit in header, post title, then content
 - **Card structure improved** - Favicon and title now side-by-side in header row, description below

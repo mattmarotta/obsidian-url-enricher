@@ -42,9 +42,8 @@ export class WikipediaMetadataHandler implements MetadataHandler {
 			apiUrl.searchParams.set('format', 'json');
 			apiUrl.searchParams.set('titles', articleTitle);
 			apiUrl.searchParams.set('prop', 'extracts|description');
-			apiUrl.searchParams.set('exintro', '1'); // Only intro section
+			apiUrl.searchParams.set('exintro', '1'); // Only intro section (full intro, not entire article)
 			apiUrl.searchParams.set('explaintext', '1'); // Plain text
-			apiUrl.searchParams.set('exsentences', '3'); // First 3 sentences for better context
 			apiUrl.searchParams.set('origin', '*'); // CORS
 
 			const response = await request({
@@ -77,13 +76,8 @@ export class WikipediaMetadataHandler implements MetadataHandler {
 			if (description) {
 				// Clean up the description
 				description = description.trim();
-				
-				// For Wikipedia, allow longer descriptions (up to 300 chars) to match other sites
-				if (description.length > 300) {
-					const lastSpace = description.lastIndexOf(' ', 300);
-					description = description.substring(0, lastSpace > 250 ? lastSpace : 300) + '...';
-				}
 
+				// Store full description - decorator will handle truncation based on maxCardLength/maxBubbleLength user settings
 				metadata.description = description;
 			}
 		} catch (error) {
