@@ -5,6 +5,20 @@ import { RedditMetadataHandler } from '../../src/services/metadataHandlers/reddi
 import { GoogleSearchMetadataHandler } from '../../src/services/metadataHandlers/googleSearchMetadataHandler';
 import { TwitterMetadataHandler } from '../../src/services/metadataHandlers/twitterMetadataHandler';
 import type { LinkMetadata } from '../../src/services/types';
+import { DEFAULT_SETTINGS } from '../../src/settings';
+
+// Helper to create a minimal MetadataHandlerContext for testing
+function createMockContext(url: string, metadata: LinkMetadata, mockRequest: any): MetadataHandlerContext {
+	const urlObj = new URL(url);
+	return {
+		originalUrl: url,
+		url: urlObj,
+		metadata,
+		request: mockRequest,
+		sanitizeText: (s: string | null | undefined) => s ?? null,
+		settings: DEFAULT_SETTINGS,
+	};
+}
 
 describe('Metadata Handlers', () => {
 	describe('WikipediaMetadataHandler', () => {
@@ -17,8 +31,7 @@ describe('Metadata Handlers', () => {
 			handler = new WikipediaMetadataHandler();
 			mockRequest = vi.fn();
 			metadata = {
-				url: '',
-				title: null,
+				title: '',
 				description: null,
 				favicon: null,
 				siteName: null,
@@ -27,44 +40,24 @@ describe('Metadata Handlers', () => {
 
 		describe('matches', () => {
 			it('should match wikipedia.org domains', () => {
-				expect(handler.matches({
-					url: new URL('https://en.wikipedia.org/wiki/Test'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				let ctx = createMockContext('https://en.wikipedia.org/wiki/Test', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(true);
 			});
 
 			it('should match all language variants of Wikipedia', () => {
-				expect(handler.matches({
-					url: new URL('https://fr.wikipedia.org/wiki/Test'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				const ctx1 = createMockContext('https://fr.wikipedia.org/wiki/Test', metadata, mockRequest);
+				expect(handler.matches(ctx1)).toBe(true);
 
-				expect(handler.matches({
-					url: new URL('https://ja.wikipedia.org/wiki/Test'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				const ctx2 = createMockContext('https://ja.wikipedia.org/wiki/Test', metadata, mockRequest);
+				expect(handler.matches(ctx2)).toBe(true);
 			});
 
 			it('should not match non-Wikipedia domains', () => {
-				expect(handler.matches({
-					url: new URL('https://example.com'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(false);
+				const ctx1 = createMockContext('https://example.com', metadata, mockRequest);
+				expect(handler.matches(ctx1)).toBe(false);
 
-				expect(handler.matches({
-					url: new URL('https://wikipedia.com'), // not .org
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(false);
+				const ctx2 = createMockContext('https://wikipedia.com', metadata, mockRequest);
+				expect(handler.matches(ctx2)).toBe(false);
 			});
 		});
 
@@ -72,11 +65,13 @@ describe('Metadata Handlers', () => {
 			it('should set siteName to "Wikipedia"', async () => {
 				const url = new URL('https://en.wikipedia.org/wiki/Test');
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -87,11 +82,13 @@ describe('Metadata Handlers', () => {
 				metadata.description = 'Existing description';
 				const url = new URL('https://en.wikipedia.org/wiki/Test');
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -101,11 +98,13 @@ describe('Metadata Handlers', () => {
 			it('should not fetch if URL path does not match /wiki/ pattern', async () => {
 				const url = new URL('https://en.wikipedia.org/');
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -128,11 +127,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -161,11 +162,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -193,11 +196,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -220,11 +225,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -239,11 +246,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -258,11 +267,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				// Should not throw
 				await expect(handler.enrich(context)).resolves.toBeUndefined();
@@ -279,11 +290,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -306,11 +319,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -329,8 +344,7 @@ describe('Metadata Handlers', () => {
 			handler = new RedditMetadataHandler();
 			mockRequest = vi.fn();
 			metadata = {
-				url: '',
-				title: null,
+				title: '',
 				description: null,
 				favicon: null,
 				siteName: null,
@@ -339,39 +353,23 @@ describe('Metadata Handlers', () => {
 
 		describe('matches', () => {
 			it('should match reddit.com', () => {
-				expect(handler.matches({
-					url: new URL('https://www.reddit.com/r/programming'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				let ctx = createMockContext('https://www.reddit.com/r/programming', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(true);
 			});
 
 			it('should match reddit.com without www', () => {
-				expect(handler.matches({
-					url: new URL('https://reddit.com/r/programming'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				let ctx = createMockContext('https://reddit.com/r/programming', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(true);
 			});
 
 			it('should match old.reddit.com', () => {
-				expect(handler.matches({
-					url: new URL('https://old.reddit.com/r/programming'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				let ctx = createMockContext('https://old.reddit.com/r/programming', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(true);
 			});
 
 			it('should not match non-Reddit domains', () => {
-				expect(handler.matches({
-					url: new URL('https://example.com'),
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				})).toBe(false);
+				let ctx = createMockContext('https://example.com', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(false);
 			});
 		});
 
@@ -382,11 +380,13 @@ describe('Metadata Handlers', () => {
 				const url = new URL('https://reddit.com/r/programming/comments/abc123/test_post');
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -412,11 +412,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -442,11 +444,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -457,11 +461,13 @@ describe('Metadata Handlers', () => {
 				const url = new URL('https://reddit.com/r/programming');
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -486,11 +492,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -520,11 +528,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -550,11 +560,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -579,11 +591,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -598,15 +612,17 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBeNull();
+				expect(metadata.title).toBe('');
 			});
 
 			it('should handle invalid JSON gracefully', async () => {
@@ -617,15 +633,17 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBeNull();
+				expect(metadata.title).toBe('');
 			});
 
 			it('should handle network errors gracefully', async () => {
@@ -633,15 +651,17 @@ describe('Metadata Handlers', () => {
 				mockRequest.mockRejectedValue(new Error('Network error'));
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBeNull();
+				expect(metadata.title).toBe('');
 			});
 
 			it('should preserve query parameters when creating JSON URL', async () => {
@@ -661,11 +681,13 @@ describe('Metadata Handlers', () => {
 				});
 
 				context = {
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: mockRequest,
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -681,12 +703,13 @@ describe('Metadata Handlers', () => {
 	describe('GoogleSearchMetadataHandler', () => {
 		let handler: GoogleSearchMetadataHandler;
 		let metadata: LinkMetadata;
+		let mockRequest: ReturnType<typeof vi.fn>;
 
 		beforeEach(() => {
 			handler = new GoogleSearchMetadataHandler();
+			mockRequest = vi.fn();
 			metadata = {
-				url: '',
-				title: null,
+				title: '',
 				description: null,
 				favicon: null,
 				siteName: null,
@@ -695,62 +718,34 @@ describe('Metadata Handlers', () => {
 
 		describe('matches', () => {
 			it('should match google.com search URLs', () => {
-				expect(handler.matches({
-					url: new URL('https://www.google.com/search?q=test'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				let ctx = createMockContext('https://www.google.com/search?q=test', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(true);
 			});
 
 			it('should match google.com without www', () => {
-				expect(handler.matches({
-					url: new URL('https://google.com/search?q=test'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				let ctx = createMockContext('https://google.com/search?q=test', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(true);
 			});
 
 			it('should match country-specific Google domains', () => {
-				expect(handler.matches({
-					url: new URL('https://www.google.co.uk/search?q=test'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				const ctx1 = createMockContext('https://www.google.co.uk/search?q=test', metadata, mockRequest);
+				expect(handler.matches(ctx1)).toBe(true);
 
-				expect(handler.matches({
-					url: new URL('https://www.google.ca/search?q=test'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(true);
+				const ctx2 = createMockContext('https://www.google.ca/search?q=test', metadata, mockRequest);
+				expect(handler.matches(ctx2)).toBe(true);
 			});
 
 			it('should not match non-search Google URLs', () => {
-				expect(handler.matches({
-					url: new URL('https://www.google.com/'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(false);
+				const ctx1 = createMockContext('https://www.google.com/', metadata, mockRequest);
+				expect(handler.matches(ctx1)).toBe(false);
 
-				expect(handler.matches({
-					url: new URL('https://www.google.com/maps'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(false);
+				const ctx2 = createMockContext('https://www.google.com/maps', metadata, mockRequest);
+				expect(handler.matches(ctx2)).toBe(false);
 			});
 
 			it('should not match non-Google domains', () => {
-				expect(handler.matches({
-					url: new URL('https://example.com/search?q=test'),
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				})).toBe(false);
+				let ctx = createMockContext('https://example.com/search?q=test', metadata, mockRequest);
+				expect(handler.matches(ctx)).toBe(false);
 			});
 		});
 
@@ -758,11 +753,13 @@ describe('Metadata Handlers', () => {
 			it('should set title with search query', async () => {
 				const url = new URL('https://www.google.com/search?q=TypeScript');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -772,11 +769,13 @@ describe('Metadata Handlers', () => {
 			it('should handle "query" parameter', async () => {
 				const url = new URL('https://www.google.com/search?query=Test');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -786,11 +785,13 @@ describe('Metadata Handlers', () => {
 			it('should normalize whitespace in query', async () => {
 				const url = new URL('https://www.google.com/search?q=test   query   here');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -800,54 +801,62 @@ describe('Metadata Handlers', () => {
 			it('should not enrich if no query parameter', async () => {
 				const url = new URL('https://www.google.com/search');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBeNull();
+				expect(metadata.title).toBe('');
 			});
 
 			it('should not enrich if query is empty', async () => {
 				const url = new URL('https://www.google.com/search?q=');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBeNull();
+				expect(metadata.title).toBe('');
 			});
 
 			it('should not enrich if query is only whitespace', async () => {
 				const url = new URL('https://www.google.com/search?q=   ');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBeNull();
+				expect(metadata.title).toBe('');
 			});
 
 			it('should not override specific existing title', async () => {
 				metadata.title = 'Specific Search Title';
 				const url = new URL('https://www.google.com/search?q=test');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -858,11 +867,13 @@ describe('Metadata Handlers', () => {
 				metadata.title = 'google';
 				const url = new URL('https://www.google.com/search?q=test');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -873,11 +884,13 @@ describe('Metadata Handlers', () => {
 				metadata.title = 'Google Search';
 				const url = new URL('https://www.google.com/search?q=test');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -887,11 +900,13 @@ describe('Metadata Handlers', () => {
 			it('should handle special characters in query', async () => {
 				const url = new URL('https://www.google.com/search?q=C%2B%2B');
 				const context = {
-					url,
-					metadata,
-					request: vi.fn(),
-					sanitizeText: (s) => s,
-				};
+				originalUrl: url.toString(),
+				url,
+				metadata,
+				request: vi.fn(),
+				sanitizeText: (s: string | null | undefined) => s ?? null,
+				settings: DEFAULT_SETTINGS,
+			};
 
 				await handler.enrich(context);
 
@@ -910,8 +925,7 @@ describe('Metadata Handlers', () => {
 			handler = new TwitterMetadataHandler();
 			mockRequest = vi.fn();
 			metadata = {
-				url: '',
-				title: null,
+				title: '',
 				description: null,
 				favicon: null,
 				siteName: null,
@@ -924,7 +938,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://x.com/username'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/username',
 					settings: {} as any,
 				})).toBe(true);
@@ -935,7 +949,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://twitter.com/username'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://twitter.com/username',
 					settings: {} as any,
 				})).toBe(true);
@@ -946,7 +960,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://www.x.com/username'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://www.x.com/username',
 					settings: {} as any,
 				})).toBe(true);
@@ -957,7 +971,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://www.twitter.com/username'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://www.twitter.com/username',
 					settings: {} as any,
 				})).toBe(true);
@@ -968,7 +982,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://mobile.twitter.com/username'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://mobile.twitter.com/username',
 					settings: {} as any,
 				})).toBe(true);
@@ -979,7 +993,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://example.com'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://example.com',
 					settings: {} as any,
 				})).toBe(false);
@@ -990,7 +1004,7 @@ describe('Metadata Handlers', () => {
 					url: new URL('https://nottwitter.com'),
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://nottwitter.com',
 					settings: {} as any,
 				})).toBe(false);
@@ -1006,7 +1020,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/ThePrimeagen',
 					settings: {} as any,
 				};
@@ -1023,7 +1037,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://twitter.com/user123',
 					settings: {} as any,
 				};
@@ -1040,7 +1054,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/test',
 					settings: {} as any,
 				};
@@ -1057,7 +1071,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/someuser',
 					settings: {} as any,
 				};
@@ -1074,7 +1088,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/username',
 					settings: {} as any,
 				};
@@ -1091,7 +1105,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1111,7 +1125,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/ThePrimeagen',
 					settings: {} as any,
 				};
@@ -1132,7 +1146,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user_123/status/1953502301173244004',
 					settings: {} as any,
 				};
@@ -1149,7 +1163,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/test_user_name',
 					settings: {} as any,
 				};
@@ -1166,7 +1180,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user123abc',
 					settings: {} as any,
 				};
@@ -1183,7 +1197,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/username/',
 					settings: {} as any,
 				};
@@ -1200,7 +1214,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/username?lang=en&ref=home',
 					settings: {} as any,
 				};
@@ -1228,7 +1242,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123456789',
 					settings: {} as any,
 				};
@@ -1248,7 +1262,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/username',
 					settings: {} as any,
 				};
@@ -1278,7 +1292,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/ThePrimeagen/status/123',
 					settings: {} as any,
 				};
@@ -1301,7 +1315,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/456',
 					settings: {} as any,
 				};
@@ -1321,7 +1335,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/789',
 					settings: {} as any,
 				};
@@ -1344,7 +1358,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/999',
 					settings: {} as any,
 				};
@@ -1370,7 +1384,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/111',
 					settings: {} as any,
 				};
@@ -1396,7 +1410,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1419,7 +1433,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1442,7 +1456,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1465,7 +1479,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1488,7 +1502,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1511,7 +1525,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1534,7 +1548,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123',
 					settings: {} as any,
 				};
@@ -1554,7 +1568,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user#section',
 					settings: {} as any,
 				};
@@ -1571,7 +1585,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user?ref=home#top',
 					settings: {} as any,
 				};
@@ -1594,7 +1608,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/user/status/123/analytics',
 					settings: {} as any,
 				};
@@ -1612,7 +1626,7 @@ describe('Metadata Handlers', () => {
 					url,
 					metadata,
 					request: mockRequest,
-					sanitizeText: (s) => s,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
 					originalUrl: 'https://x.com/',
 					settings: {} as any,
 				};
