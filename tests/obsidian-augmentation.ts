@@ -1,4 +1,4 @@
-import type { RequestUrlParams, RequestUrlResponse } from "./stubs/obsidian";
+import type { RequestUrlParams, RequestUrlResponse } from "./mocks/obsidian";
 
 declare module "obsidian" {
 	// Augment the testing build with a helper for swapping the requestUrl mock.

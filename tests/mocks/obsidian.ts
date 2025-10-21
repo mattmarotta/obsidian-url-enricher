@@ -129,6 +129,7 @@ export class Plugin {
 // Vault Mock
 export class Vault {
 	adapter: any;
+	private rootFolder: TFolder | null = null;
 
 	async read(file: any): Promise<string> {
 		return '';
@@ -140,6 +141,19 @@ export class Vault {
 
 	async create(path: string, data: string): Promise<any> {
 		return {};
+	}
+
+	getRoot(): TFolder {
+		if (!this.rootFolder) {
+			this.rootFolder = new TFolder([]);
+			this.rootFolder.isRoot = true;
+		}
+		return this.rootFolder;
+	}
+
+	setRoot(folder: TFolder): void {
+		this.rootFolder = folder;
+		folder.isRoot = true;
 	}
 }
 
@@ -238,7 +252,7 @@ export class PluginSettingTab {
 
 // TAbstractFile Mock
 export class TAbstractFile {
-	vault: Vault | null = null;
+	vault!: Vault;
 	path: string = '';
 	name: string = '';
 	parent: any = null;
