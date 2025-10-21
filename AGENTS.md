@@ -352,11 +352,49 @@ This section documents key architectural choices and their rationale.
 
 ## Testing
 
-- Manual install for testing: copy `main.js`, `manifest.json`, `styles.css` (if any) to:
-  ```
-  <Vault>/.obsidian/plugins/<plugin-id>/
-  ```
-- Reload Obsidian and enable the plugin in **Settings → Community plugins**.
+### Automated Testing
+
+The plugin uses **Vitest** with comprehensive test coverage:
+
+- **Test framework**: [Vitest](https://vitest.dev/) (fast, ESM-native)
+- **DOM environment**: happy-dom (lightweight DOM for Node.js)
+- **Coverage provider**: V8
+- **CI/CD**: GitHub Actions
+
+**Test Files**: 194 tests across 4 test suites
+
+**Test Structure**:
+```
+tests/
+├── setup.ts                      # Global setup/teardown
+├── mocks/obsidian.ts             # Obsidian API mocks
+├── fixtures/                     # Reusable test data
+├── helpers/                      # Custom assertions and utilities
+├── utils/                        # Utility function tests
+└── services/                     # Service layer tests
+```
+
+**Coverage**: ~18% overall
+- **High coverage** (90%+): Utils (url, text), Favicon cache, Metadata handlers
+- **Not yet tested**: LinkPreviewService, Editor integration, Plugin lifecycle
+
+See [TESTING.md](TESTING.md) for:
+- Running tests (`npm test`, `npm run test:coverage`)
+- Writing new tests
+- Testing best practices
+- Future testing roadmap
+
+### Manual Testing
+
+For testing the plugin in Obsidian:
+
+1. Copy `main.js`, `manifest.json`, `styles.css` to:
+   ```
+   <Vault>/.obsidian/plugins/<plugin-id>/
+   ```
+2. Reload Obsidian and enable the plugin in **Settings → Community plugins**
+3. Test with various URL types: Wikipedia, Reddit, Google Search, generic URLs
+4. Verify frontmatter overrides work (see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md))
 
 ## Commands & settings
 

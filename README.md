@@ -402,6 +402,50 @@ The release bundle consists of `manifest.json`, `main.js`, and optionally `style
 
 Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules.
 
+## Testing
+
+The plugin uses [Vitest](https://vitest.dev/) for testing with comprehensive test coverage of core functionality.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with UI dashboard
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Current Test Coverage
+
+**194 tests across 4 test files** covering:
+
+- **Utilities** (108 tests):
+  - URL extraction and validation ([url.test.ts](tests/utils/url.test.ts:63))
+  - Text sanitization and HTML entity decoding ([text.test.ts](tests/utils/text.test.ts:45))
+
+- **Services** (86 tests):
+  - Favicon caching with memory/disk persistence ([faviconCache.test.ts](tests/services/faviconCache.test.ts:41))
+  - Metadata handlers for Wikipedia, Reddit, and Google Search ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts:45))
+
+**Coverage**: ~18% overall, with 90%+ coverage of tested modules
+
+### Testing Documentation
+
+For comprehensive testing documentation, including:
+- Writing new tests
+- Testing best practices
+- CI/CD integration
+- Future testing goals
+
+See [TESTING.md](TESTING.md)
+
 ## Contributing
 
 ### Adding Custom Metadata Handlers
