@@ -184,6 +184,37 @@ describe('URL Utilities', () => {
 				const result = extractUrlList(text);
 				expect(result).toBe(null);
 			});
+
+			it('should extract URL when it appears in link text [URL](notes)', () => {
+				const text = '[https://example.com](notes)';
+				const result = extractUrlList(text);
+				expect(result).toHaveLength(1);
+				expect(result![0].url).toBe('https://example.com');
+				expect(result![0].start).toBe(0);
+				expect(result![0].end).toBe(text.length);
+			});
+
+			it('should extract URL with markdown link format and whitespace', () => {
+				const text = '  [https://example.com](note)  ';
+				const result = extractUrlList(text);
+				expect(result).toHaveLength(1);
+				expect(result![0].url).toBe('https://example.com');
+			});
+
+			it('should handle markdown link with URL in text followed by newline', () => {
+				const text = '[https://example.com](note)\n';
+				const result = extractUrlList(text);
+				expect(result).toHaveLength(1);
+				expect(result![0].end).toBe(text.length - 1);
+			});
+
+			it('should handle multiple markdown links with URLs in text', () => {
+				const text = '[https://first.com](n1)\n[https://second.com](n2)';
+				const result = extractUrlList(text);
+				expect(result).toHaveLength(2);
+				expect(result![0].url).toBe('https://first.com');
+				expect(result![1].url).toBe('https://second.com');
+			});
 		});
 
 		describe('Wrapped URLs', () => {

@@ -20,6 +20,7 @@ export interface RequestUrlResponse {
 // Mock Request URL Builder
 class MockRequestUrlBuilder {
 	private mocks = new Map<string, RequestUrlResponse | Error>();
+	private calls = new Map<string, RequestUrlParams[]>();
 	private defaultResponse: RequestUrlResponse = {
 		status: 200,
 		text: '',
@@ -44,6 +45,11 @@ class MockRequestUrlBuilder {
 	}
 
 	async execute(params: RequestUrlParams): Promise<RequestUrlResponse> {
+		// Track call
+		const urlCalls = this.calls.get(params.url) || [];
+		urlCalls.push(params);
+		this.calls.set(params.url, urlCalls);
+
 		const mock = this.mocks.get(params.url);
 
 		if (!mock) {
@@ -57,8 +63,18 @@ class MockRequestUrlBuilder {
 		return mock;
 	}
 
+	getCallCount(url: string): number {
+		return this.calls.get(url)?.length || 0;
+	}
+
+	getLastRequest(url: string): RequestUrlParams | undefined {
+		const urlCalls = this.calls.get(url);
+		return urlCalls?.[urlCalls.length - 1];
+	}
+
 	reset(): void {
 		this.mocks.clear();
+		this.calls.clear();
 	}
 
 	hasUrl(url: string): boolean {
@@ -217,5 +233,39 @@ export class PluginSettingTab {
 
 	hide(): void {
 		// Mock implementation
+	}
+}
+
+// TAbstractFile Mock
+export class TAbstractFile {
+	vault: Vault | null = null;
+	path: string = '';
+	name: string = '';
+	parent: any = null;
+}
+
+// TFile Mock
+export class TFile extends TAbstractFile {
+	extension: string;
+	stat: any;
+	basename: string;
+
+	constructor(extension: string = 'md') {
+		super();
+		this.extension = extension;
+		this.basename = 'file';
+		this.stat = { ctime: Date.now(), mtime: Date.now(), size: 0 };
+	}
+}
+
+// TFolder Mock
+export class TFolder extends TAbstractFile {
+	children: (TFile | TFolder)[];
+	isRoot: boolean;
+
+	constructor(children: (TFile | TFolder)[] = []) {
+		super();
+		this.children = children;
+		this.isRoot = false;
 	}
 }

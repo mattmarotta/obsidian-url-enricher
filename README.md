@@ -424,17 +424,22 @@ npm run test:coverage
 
 ### Current Test Coverage
 
-**194 tests across 4 test files** covering:
+**322 tests across 9 test files** covering:
 
-- **Utilities** (108 tests):
-  - URL extraction and validation ([url.test.ts](tests/utils/url.test.ts:63))
-  - Text sanitization and HTML entity decoding ([text.test.ts](tests/utils/text.test.ts:45))
+- **Utilities** (210 tests, 91% coverage):
+  - URL extraction, validation, and markdown link handling ([url.test.ts](tests/utils/url.test.ts) - 67 tests, 98% coverage)
+  - Text sanitization and HTML entity decoding ([text.test.ts](tests/utils/text.test.ts) - 45 tests, 67% coverage)
+  - Editor position utilities ([editorHelpers.test.ts](tests/utils/editorHelpers.test.ts) - 19 tests, 100% coverage)
+  - Markdown link detection ([markdown.test.ts](tests/utils/markdown.test.ts) - 27 tests, 95% coverage)
+  - String replacement utilities ([stringReplace.test.ts](tests/utils/stringReplace.test.ts) - 22 tests, 100% coverage)
+  - Vault file/folder traversal ([vault.test.ts](tests/utils/vault.test.ts) - 30 tests, 100% coverage)
 
-- **Services** (86 tests):
-  - Favicon caching with memory/disk persistence ([faviconCache.test.ts](tests/services/faviconCache.test.ts:41))
-  - Metadata handlers for Wikipedia, Reddit, and Google Search ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts:45))
+- **Services** (138 tests, 73% coverage):
+  - Link preview metadata fetching and caching ([linkPreviewService.test.ts](tests/services/linkPreviewService.test.ts) - 52 tests, 69% coverage)
+  - Favicon caching with memory/disk persistence ([faviconCache.test.ts](tests/services/faviconCache.test.ts) - 41 tests, 97% coverage)
+  - Metadata handlers for Wikipedia, Reddit, and Google Search ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts) - 45 tests, 92% coverage)
 
-**Coverage**: ~18% overall, with 90%+ coverage of tested modules
+**Coverage**: ~39% overall, with 90%+ coverage of utilities and services
 
 ### Testing Documentation
 

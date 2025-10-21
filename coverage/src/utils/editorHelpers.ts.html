@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/24</span>
+                <span class='fraction'>24/24</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/24</span>
+                <span class='fraction'>24/24</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -105,34 +105,34 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Editor, EditorPosition } from "obsidian";
 &nbsp;
 export interface EditorTextRange {
@@ -140,34 +140,34 @@ export interface EditorTextRange {
 	end: EditorPosition;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function getPrimarySelection(editor: Editor): EditorTextRange {</span>
-<span class="cstat-no" title="statement not covered" >	const selections = editor.listSelections();</span>
-<span class="cstat-no" title="statement not covered" >	if (!selections.length) {</span>
-<span class="cstat-no" title="statement not covered" >		const cursor = editor.getCursor();</span>
-<span class="cstat-no" title="statement not covered" >		return { start: cursor, end: cursor };</span>
-<span class="cstat-no" title="statement not covered" >	}</span>
+export function getPrimarySelection(editor: Editor): EditorTextRange {
+	const selections = editor.listSelections();
+	if (!selections.length) {
+		const cursor = editor.getCursor();
+		return { start: cursor, end: cursor };
+	}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	const selection = selections[0];</span>
-<span class="cstat-no" title="statement not covered" >	return normalizeRange(selection.anchor, selection.head);</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+	const selection = selections[0];
+	return normalizeRange(selection.anchor, selection.head);
+}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function normalizeRange(a: EditorPosition, b: EditorPosition): EditorTextRange {</span>
-<span class="cstat-no" title="statement not covered" >	if (comparePositions(a, b) &lt;= 0) {</span>
-<span class="cstat-no" title="statement not covered" >		return { start: a, end: b };</span>
-<span class="cstat-no" title="statement not covered" >	}</span>
-<span class="cstat-no" title="statement not covered" >	return { start: b, end: a };</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+export function normalizeRange(a: EditorPosition, b: EditorPosition): EditorTextRange {
+	if (comparePositions(a, b) &lt;= 0) {
+		return { start: a, end: b };
+	}
+	return { start: b, end: a };
+}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function comparePositions(a: EditorPosition, b: EditorPosition): number {</span>
-<span class="cstat-no" title="statement not covered" >	if (a.line !== b.line) {</span>
-<span class="cstat-no" title="statement not covered" >		return a.line - b.line;</span>
-<span class="cstat-no" title="statement not covered" >	}</span>
-<span class="cstat-no" title="statement not covered" >	return a.ch - b.ch;</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+export function comparePositions(a: EditorPosition, b: EditorPosition): number {
+	if (a.line !== b.line) {
+		return a.line - b.line;
+	}
+	return a.ch - b.ch;
+}
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export function isRangeMatching(editor: Editor, range: EditorTextRange, expected: string): boolean {</span>
-<span class="cstat-no" title="statement not covered" >	return editor.getRange(range.start, range.end) === expected;</span>
-<span class="cstat-no" title="statement not covered" >}</span>
+export function isRangeMatching(editor: Editor, range: EditorTextRange, expected: string): boolean {
+	return editor.getRange(range.start, range.end) === expected;
+}
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -175,7 +175,7 @@ export interface EditorTextRange {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-21T02:00:14.156Z
+                at 2025-10-21T12:40:40.718Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
