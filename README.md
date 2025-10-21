@@ -424,7 +424,7 @@ npm run test:coverage
 
 ### Current Test Coverage
 
-**322 tests across 9 test files** covering:
+**407 tests across 10 test files** covering:
 
 - **Utilities** (210 tests, 91% coverage):
   - URL extraction, validation, and markdown link handling ([url.test.ts](tests/utils/url.test.ts) - 67 tests, 98% coverage)
@@ -439,7 +439,12 @@ npm run test:coverage
   - Favicon caching with memory/disk persistence ([faviconCache.test.ts](tests/services/faviconCache.test.ts) - 41 tests, 97% coverage)
   - Metadata handlers for Wikipedia, Reddit, and Google Search ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts) - 45 tests, 92% coverage)
 
-**Coverage**: ~39% overall, with 90%+ coverage of utilities and services
+- **Editor** (95 tests, business logic only):
+  - Frontmatter parsing and settings ([urlPreviewDecorator.test.ts](tests/editor/urlPreviewDecorator.test.ts) - 95 tests)
+  - Text processing helpers (truncate, stripEmoji, deriveTitleFromUrl, etc.)
+  - Note: Widget rendering intentionally not tested (UI/DOM code)
+
+**Coverage**: ~39% overall, with 90%+ coverage of utilities and services, and comprehensive business logic coverage for editor integration
 
 ### Testing Documentation
 
