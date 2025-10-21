@@ -424,7 +424,7 @@ npm run test:coverage
 
 ### Current Test Coverage
 
-**407 tests across 10 test files** covering:
+**517 tests across 12 test files** covering:
 
 - **Utilities** (210 tests, 91% coverage):
   - URL extraction, validation, and markdown link handling ([url.test.ts](tests/utils/url.test.ts) - 67 tests, 98% coverage)
@@ -444,7 +444,12 @@ npm run test:coverage
   - Text processing helpers (truncate, stripEmoji, deriveTitleFromUrl, etc.)
   - Note: Widget rendering intentionally not tested (UI/DOM code)
 
-**Coverage**: ~39% overall, with 90%+ coverage of utilities and services, and comprehensive business logic coverage for editor integration
+- **Plugin Lifecycle** (110 tests):
+  - Settings structure validation ([settings.test.ts](tests/settings.test.ts) - 60 tests)
+  - Settings normalization and defaults ([main.test.ts](tests/main.test.ts) - 50 tests)
+  - Type conversion, clamping, and validation
+
+**Coverage**: 39.63% overall, with 90%+ coverage of utilities and services, and comprehensive business logic coverage for editor and plugin lifecycle
 
 ### Testing Documentation
 

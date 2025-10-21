@@ -67,6 +67,8 @@ tests/
 ├── helpers/
 │   ├── assertion-helpers.ts         # Custom assertion utilities
 │   └── mock-helpers.ts              # Mock creation utilities
+├── main.test.ts                     # Plugin lifecycle tests (50 tests)
+├── settings.test.ts                 # Settings validation tests (60 tests)
 ├── utils/
 │   ├── editorHelpers.test.ts        # Editor helper tests (19 tests)
 │   ├── markdown.test.ts             # Markdown utility tests (27 tests)
@@ -135,9 +137,9 @@ Test utilities:
 
 ## Test Coverage
 
-### Current Coverage: ~39%
+### Current Coverage: 39.63%
 
-**Test Files**: 10 files, 407 tests
+**Test Files**: 12 files, 517 tests
 
 **Fully Tested (90%+ coverage):**
 
@@ -177,23 +179,29 @@ Test utilities:
    - **sanitizeLinkText** (10 tests): HTML sanitization with emoji handling
    - Note: Widget rendering intentionally not tested (UI/DOM code)
 
+6. **src/settings.ts** (8% coverage, 60 tests)
+   - **DEFAULT_SETTINGS validation** (60 tests): All 11 fields validated for type, value, constraints
+   - Boolean field defaults and validation
+   - Numeric field ranges and constraints
+   - String enum validation
+   - Data integrity checks
+   - Settings object creation patterns
+   - Note: Only exported types/constants tested; UI rendering intentionally not tested
+
+7. **src/main.ts** (0% coverage, 50 tests)
+   - **Settings normalization** (50 tests): Clamping, type conversion, default fallbacks
+   - maxCardLength normalization (11 tests)
+   - maxBubbleLength normalization (9 tests)
+   - requestTimeoutMs normalization (8 tests)
+   - Boolean normalization (8 tests)
+   - Combined normalization scenarios (3 tests)
+   - Bubble color CSS logic (6 tests)
+   - Settings merge behavior (5 tests)
+   - Note: Plugin lifecycle not tested; normalization logic extracted for testing
+
 ### Not Yet Tested
 
-**Medium Priority:**
-
-- **src/settings.ts** (295 lines)
-  - Settings UI and normalization
-  - Default settings and validation
-  - Frontmatter override logic
-  - Settings migration
-
-- **src/main.ts** (122 lines)
-  - Plugin lifecycle (initialization, unload)
-  - Settings loading and management
-  - Command registration
-  - Editor decoration setup
-
-**Low Priority (difficult to test):**
+**Low Priority (difficult to test - mostly UI rendering code):**
 
 - **src/editor/urlRangeDecorator.ts** (1139 lines)
   - CodeMirror widget rendering
@@ -201,10 +209,10 @@ Test utilities:
   - Hover states and animations
   - Content loading and error states
 
-- **src/editor/urlPreviewDecorator.ts** (132 lines)
-  - Editor integration
-  - Frontmatter parsing
-  - Decoration logic and state management
+- **src/editor/urlPreviewDecorator.ts** (132 lines - widget integration)
+  - CodeMirror decoration lifecycle
+  - Widget instantiation and updates
+  - State management and event handling
 
 ## Writing Tests
 
