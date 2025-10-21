@@ -339,6 +339,40 @@ The plugin includes specialized handlers for specific websites to provide richer
 ### Extensible Handler System
 The metadata enrichment pipeline is extensible—additional domain-specific handlers can be registered to provide custom formatting for other websites.
 
+## Troubleshooting
+
+### Previews Not Appearing
+- Ensure you're in **Live Preview mode** (not Source mode or Reading view)
+- Check that URLs are on their own line or properly formatted as markdown links
+- The plugin is non-destructive: URLs must remain as plain text URLs in your markdown
+
+### Previews Show Wrong Content
+- Clear metadata cache: **Settings → Inline Link Preview → Cache Management → Clear Cache**
+- Check if the website blocks automated requests (403 Forbidden errors)
+- Some sites may not provide OpenGraph or meta tag metadata
+
+### Favicons Not Loading
+- Favicon cache is persistent with 30-day expiration
+- Clear favicon cache: **Settings → Inline Link Preview → Cache Management → Clear Favicon Cache**
+- Some domains may not have favicons available via Google's favicon service
+
+### Frontmatter Not Working
+- Frontmatter properties MUST start on **line 1** with `---`
+- Check property names are spelled correctly (case-insensitive)
+- Verify values are valid (e.g., max-card-length: 100-5000)
+- See [FRONTMATTER-TROUBLESHOOTING.md](FRONTMATTER-TROUBLESHOOTING.md) for detailed debugging steps
+
+### Performance Issues
+- Reduce `max-card-length` or `max-bubble-length` settings to limit preview size
+- Disable descriptions: Set `include-description` to false
+- Increase `request timeout` if on slow connection
+- Consider using bubble style instead of card style for more compact previews
+
+### Error Warnings (⚠️)
+- **HTTP errors** (403, 404, 500+): Enable/disable warnings in Settings → HTTP Error Warnings
+- **Network errors**: Always shown for DNS failures, timeouts, SSL errors
+- Hover over warning indicator to see error details
+
 ## Privacy and network usage
 
 To build a preview, the plugin requests the linked page and parses its HTML locally. Favicons are fetched from Google's public favicon service at 128px resolution for consistent, high-quality icons across all sites. URLs are sent directly to their target domains; no additional third-party metadata service is used.
@@ -363,7 +397,75 @@ The release bundle consists of `manifest.json`, `main.js`, and optionally `style
 - `npm install` – install dependencies.
 - `npm run dev` – watch mode with incremental builds.
 - `npm run build` – type-check and create a production bundle.
-- `npm test` – run unit tests for preview formatting and paste conversion helpers.
+- `npm test` – run unit tests.
 - `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
 
-Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules. All commands must use Obsidian’s registration APIs so they clean up correctly when the plugin unloads.
+Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules.
+
+## Contributing
+
+### Adding Custom Metadata Handlers
+
+The plugin uses an extensible metadata handler system to provide site-specific enhancements. To add support for a new site:
+
+1. **Create a handler** in `src/services/metadataHandlers/`:
+
+```typescript
+import type { MetadataHandler, MetadataHandlerContext } from "./metadataHandler";
+
+export class CustomSiteHandler implements MetadataHandler {
+  matches({ url }: MetadataHandlerContext): boolean {
+    // Return true if this handler should process the URL
+    return url.hostname.includes('example.com');
+  }
+
+  async enrich(context: MetadataHandlerContext): Promise<void> {
+    const { url, metadata, request } = context;
+
+    // Fetch additional metadata from the site's API or HTML
+    // Example: Call a REST API, parse custom meta tags, etc.
+
+    // Update the metadata object
+    metadata.title = "Custom Title";
+    metadata.description = "Custom Description";
+    metadata.siteName = "EXAMPLE SITE";
+  }
+}
+```
+
+2. **Register the handler** in `src/services/metadataHandlers/index.ts`:
+
+```typescript
+import { CustomSiteHandler } from './customSiteHandler';
+
+export function getMetadataHandlers(): MetadataHandler[] {
+  return [
+    new CustomSiteHandler(),
+    new WikipediaMetadataHandler(),
+    new RedditMetadataHandler(),
+    new GoogleSearchMetadataHandler(),
+  ];
+}
+```
+
+3. **Test your handler**:
+   - Run `npm run dev` to start watch mode
+   - Add a URL from your custom site to a test note
+   - Verify the custom metadata appears in the preview
+
+**See [AGENTS.md](AGENTS.md)** for complete architecture documentation and advanced handler patterns.
+
+### Code Guidelines
+
+- Keep `src/main.ts` focused on lifecycle management only
+- Place feature logic in dedicated modules (`src/services/`, `src/editor/`, `src/utils/`)
+- Use TypeScript strict mode and follow existing patterns
+- Add JSDoc comments for public APIs and complex logic
+- Ensure all new features work in both bubble and card preview styles
+
+### Pull Requests
+
+- Test changes in both Desktop and Mobile Obsidian apps
+- Update documentation if adding new features or changing behavior
+- Follow the non-destructive principle: never modify markdown source files
+- Include screenshots for UI changes

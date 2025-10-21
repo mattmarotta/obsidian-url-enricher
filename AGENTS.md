@@ -9,7 +9,7 @@ This plugin adds rich, dynamic link previews to Obsidian. It is **completely non
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript)
 - Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian
 - Required release artifacts: `main.js`, `manifest.json`, `styles.css`
-- Current version: 0.4.0
+- Current version: 0.7.0
 
 ## Environment & tooling
 
@@ -133,18 +133,43 @@ Page-level settings can override global preferences using frontmatter:
 
 ```yaml
 ---
-preview-style: card      # or bubble
-preview-display: inline  # or block
+preview-style: card              # or bubble
+preview-display: inline          # or block
+max-card-length: 400             # 100-5000
+max-bubble-length: 200           # 50-5000
+show-favicon: true               # or false
+include-description: true        # or false
+preview-color-mode: grey         # none, grey, or custom
+custom-preview-color: "#4a4a4a"  # hex color
 ---
 ```
 
-The decorator parses frontmatter on each render pass using simple regex:
-- Checks if document starts with `---`
-- Finds closing `---`
-- Extracts `preview-style:` and `preview-display:` keys
-- Falls back to global settings if not specified
+**Implementation Architecture:**
 
-Configuration hierarchy: `frontmatter > global settings`
+1. **PageConfig Interface** (`src/editor/urlPreviewDecorator.ts`):
+   - Extends base settings with optional frontmatter properties
+   - All properties are optional to allow partial overrides
+   - Includes types: `PreviewStyle`, `DisplayMode`, `PreviewColorMode`
+
+2. **parsePageConfig() Function**:
+   - Parses frontmatter using regex on each decoration pass
+   - Validates frontmatter must start on line 1 with `---`
+   - Property parsing is case-insensitive
+   - Validates number ranges:
+     - `max-card-length`: 100-5000
+     - `max-bubble-length`: 50-5000
+   - Validates hex colors: `#RRGGBB` format for custom-preview-color
+   - Boolean values parsed from "true"/"false" strings
+
+3. **Settings Merge Logic**:
+   - Frontmatter values override global settings per-page
+   - Falls back to global settings if frontmatter property undefined
+   - Merge happens in decorator before rendering
+   - `keepEmoji` intentionally NOT exposed (global-only preference)
+
+**Configuration Hierarchy:** `frontmatter > global settings`
+
+**Note:** Length settings apply consistently to all sites (Wikipedia, Reddit, etc.) with no site-specific limits.
 
 ### Material Design Card Styling
 Card previews follow **Google's Material Design** principles:
@@ -161,47 +186,6 @@ Card previews follow **Google's Material Design** principles:
 - Subreddit shown as caption-style label (0.85em, medium weight, muted color)
 - Content preview below with proper line-height (1.6) and muted text
 - Structured layout parses `r/Subreddit • Content` format for clean display
-
-### Settings Reactivity
-Settings changes trigger immediate updates across all open editor tabs:
-
-```typescript
-// In main.ts
-refreshDecorations(): void {
-  this.app.workspace.iterateAllLeaves((leaf) => {
-    const cm = leaf.view.editor?.cm;
-    if (cm) {
-      cm.dispatch({
-        effects: [
-          faviconRefreshEffect.of(null),
-          urlPreviewRefreshEffect.of(null)
-        ]
-      });
-    }
-  });
-}
-```
-
-Each decorator's ViewPlugin listens for its StateEffect and rebuilds decorations when triggered.
-
-### Metadata Enrichment Pipeline
-The `LinkPreviewService` uses a handler chain pattern for domain-specific metadata extraction:
-
-- Base handler: Generic HTML meta tag parsing
-- Google Search handler: Extracts search query from URL parameters
-- Reddit handler: Custom title formatting for Reddit posts
-- **Extensible**: Additional handlers can be registered via `registerMetadataHandler()`
-
-Handlers run in sequence; first match wins.
-
-### Favicon Caching
-`FaviconCache` provides persistent storage for favicons:
-
-- Uses Obsidian's `loadData()`/`saveData()` for persistence
-- 30-day expiration per domain
-- Automatic flushing on plugin unload
-- Cache statistics available in settings UI
-- Falls back to Google's favicon service (32x32) for reliable coverage
 
 ### Settings Reactivity
 Settings changes trigger immediate updates across all open editor tabs:
@@ -271,7 +255,86 @@ Handlers run in sequence; first match wins.
 - 30-day expiration per domain
 - Automatic flushing on plugin unload
 - Cache statistics available in settings UI
-- Falls back to Google's favicon service (32x32) for reliable coverage
+- Falls back to Google's favicon service (128px) for reliable coverage
+
+## Design Decisions
+
+This section documents key architectural choices and their rationale.
+
+### Why CodeMirror 6 Decorations?
+
+**Decision**: Use CodeMirror 6's decoration system via ViewPlugin instead of DOM manipulation or view components.
+
+**Rationale**:
+- **Non-destructive**: Decorations overlay the editor without modifying markdown source
+- **Performance**: CM6 efficiently updates only changed decorations on each render
+- **Integration**: Native to Obsidian's Live Preview mode architecture
+- **State management**: Decorations rebuild automatically when doc changes
+- **Clean lifecycle**: No manual DOM cleanup required
+
+**Alternative considered**: Custom view components → Rejected due to complex lifecycle management and potential conflicts with Obsidian's editor.
+
+### Why Non-Destructive Approach?
+
+**Decision**: Never modify markdown source files. All previews are visual-only decorations.
+
+**Rationale**:
+- **Portability**: Notes remain readable in any markdown editor
+- **Version control**: Git diffs show actual content changes, not formatting
+- **User trust**: Users maintain full control over their source files
+- **Simplicity**: No complex markdown parsing/generation logic needed
+- **Safety**: No risk of data loss from failed conversions
+
+**Historical context**: v0.3.x supported destructive URL conversion. Removed in v0.5.0 based on user feedback preferring source file integrity.
+
+### Why Separate max-card-length vs max-bubble-length?
+
+**Decision**: Provide independent length settings for card and bubble styles.
+
+**Rationale**:
+- **Different use cases**: Cards (prominent, detailed) vs bubbles (compact, subtle)
+- **Visual balance**: Cards can show more text without overwhelming the page
+- **User control**: Let users optimize each style independently
+- **Defaults reflect intent**: 300 for cards (informative) vs 150 for bubbles (concise)
+
+**Trade-off**: Slightly more complex settings UI vs significantly better UX flexibility.
+
+### Why Cursor-Aware Preview Hiding?
+
+**Decision**: Hide previews when cursor is inside the URL text.
+
+**Rationale**:
+- **Prevents accidental edits**: Users see raw URL before modifying it
+- **Clear editing feedback**: Immediate visual indication of edit mode
+- **Familiar pattern**: Similar to inline code, LaTeX in many editors
+- **Safety**: Impossible to corrupt URL without seeing it first
+
+**Implementation**: Check cursor position against URL range on each render pass.
+
+### Why 30-Day Favicon Cache?
+
+**Decision**: Cache favicons for 30 days with persistent storage.
+
+**Rationale**:
+- **Performance**: Eliminates repeated favicon requests for frequently-visited domains
+- **Offline support**: Favicons available without network connectivity
+- **Balance**: Long enough to benefit users, short enough to catch updates
+- **Disk usage**: Minimal - stores only URLs, not actual images (~1KB per 100 domains)
+
+**Alternative considered**: Session-only cache → Rejected because reload cost outweighs small disk usage.
+
+### Why 128px Favicons?
+
+**Decision**: Request 128px favicons from Google's service instead of standard 16px/32px.
+
+**Rationale**:
+- **Retina displays**: 128px scales beautifully on high-DPI screens
+- **Card mode**: Larger favicons (2em) need high-res source for crisp rendering
+- **Future-proof**: Works well as displays get higher resolution
+- **Negligible cost**: File size difference is minimal (~2-5KB)
+- **Browser scaling**: Chromium's auto scaling produces better results from high-res source
+
+**Trade-off**: Slightly larger downloads vs significantly better visual quality on modern displays.
 
 ## Manifest rules (`manifest.json`)
 
