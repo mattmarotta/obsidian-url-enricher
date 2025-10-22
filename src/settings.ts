@@ -287,6 +287,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 							await this.plugin.faviconCache.flush();
 						}
 						new Notice("Inline link preview cache cleared.");
+						// Trigger decoration refresh so previews update immediately
+						this.plugin.refreshDecorations();
 						// Refresh the display to update stats
 						this.display();
 					}),

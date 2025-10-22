@@ -389,3 +389,23 @@ a.ilp-card-url:hover {
 	opacity: 0.7 !important;
 	display: inline !important;
 }
+
+/* Hashtag and Mention Styling - Non-clickable visual enhancement */
+.ilp-hashtag,
+.ilp-mention {
+	font-weight: 500;
+	color: var(--text-accent);
+	/* Subtle visual distinction without being distracting */
+	opacity: 1;
+}
+
+.ilp-hashtag {
+	/* Hashtags get accent color */
+	color: var(--text-accent);
+}
+
+.ilp-mention {
+	/* Mentions get a slightly different treatment */
+	color: var(--text-accent);
+	font-weight: 500;
+}

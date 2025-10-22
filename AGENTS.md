@@ -187,6 +187,26 @@ Card previews follow **Google's Material Design** principles:
 - Content preview below with proper line-height (1.6) and muted text
 - Structured layout parses `r/Subreddit • Content` format for clean display
 
+### Content Enhancement Features
+
+**Hashtag and Mention Styling:**
+- Hashtags (`#tag`) and mentions (`@username`) are automatically styled for visual distinction
+- Applies universally to all preview content (Twitter, Reddit, Wikipedia, generic URLs)
+- Non-clickable visual enhancement using accent color and medium font weight
+- CSS classes: `.ilp-hashtag` and `.ilp-mention`
+- Subtle styling maintains readability while highlighting social media conventions
+
+**Media URL Cleaning:**
+- Automatically removes common media and shortened URLs from descriptions
+- Cleaned patterns include:
+  - `pic.twitter.com/*` (Twitter images)
+  - `t.co/*` (Twitter shortened links)
+  - `i.imgur.com/*`, `imgur.com/*` (Imgur images)
+  - `i.redd.it/*`, `v.redd.it/*` (Reddit media)
+  - `gfycat.com/*` (GIF hosting)
+- Applies to all sites universally to declutter preview descriptions
+- Whitespace is automatically cleaned up after URL removal
+
 ### Settings Reactivity
 Settings changes trigger immediate updates across all open editor tabs:
 
@@ -240,6 +260,13 @@ Handlers run in sequence; first match wins.
 - **Card view**: Subreddit in header (beside favicon) → Post title (bold) → Content preview (200 chars)
 - **Bubble view**: `r/Subreddit — Post Title` (compact, 100 chars)
 - Separate length limits optimize for each display mode
+
+**Twitter/X-specific enhancements:**
+- **Username format**: Shows `@username` for all Twitter/X URLs (profiles and tweets)
+- **Tweet content**: Fetches tweet text via Twitter oEmbed API for tweet URLs
+- **Generic descriptions**: Automatically filters out unhelpful descriptions like "X (FORMERLY TWITTER)"
+- **URL cleaning**: Automatically removes `pic.twitter.com` and `t.co` URLs from descriptions
+- **Styling**: Hashtags and mentions are styled for visual distinction
 
 **Favicon quality:**
 - Requests 128px favicons from Google's service for high-DPI displays

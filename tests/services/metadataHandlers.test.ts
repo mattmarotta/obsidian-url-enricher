@@ -1097,9 +1097,16 @@ describe('Metadata Handlers', () => {
 				expect(metadata.title).toBe('@username');
 			});
 
-			it('should not enrich non-generic titles', async () => {
+			it('should always enrich titles to @username format', async () => {
 				metadata.title = 'Specific Tweet Title';
 				const url = new URL('https://x.com/user/status/123');
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify({
+						html: '<blockquote class="twitter-tweet"><p>Tweet content</p></blockquote>'
+					})
+				});
 
 				context = {
 					url,
@@ -1111,8 +1118,8 @@ describe('Metadata Handlers', () => {
 				};
 
 				await handler.enrich(context);
-				expect(metadata.title).toBe('Specific Tweet Title');
-				expect(mockRequest).not.toHaveBeenCalled();
+				expect(metadata.title).toBe('@user');
+				expect(metadata.description).toBe('Tweet content');
 			});
 		});
 
@@ -1270,6 +1277,43 @@ describe('Metadata Handlers', () => {
 				await handler.enrich(context);
 				expect(mockRequest).not.toHaveBeenCalled();
 				expect(metadata.title).toBe('@username');
+				expect(metadata.description).toBeNull();
+			});
+
+			it('should preserve existing description for profile URLs', async () => {
+				metadata.title = 'x.com';
+				metadata.description = 'Software engineer and content creator';
+				const url = new URL('https://x.com/ThePrimeagen');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://x.com/ThePrimeagen',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('@ThePrimeagen');
+				expect(metadata.description).toBe('Software engineer and content creator');
+			});
+
+			it('should filter out generic descriptions like "X (FORMERLY TWITTER)"', async () => {
+				metadata.title = 'x.com';
+				metadata.description = 'X (FORMERLY TWITTER)';
+				const url = new URL('https://x.com/username');
+
+				context = {
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://x.com/username',
+					settings: {} as any,
+				};
+
+				await handler.enrich(context);
 				expect(metadata.description).toBeNull();
 			});
 		});

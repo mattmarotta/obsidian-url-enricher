@@ -24,6 +24,78 @@ function stripEmoji(value: string): string {
 	return value.replace(emojiRegex, "").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Remove common media/shortened URLs from text to clean up descriptions
+ */
+function cleanMediaUrls(text: string): string {
+	if (!text) return text;
+
+	// Pattern to match common media and shortened URLs
+	const mediaUrlPatterns = [
+		/pic\.twitter\.com\/\w+/gi,
+		/t\.co\/\w+/gi,
+		/i\.imgur\.com\/\w+\.\w+/gi,
+		/imgur\.com\/\w+/gi,
+		/i\.redd\.it\/\w+\.\w+/gi,
+		/v\.redd\.it\/\w+/gi,
+		/gfycat\.com\/\w+/gi,
+	];
+
+	let cleaned = text;
+	for (const pattern of mediaUrlPatterns) {
+		cleaned = cleaned.replace(pattern, '');
+	}
+
+	// Clean up extra whitespace left after URL removal
+	cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+	return cleaned;
+}
+
+/**
+ * Enrich text by wrapping hashtags and @mentions in styled spans (non-clickable)
+ * Returns an HTML element with styled content
+ */
+function enrichTextWithStyledElements(text: string): HTMLElement {
+	const container = document.createElement('span');
+
+	// Pattern to match hashtags (#word) and mentions (@word)
+	// Matches word characters, numbers, and underscores
+	const pattern = /(#\w+)|(@\w+)/g;
+
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
+
+	while ((match = pattern.exec(text)) !== null) {
+		// Add text before the match
+		if (match.index > lastIndex) {
+			container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+		}
+
+		// Create styled span for hashtag or mention
+		const span = document.createElement('span');
+		const matchedText = match[0];
+
+		if (matchedText.startsWith('#')) {
+			span.className = 'ilp-hashtag';
+		} else {
+			span.className = 'ilp-mention';
+		}
+
+		span.textContent = matchedText;
+		container.appendChild(span);
+
+		lastIndex = pattern.lastIndex;
+	}
+
+	// Add remaining text after last match
+	if (lastIndex < text.length) {
+		container.appendChild(document.createTextNode(text.substring(lastIndex)));
+	}
+
+	return container;
+}
+
 interface PageConfig {
 	previewStyle?: PreviewStyle;
 	displayMode?: DisplayMode;
@@ -202,15 +274,15 @@ class UrlPreviewWidget extends WidgetType {
 		// Create a wrapper container
 		const wrapper = document.createElement("span");
 		wrapper.style.display = "contents"; // Allows children to participate in parent's layout
-		
+
 		// Add line break for block display mode
 		if (this.displayMode === "block") {
 			const br = document.createElement("br");
 			wrapper.appendChild(br);
 		}
-		
+
 		const container = document.createElement("span");
-		
+
 		// Apply style classes
 		if (this.previewStyle === "card") {
 			container.className = "inline-url-preview inline-url-preview--card";
@@ -229,6 +301,9 @@ class UrlPreviewWidget extends WidgetType {
 			wrapper.appendChild(container);
 			return wrapper;
 		}
+
+		// Clean media URLs from description
+		const cleanedDescription = this.description ? cleanMediaUrls(this.description) : this.description;
 
 		// Make the preview bubble clickable
 		container.style.cursor = "pointer";
@@ -288,17 +363,17 @@ class UrlPreviewWidget extends WidgetType {
 		textContainer.className = "inline-url-preview__text";
 
 		// Check if this is Reddit content with special markers
-		const isReddit = this.description && this.description.includes("§REDDIT_CARD§");
+		const isReddit = cleanedDescription && cleanedDescription.includes("§REDDIT_CARD§");
 		
 		if (this.previewStyle === "card") {
 			// Card layout
-			if (isReddit && this.description) {
+			if (isReddit && cleanedDescription) {
 				// Reddit card: parse structured format
-				const parts = this.description.split("§REDDIT_CARD§");
+				const parts = cleanedDescription.split("§REDDIT_CARD§");
 				const titleAndContent = parts[1] || "";
 				const [postTitle, ...contentParts] = titleAndContent.split("§REDDIT_CONTENT§");
 				let postContent = contentParts.join("§REDDIT_CONTENT§");
-				
+
 				// Calculate total length and truncate if needed
 				// Format: "r/Subreddit" (title) + "Post Title" + content
 				const totalLength = (this.title?.length || 0) + postTitle.length + postContent.length;
@@ -312,12 +387,14 @@ class UrlPreviewWidget extends WidgetType {
 						postContent = "";
 					}
 				}
-				
+
 				// Post title (below subreddit/favicon)
 				if (postTitle) {
 					const postTitleDiv = document.createElement("div");
 					postTitleDiv.className = "inline-url-preview__post-title";
-					postTitleDiv.textContent = postTitle.trim();
+					// Enrich post title with styled hashtags/mentions
+					const enrichedTitle = enrichTextWithStyledElements(postTitle.trim());
+					postTitleDiv.appendChild(enrichedTitle);
 					postTitleDiv.style.cssText = `
 						font-size: 1.05em;
 						font-weight: 600;
@@ -327,44 +404,50 @@ class UrlPreviewWidget extends WidgetType {
 					`.replace(/\s+/g, ' ').trim();
 					textContainer.appendChild(postTitleDiv);
 				}
-				
+
 				// Post content preview (below post title)
 				if (postContent) {
 					const contentDiv = document.createElement("div");
 					contentDiv.className = "inline-url-preview__description";
-					contentDiv.textContent = postContent.trim();
+					// Enrich content with styled hashtags/mentions
+					const enrichedContent = enrichTextWithStyledElements(postContent.trim());
+					contentDiv.appendChild(enrichedContent);
 					textContainer.appendChild(contentDiv);
 				}
-			} else if (this.description) {
+			} else if (cleanedDescription) {
 				// Standard card: description below title
 				const descDiv = document.createElement("div");
 				descDiv.className = "inline-url-preview__description";
-				descDiv.textContent = this.description;
+				// Enrich description with styled hashtags/mentions
+				const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
+				descDiv.appendChild(enrichedDesc);
 				textContainer.appendChild(descDiv);
 			}
 		} else {
 			// Bubble layout
-			if (isReddit && this.description) {
+			if (isReddit && cleanedDescription) {
 				// Reddit bubble: "r/Subreddit — Post Title"
-				const parts = this.description.split("§REDDIT_CARD§");
+				const parts = cleanedDescription.split("§REDDIT_CARD§");
 				const titlePart = parts[1] ? parts[1].split("§REDDIT_CONTENT§")[0] : "";
-				
+
 				if (this.title) {
 					const titleSpan = document.createElement("span");
 					titleSpan.className = "inline-url-preview__title";
 					titleSpan.textContent = this.title; // r/Subreddit
 					textContainer.appendChild(titleSpan);
 				}
-				
+
 				if (titlePart) {
 					const separator = document.createElement("span");
 					separator.className = "inline-url-preview__separator";
 					separator.textContent = " — ";
 					textContainer.appendChild(separator);
-					
+
 					const descSpan = document.createElement("span");
 					descSpan.className = "inline-url-preview__description";
-					descSpan.textContent = titlePart.trim();
+					// Enrich title part with styled hashtags/mentions
+					const enrichedTitlePart = enrichTextWithStyledElements(titlePart.trim());
+					descSpan.appendChild(enrichedTitlePart);
 					textContainer.appendChild(descSpan);
 				}
 			} else {
@@ -375,7 +458,7 @@ class UrlPreviewWidget extends WidgetType {
 					titleSpan.textContent = this.title;
 					textContainer.appendChild(titleSpan);
 
-					if (this.description) {
+					if (cleanedDescription) {
 						const separator = document.createElement("span");
 						separator.className = "inline-url-preview__separator";
 						separator.textContent = " — ";
@@ -383,7 +466,9 @@ class UrlPreviewWidget extends WidgetType {
 
 						const descSpan = document.createElement("span");
 						descSpan.className = "inline-url-preview__description";
-						descSpan.textContent = this.description;
+						// Enrich description with styled hashtags/mentions
+						const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
+						descSpan.appendChild(enrichedDesc);
 						textContainer.appendChild(descSpan);
 					}
 				}

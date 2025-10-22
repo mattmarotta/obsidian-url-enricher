@@ -18,17 +18,12 @@ export class TwitterMetadataHandler implements MetadataHandler {
 	async enrich(context: MetadataHandlerContext): Promise<void> {
 		const { metadata, url } = context;
 
-		// Only enrich if title is generic
-		if (!this.isGenericTitle(metadata.title)) {
-			return;
-		}
-
 		const username = this.extractUsername(url);
 		if (!username) {
 			return;
 		}
 
-		// Set title to @username
+		// Always set title to @username for all Twitter/X URLs
 		metadata.title = `@${username}`;
 
 		// Try to fetch tweet content if it's a status URL
@@ -41,24 +36,11 @@ export class TwitterMetadataHandler implements MetadataHandler {
 				}
 			}
 		}
-		// For profile URLs, leave description as-is (empty or from existing metadata)
-	}
 
-	private isGenericTitle(title: string | null | undefined): boolean {
-		if (!title) {
-			return true;
+		// Clear generic descriptions for all Twitter URLs
+		if (metadata.description && this.isGenericDescription(metadata.description)) {
+			metadata.description = null;
 		}
-
-		const normalized = title.trim().toLowerCase();
-		return (
-			normalized === "x.com" ||
-			normalized === "twitter.com" ||
-			normalized === "x" ||
-			normalized === "twitter" ||
-			normalized.includes("x (formerly twitter)") ||
-			normalized.includes("on x") ||
-			normalized.includes("on twitter")
-		);
 	}
 
 	private extractUsername(url: URL): string | null {
@@ -139,5 +121,19 @@ export class TwitterMetadataHandler implements MetadataHandler {
 		text = text.replace(/\s+/g, " ").trim();
 
 		return text.length > 0 ? text : null;
+	}
+
+	private isGenericDescription(desc: string): boolean {
+		const normalized = desc.trim().toLowerCase();
+		return (
+			normalized.includes("see tweets about") ||
+			normalized.includes("see what") ||
+			normalized.includes("x (formerly twitter)") ||
+			normalized.includes("formerly twitter") ||
+			normalized === "x.com" ||
+			normalized === "twitter.com" ||
+			normalized === "" ||
+			normalized.length < 10
+		);
 	}
 }
