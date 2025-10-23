@@ -1,17 +1,5 @@
 # Inline Link Preview
 
-Inline Link Preview adds Trello- and Notion-style link cards to Obsidian. Whenever you paste a URL, the plugin fetches the page title and description and rep## Development
-
-- `npm install` – install dependencies.
-- `npm run dev` – watch mode with incremental builds.
-- `npm run build` – type-check and create a production bundle.
-- `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
-
-Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules. The plugin is designed to be completely non-destructive, so any new features must respect this principle and not modify markdown source files. raw link with an inline preview such as:
-
-```
-# Inline Link Preview
-
 Inline Link Preview adds rich, live preview bubbles or cards for URLs in Obsidian. This plugin is **completely non-destructive** — your markdown source stays unchanged while URLs are enhanced with metadata previews in Live Preview mode.
 
 When you have a bare URL in your notes like `https://trello.com`, the plugin automatically fetches the page title, description, and favicon, displaying them as an inline preview bubble or prominent card right in your editor — all without modifying your source markdown.
@@ -49,7 +37,7 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
   - Bare URLs: `https://example.com`
   - Markdown links: `[text](https://example.com)` or `[https://example.com](https://example.com)`
   - Wikilinks with URLs: `[[https://example.com]]` (URL only, not page names like `[[My Page]]`)
-  
+
   And skips URLs in:
   - Image embeds `![alt](url)`
   - Code blocks and inline code
@@ -62,7 +50,7 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
 The plugin automatically generates previews for URLs in these formats:
 
 1. **Bare URLs**: `https://example.com`
-2. **Markdown links**: 
+2. **Markdown links**:
    - `[text](https://example.com)` - uses "text" as the title
    - `[https://example.com](https://example.com)` - fetches metadata title
 3. **Wikilinks with URLs**: `[[https://example.com]]`
@@ -96,58 +84,6 @@ These settings override your global preferences for that specific page only. For
 ## Settings
 
 Open **Settings → Community plugins → Inline link preview** to configure:
-```
-
-Emoji in titles or descriptions are preserved (unless you turn them off), so Reddit headlines and other rich text sources keep their flair. The favicon is rendered at emoji size for a Trello-style look.
-
-## Features
-
-- **Hybrid approach**: Choose between automatic conversion (URLs replaced with markdown) or dynamic preview mode (URLs stay intact but show live previews in Live Preview).
-- Convert pasted URLs—including multi-line lists—into inline previews automatically (can be toggled).
-- **Dynamic preview mode**: When enabled, bare URLs show inline previews in Live Preview without modifying your markdown source.
-  - **Automatic URL display**: Cards show small editable URLs, bubbles hide URLs entirely
-  - **Clickable preview bubbles**: Click any preview bubble to open the URL in a new tab
-  - **Real-time settings updates**: Changes apply immediately without page navigation
-  - **Flexible description length**: Control how much metadata is shown with natural word-wrapping
-  - Keeps your markdown portable while providing rich visual feedback
-- Display the site favicon before the preview text (can be disabled).
-- Favicons are displayed dynamically in Live Preview mode at 32x32 resolution for crisp quality.
-- Uses Google's favicon service for reliable coverage across all sites.
-- Favicons are not embedded in the Markdown, keeping source files clean and readable.
-- Treat YouTube links as standard previews with the site favicon, avoiding unwanted video embeds.
-- Keep emoji and other Unicode characters that appear in the source page.
-- Command palette action to convert the current selection to a preview.
-- Bulk conversion flow that can target the active note, a picked note, an entire folder, or the whole vault.
-- Adjustable description length limit plus networking timeout controls.
-- Domain-aware metadata enrichments for Google Search, Reddit, Wikipedia, and Twitter/X links, with an extensible handler pipeline for additional sites.
-- Floating progress indicator while multiple links are being processed.
-- Persistent favicon cache with 30-day expiration and cache statistics display.
-
-## Usage
-
-### Convert as you write
-1. Copy a URL to your clipboard.
-2. Paste it into a Markdown editor in Obsidian.
-3. The plugin briefly inserts the raw URL (or list of URLs), then replaces each entry with a `[Title — Description](url)` preview once metadata is fetched. A temporary floating progress banner appears when multiple links are being processed so you can tell work is underway. If emoji are disabled in settings, they are omitted from the final text.
-4. When favicons are enabled, they appear dynamically in Live Preview mode before each link (not embedded in the Markdown).
-
-If the page cannot be reached, the URL is left as-is so you never lose what you pasted.
-
-### Update existing notes
-Run **Convert existing links to inline previews…** from the command palette. Choose one of the available scopes:
-
-- **Active note** – updates only the file you are editing.
-- **Select note…** – opens a quick switcher to pick a single file.
-- **Folder…** – scans every Markdown file in the chosen folder (recursively).
-- **Entire vault** – processes every Markdown file in the vault.
-
-Only bare HTTP/HTTPS links outside of existing Markdown links or code blocks are replaced.
-
-The floating progress banner tracks how many notes remain and highlights the one currently processing. If the active note is being converted you’ll see a reminder not to edit it until the update finishes.
-
-## Settings
-
-Open **Settings → Community plugins → Inline link preview** to configure:
 
 ### Core Settings
 - **Dynamic preview mode** – Enable or disable the plugin entirely. When enabled, bare URLs show rich previews in Live Preview mode.
@@ -161,7 +97,7 @@ Open **Settings → Community plugins → Inline link preview** to configure:
   - **Block**: Appears on its own line (default)
 - **Preview background color** – Customize background color for both bubbles and cards (none, grey, or custom)
 
-**Note**: 
+**Note**:
 - URL display is automatic—cards show a small editable URL, bubbles hide the URL entirely.
 - Cards display a site name footer (e.g., "WIKIPEDIA", "ANTHROPIC") extracted from page metadata or URL.
 
@@ -192,7 +128,7 @@ custom-preview-color: "#4a4a4a"  # hex color when using custom mode
 ---
 ```
 
-**Notes**: 
+**Notes**:
 - Minimum values (100 for cards, 50 for bubbles) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
 - URL display is automatic: Cards show a small editable URL, bubbles hide the URL entirely.
 
@@ -246,7 +182,7 @@ One of the plugin's most powerful UX features is **cursor-aware preview renderin
 
 This behavior applies to all URL formats: bare URLs, markdown links `[text](url)`, and wikilinks `[[url]]`.
 
-### URL Error Detection
+## URL Error Detection
 
 The plugin detects and flags broken URLs with a small warning indicator (⚠️). URLs with errors remain fully visible and editable—they are not replaced with previews.
 
@@ -346,6 +282,129 @@ The plugin includes specialized handlers for specific websites to provide richer
 ### Extensible Handler System
 The metadata enrichment pipeline is extensible—additional domain-specific handlers can be registered to provide custom formatting for other websites.
 
+## Debugging & Advanced Features
+
+The plugin includes powerful debugging tools accessible via the browser console (open with `Ctrl+Shift+I` or `Cmd+Option+I`).
+
+### Developer Console API
+
+All debugging commands are available under `window.inlineLinkPreview`:
+
+```javascript
+// Show help and available commands
+window.inlineLinkPreview.help()
+
+// Cache Management
+window.inlineLinkPreview.getCacheStats()        // View cache statistics
+window.inlineLinkPreview.clearAllCaches()       // Clear all caches
+
+// Logging Control
+window.inlineLinkPreview.setLogLevel("debug")   // Set log level: error, warn, info, debug
+window.inlineLinkPreview.setLogLevel("error")   // Reduce logging to errors only
+
+// Performance Tracking (optional - disabled by default)
+window.inlineLinkPreview.enablePerformanceTracking()   // Start tracking performance
+window.inlineLinkPreview.getPerformanceMetrics()       // View metrics table
+window.inlineLinkPreview.resetPerformanceMetrics()     // Reset all metrics
+window.inlineLinkPreview.disablePerformanceTracking()  // Stop tracking
+
+// Utilities
+window.inlineLinkPreview.refreshDecorations()   // Force refresh all previews
+```
+
+### Cache Statistics
+
+View detailed cache performance:
+
+```javascript
+window.inlineLinkPreview.getCacheStats()
+```
+
+**Example output:**
+```
+=== Metadata Cache Stats ===
+Size: 342 / 1000 items
+Hits: 1,234
+Misses: 156
+Evictions: 12
+Hit Rate: 88.79%
+
+=== Favicon Cache Stats ===
+Cached Domains: 89
+Oldest Entry: reddit.com (cached 2024-01-15)
+Cache Age: 7 days
+```
+
+### Log Levels
+
+Control logging verbosity:
+
+- **`error`** - Only critical errors (quietest)
+- **`warn`** - Warnings and errors
+- **`info`** - General information (default)
+- **`debug`** - Detailed debugging info (most verbose)
+
+```javascript
+// Enable detailed debugging
+window.inlineLinkPreview.setLogLevel("debug")
+
+// Reduce noise
+window.inlineLinkPreview.setLogLevel("warn")
+```
+
+### Performance Tracking
+
+Track operation timing and identify bottlenecks:
+
+```javascript
+// Enable tracking
+window.inlineLinkPreview.enablePerformanceTracking()
+
+// Use the plugin normally...
+
+// View metrics
+window.inlineLinkPreview.getPerformanceMetrics()
+```
+
+**Example output:**
+```
+=== Performance Metrics ===
+Operation                Count   Avg Time   Min Time   Max Time   Total Time
+────────────────────────────────────────────────────────────────────────────
+fetchMetadata           45      234.5ms    120ms      890ms      10,552ms
+parseHtml               45      12.3ms     8ms        45ms       553ms
+resolveFavicon          38      156.7ms    90ms       450ms      5,954ms
+buildDecorations        12      3.2ms      2ms        8ms        38ms
+```
+
+**Note:** Performance tracking is disabled by default to avoid overhead. Enable it only when troubleshooting performance issues.
+
+### Common Debugging Scenarios
+
+**Problem: Previews not loading**
+```javascript
+// Check if metadata is being fetched
+window.inlineLinkPreview.setLogLevel("debug")
+// Watch console for fetch errors
+```
+
+**Problem: Slow performance**
+```javascript
+// Enable performance tracking
+window.inlineLinkPreview.enablePerformanceTracking()
+// Use the plugin for a minute
+window.inlineLinkPreview.getPerformanceMetrics()
+// Look for operations with high average time
+```
+
+**Problem: Stale or incorrect previews**
+```javascript
+// Clear all caches
+window.inlineLinkPreview.clearAllCaches()
+// Force refresh
+window.inlineLinkPreview.refreshDecorations()
+```
+
 ## Troubleshooting
 
 ### Previews Not Appearing
@@ -354,13 +413,13 @@ The metadata enrichment pipeline is extensible—additional domain-specific hand
 - The plugin is non-destructive: URLs must remain as plain text URLs in your markdown
 
 ### Previews Show Wrong Content
-- Clear metadata cache: **Settings → Inline Link Preview → Cache Management → Clear Cache**
+- Clear metadata cache: `window.inlineLinkPreview.clearAllCaches()` in browser console
 - Check if the website blocks automated requests (403 Forbidden errors)
 - Some sites may not provide OpenGraph or meta tag metadata
 
 ### Favicons Not Loading
 - Favicon cache is persistent with 30-day expiration
-- Clear favicon cache: **Settings → Inline Link Preview → Cache Management → Clear Favicon Cache**
+- Clear favicon cache: `window.inlineLinkPreview.clearAllCaches()` in browser console
 - Some domains may not have favicons available via Google's favicon service
 
 ### Frontmatter Not Working
@@ -374,6 +433,7 @@ The metadata enrichment pipeline is extensible—additional domain-specific hand
 - Disable descriptions: Set `include-description` to false
 - Increase `request timeout` if on slow connection
 - Consider using bubble style instead of card style for more compact previews
+- Check performance metrics: `window.inlineLinkPreview.getPerformanceMetrics()`
 
 ### Error Warnings (⚠️)
 - **HTTP errors** (403, 404, 500+): Enable/disable warnings in Settings → HTTP Error Warnings
@@ -407,7 +467,7 @@ The release bundle consists of `manifest.json`, `main.js`, and optionally `style
 - `npm test` – run unit tests.
 - `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
 
-Contributions should keep `src/main.ts` focused on lifecycle wiring and place feature logic in dedicated modules.
+For detailed contributing guidelines, coding standards, and testing documentation, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Testing
 
@@ -431,23 +491,23 @@ npm run test:coverage
 
 ### Current Test Coverage
 
-**556 tests across 12 test files** covering:
+**558 tests across 12 test files** covering:
 
 - **Utilities** (210 tests, 91% coverage):
   - URL extraction, validation, and markdown link handling ([url.test.ts](tests/utils/url.test.ts) - 67 tests, 98% coverage)
   - Text sanitization and HTML entity decoding ([text.test.ts](tests/utils/text.test.ts) - 45 tests, 67% coverage)
-  - Editor position utilities ([editorHelpers.test.ts](tests/utils/editorHelpers.test.ts) - 19 tests, 100% coverage)
+  - Editor position utilities ([editorHelpers.test.ts](tests/utils/editorHelpers.test.ts) - 15 tests, 100% coverage)
   - Markdown link detection ([markdown.test.ts](tests/utils/markdown.test.ts) - 27 tests, 95% coverage)
-  - String replacement utilities ([stringReplace.test.ts](tests/utils/stringReplace.test.ts) - 22 tests, 100% coverage)
-  - Vault file/folder traversal ([vault.test.ts](tests/utils/vault.test.ts) - 30 tests, 100% coverage)
+  - String replacement utilities ([stringReplace.test.ts](tests/utils/stringReplace.test.ts) - 17 tests, 100% coverage)
+  - Vault file/folder traversal ([vault.test.ts](tests/utils/vault.test.ts) - 13 tests, 100% coverage)
 
 - **Services** (185 tests, 73% coverage):
   - Link preview metadata fetching and caching ([linkPreviewService.test.ts](tests/services/linkPreviewService.test.ts) - 52 tests, 69% coverage)
   - Favicon caching with memory/disk persistence ([faviconCache.test.ts](tests/services/faviconCache.test.ts) - 41 tests, 97% coverage)
-  - Metadata handlers for Wikipedia, Reddit, Google Search, and Twitter/X ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts) - 92 tests, 92% coverage)
+  - Metadata handlers for Wikipedia, Reddit, Google Search, and Twitter/X ([metadataHandlers.test.ts](tests/services/metadataHandlers.test.ts) - 86 tests, 92% coverage)
 
-- **Editor** (95 tests, business logic only):
-  - Frontmatter parsing and settings ([urlPreviewDecorator.test.ts](tests/editor/urlPreviewDecorator.test.ts) - 95 tests)
+- **Editor** (85 tests, business logic only):
+  - Frontmatter parsing and settings ([urlPreviewDecorator.test.ts](tests/editor/urlPreviewDecorator.test.ts) - 85 tests)
   - Text processing helpers (truncate, stripEmoji, deriveTitleFromUrl, etc.)
   - Note: Widget rendering intentionally not tested (UI/DOM code)
 
@@ -456,19 +516,16 @@ npm run test:coverage
   - Settings normalization and defaults ([main.test.ts](tests/main.test.ts) - 50 tests)
   - Type conversion, clamping, and validation
 
-**Coverage**: 39.63% overall, with 90%+ coverage of utilities and services, and comprehensive business logic coverage for editor and plugin lifecycle
-
-### Testing Documentation
-
-For comprehensive testing documentation, including:
-- Writing new tests
-- Testing best practices
-- CI/CD integration
-- Future testing goals
-
-See [TESTING.md](TESTING.md)
+For comprehensive testing documentation, see [TESTING.md](TESTING.md).
 
 ## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Development setup
+- Coding standards and TypeScript guidelines
+- Testing requirements
+- Git workflow and commit conventions
+- Pull request process
 
 ### Adding Custom Metadata Handlers
 
@@ -519,19 +576,8 @@ export function getMetadataHandlers(): MetadataHandler[] {
    - Add a URL from your custom site to a test note
    - Verify the custom metadata appears in the preview
 
-**See [AGENTS.md](AGENTS.md)** for complete architecture documentation and advanced handler patterns.
+For architecture details and advanced patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
-### Code Guidelines
+## License
 
-- Keep `src/main.ts` focused on lifecycle management only
-- Place feature logic in dedicated modules (`src/services/`, `src/editor/`, `src/utils/`)
-- Use TypeScript strict mode and follow existing patterns
-- Add JSDoc comments for public APIs and complex logic
-- Ensure all new features work in both bubble and card preview styles
-
-### Pull Requests
-
-- Test changes in both Desktop and Mobile Obsidian apps
-- Update documentation if adding new features or changing behavior
-- Follow the non-destructive principle: never modify markdown source files
-- Include screenshots for UI changes
+MIT

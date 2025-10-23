@@ -70,18 +70,18 @@ tests/
 ├── main.test.ts                     # Plugin lifecycle tests (50 tests)
 ├── settings.test.ts                 # Settings validation tests (60 tests)
 ├── utils/
-│   ├── editorHelpers.test.ts        # Editor helper tests (19 tests)
+│   ├── editorHelpers.test.ts        # Editor helper tests (15 tests)
 │   ├── markdown.test.ts             # Markdown utility tests (27 tests)
-│   ├── stringReplace.test.ts        # String replacement tests (22 tests)
+│   ├── stringReplace.test.ts        # String replacement tests (17 tests)
 │   ├── text.test.ts                 # Text utility tests (45 tests)
 │   ├── url.test.ts                  # URL utility tests (67 tests)
-│   └── vault.test.ts                # Vault utility tests (30 tests)
+│   └── vault.test.ts                # Vault utility tests (13 tests)
 ├── editor/
-│   └── urlPreviewDecorator.test.ts  # Editor decorator business logic (95 tests)
+│   └── urlPreviewDecorator.test.ts  # Editor decorator business logic (85 tests)
 └── services/
     ├── faviconCache.test.ts         # Favicon cache tests (41 tests)
     ├── linkPreviewService.test.ts   # Link preview service tests (52 tests)
-    └── metadataHandlers.test.ts     # Metadata handler tests (45 tests)
+    └── metadataHandlers.test.ts     # Metadata handler tests (86 tests)
 ```
 
 ### Key Test Files
@@ -139,17 +139,17 @@ Test utilities:
 
 ### Current Coverage: 39.63%
 
-**Test Files**: 12 files, 556 tests
+**Test Files**: 12 files, 558 tests
 
 **Fully Tested (90%+ coverage):**
 
-1. **src/utils/** (91% overall coverage, 210 tests)
-   - **editorHelpers.ts** (100%, 19 tests): Editor position utilities, selection handling
+1. **src/utils/** (91% overall coverage, 171 tests)
+   - **editorHelpers.ts** (100%, 15 tests): Editor position utilities, selection handling
    - **markdown.ts** (95%, 27 tests): Markdown link detection and range finding
-   - **stringReplace.ts** (100%, 22 tests): Text replacement with position tracking
+   - **stringReplace.ts** (100%, 17 tests): Text replacement with position tracking
    - **text.ts** (67%, 45 tests): HTML entity decoding, tag stripping, whitespace normalization
    - **url.ts** (98%, 67 tests): URL extraction, validation, markdown link handling
-   - **vault.ts** (100%, 30 tests): Vault file/folder traversal and filtering
+   - **vault.ts** (100%, 13 tests): Vault file/folder traversal and filtering
 
 2. **src/services/faviconCache.ts** (97% coverage, 41 tests)
    - Two-tier caching (memory + disk)
@@ -165,13 +165,13 @@ Test utilities:
    - Soft 404 detection (Reddit, YouTube, generic patterns)
    - Settings integration and metadata handler delegation
 
-4. **src/services/metadataHandlers/** (92% coverage, 92 tests)
+4. **src/services/metadataHandlers/** (92% coverage, 86 tests)
    - **Wikipedia Handler** (96%): Fetches Wikipedia article extracts via API
    - **Reddit Handler** (94%): Parses Reddit post metadata with special formatting
    - **Google Search Handler** (95%): Enriches Google search URLs with query text
    - **Twitter/X Handler** (100%): Fetches tweet content via oEmbed API for rich previews
 
-5. **src/editor/urlPreviewDecorator.ts** (Business logic tested, 95 tests)
+5. **src/editor/urlPreviewDecorator.ts** (Business logic tested, 85 tests)
    - **parsePageConfig** (33 tests): Frontmatter parsing for all settings (preview-style, display-mode, etc.)
    - **stripEmoji** (11 tests): Emoji removal and whitespace normalization
    - **truncate** (10 tests): Text truncation with ellipsis

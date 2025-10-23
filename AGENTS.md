@@ -58,29 +58,63 @@ npm run build
   src/
     main.ts                    # Plugin entry point, lifecycle management
     settings.ts                # Settings interface, defaults, and UI
+    constants.ts               # Application-wide constants
+    decorators/                # Editor decoration components
+      PreviewWidget.ts         # Widget rendering (bubbles, cards)
+      DecorationBuilder.ts     # Core decoration creation logic
+      UrlMatcher.ts            # URL pattern matching
+      MetadataEnricher.ts      # Text enrichment (hashtags, emojis)
+      FrontmatterParser.ts     # Per-note configuration
     editor/
-      faviconDecorator.ts      # (Legacy - not used in non-destructive mode)
-      urlPreviewDecorator.ts   # Dynamic URL preview bubbles/cards (key component)
+      urlPreviewDecorator.ts   # CodeMirror ViewPlugin coordinator (reduced from 1224 to 120 lines)
     services/
-      linkPreviewService.ts    # Core metadata fetching service
+      linkPreviewService.ts    # Core metadata fetching service with LRU cache
+      MetadataFetcher.ts       # HTTP request handling
+      HtmlParser.ts            # HTML metadata parsing
+      FaviconResolver.ts       # Favicon resolution
+      MetadataValidator.ts     # Soft 404 detection
       faviconCache.ts          # Persistent favicon cache with expiration
       types.ts                 # Shared type definitions
       metadataHandlers/        # Domain-specific metadata extraction
         index.ts
         metadataHandler.ts
-        googleSearchMetadataHandler.ts
+        wikipediaMetadataHandler.ts
         redditMetadataHandler.ts
+        googleSearchMetadataHandler.ts
+        twitterMetadataHandler.ts
     utils/
+      LRUCache.ts              # Generic LRU cache with bounded memory
+      logger.ts                # Structured logging with log levels
+      performance.ts           # Performance tracking and profiling
       editorHelpers.ts         # CodeMirror utilities
       markdown.ts              # Markdown parsing helpers
       stringReplace.ts         # Safe string replacement
       text.ts                  # Text processing and sanitization
       url.ts                   # URL validation and normalization
       vault.ts                 # Vault file operations
+    types/
+      obsidian-extended.ts     # Extended Obsidian API types
   tests/
-    run-tests.mjs              # Test runner
-    stubs/
-      obsidian.ts              # Obsidian API mocks
+    # 558 tests across 12 test files
+    setup.ts                   # Global test setup
+    mocks/                     # CodeMirror and Obsidian API mocks
+    fixtures/                  # Test data
+    helpers/                   # Test utilities
+    main.test.ts
+    settings.test.ts
+    editor/
+      urlPreviewDecorator.test.ts
+    services/
+      linkPreviewService.test.ts
+      faviconCache.test.ts
+      metadataHandlers.test.ts
+    utils/
+      url.test.ts
+      text.test.ts
+      markdown.test.ts
+      stringReplace.test.ts
+      editorHelpers.test.ts
+      vault.test.ts
   ```
 - **Do not commit build artifacts**: Never commit `node_modules/`, `main.js`, or other generated files to version control
 - Keep the plugin small. Avoid large dependencies. Prefer browser-compatible packages
