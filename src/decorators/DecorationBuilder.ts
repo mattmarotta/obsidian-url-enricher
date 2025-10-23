@@ -8,8 +8,13 @@ import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock } from
 import { UrlPreviewWidget, ErrorIndicatorWidget } from "./PreviewWidget";
 import { stripEmoji } from "./MetadataEnricher";
 import { sanitizeTextContent } from "../utils/text";
-
-const ELLIPSIS = "\u2026";
+import {
+	ELLIPSIS,
+	DEFAULT_CARD_LENGTH,
+	DEFAULT_BUBBLE_LENGTH,
+	MIN_DESCRIPTION_LENGTH,
+	TITLE_SEPARATOR_LENGTH
+} from "../constants";
 
 /**
  * Helper functions for text processing
@@ -59,10 +64,10 @@ function calculateMaxLength(
 		maxLengthValue = maxLength;
 	} else {
 		// Default: 300 for cards, 150 for bubbles
-		maxLengthValue = previewStyle === "card" ? 300 : 150;
+		maxLengthValue = previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_BUBBLE_LENGTH;
 	}
 
-	return Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? 300 : 150);
+	return Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_BUBBLE_LENGTH);
 }
 
 /**
@@ -77,7 +82,7 @@ interface ProcessedMetadata {
 }
 
 function processMetadata(
-	metadata: any | undefined,
+	metadata: import("../services/types").LinkMetadata | undefined,
 	url: string,
 	linkText: string | undefined,
 	settings: {
@@ -125,9 +130,9 @@ function processMetadata(
 	if (description && limit > 0) {
 		const combined = `${title} — ${description}`;
 		if (combined.length > limit) {
-			const titleLength = title.length + 3; // " — "
+			const titleLength = title.length + TITLE_SEPARATOR_LENGTH;
 			const remainingLength = limit - titleLength;
-			if (remainingLength > 10) {
+			if (remainingLength > MIN_DESCRIPTION_LENGTH) {
 				description = truncate(description, remainingLength);
 			} else {
 				description = null;
@@ -158,7 +163,7 @@ function createDecorationsForUrl(
 	isLoading: boolean,
 	settings: {
 		previewStyle: PreviewStyle;
-		displayMode: any;
+		displayMode: import("../settings").DisplayMode;
 		maxCardLength: number;
 		maxBubbleLength: number;
 	}
@@ -310,8 +315,7 @@ export function buildUrlDecorations(
 		queueMetadataFetch(url);
 
 		// Try to get cached metadata
-		const cache = (service as any).cache as Map<string, any> | undefined;
-		const metadata = cache?.get(url);
+		const metadata = service.getCachedMetadata(url);
 
 		const isLoading = !metadata && pendingUpdates.has(url);
 

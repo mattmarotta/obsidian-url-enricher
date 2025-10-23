@@ -3,6 +3,7 @@ import { createUrlPreviewDecorator, refreshDecorationsEffect as urlPreviewRefres
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
+import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
@@ -70,7 +71,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// This properly triggers the ViewPlugin update cycle
 		this.app.workspace.iterateAllLeaves((leaf) => {
 			if (leaf.view.getViewType() === "markdown") {
-				const view = leaf.view as any;
+				const view = leaf.view as MarkdownViewWithEditor;
 				const cm = view.editor?.cm;
 				
 				if (cm) {

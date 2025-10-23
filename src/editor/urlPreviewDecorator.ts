@@ -91,8 +91,7 @@ export function createUrlPreviewDecorator(
 				}
 
 				// Check if already cached
-				const cache = (service as any).cache as Map<string, any> | undefined;
-				if (cache?.has(url)) {
+				if (service.hasCachedMetadata(url)) {
 					return;
 				}
 

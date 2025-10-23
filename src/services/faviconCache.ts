@@ -1,3 +1,5 @@
+import { FAVICON_CACHE_EXPIRATION_MS, FAVICON_CACHE_SAVE_DEBOUNCE_MS, FAVICON_CACHE_KEY } from "../constants";
+
 interface FaviconCacheEntry {
 	url: string;
 	timestamp: number;
@@ -7,25 +9,51 @@ interface FaviconCacheData {
 	[origin: string]: FaviconCacheEntry;
 }
 
+/**
+ * Plugin data structure (from Obsidian's Plugin.loadData/saveData)
+ */
+interface PluginData {
+	[key: string]: unknown;
+}
+
 export class FaviconCache {
 	private memoryCache = new Map<string, string | null>();
 	private diskCache: FaviconCacheData = {};
-	private readonly CACHE_KEY = "favicon-cache";
-	private readonly EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+	private readonly CACHE_KEY = FAVICON_CACHE_KEY;
+	private readonly EXPIRATION_MS = FAVICON_CACHE_EXPIRATION_MS;
 	private dirty = false;
 	private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	constructor(
-		private loadData: () => Promise<any>,
-		private saveData: (data: any) => Promise<void>
+		private loadData: () => Promise<PluginData>,
+		private saveData: (data: PluginData) => Promise<void>
 	) {}
+
+	private isValidCacheData(value: unknown): value is FaviconCacheData {
+		if (!value || typeof value !== 'object') {
+			return false;
+		}
+		// Basic validation - all values should be objects with url and timestamp
+		return Object.values(value as Record<string, unknown>).every(
+			entry =>
+				entry &&
+				typeof entry === 'object' &&
+				'url' in entry &&
+				'timestamp' in entry &&
+				typeof (entry as FaviconCacheEntry).url === 'string' &&
+				typeof (entry as FaviconCacheEntry).timestamp === 'number'
+		);
+	}
 
 	async load(): Promise<void> {
 		try {
 			const data = await this.loadData();
 			if (data && data[this.CACHE_KEY]) {
-				this.diskCache = data[this.CACHE_KEY];
-				this.cleanExpired();
+				const cacheData = data[this.CACHE_KEY];
+				if (this.isValidCacheData(cacheData)) {
+					this.diskCache = cacheData;
+					this.cleanExpired();
+				}
 			}
 		} catch (error) {
 			console.warn("[inline-link-preview] Failed to load favicon cache", error);
@@ -117,7 +145,7 @@ export class FaviconCache {
 		this.saveTimeout = setTimeout(() => {
 			this.flush();
 			this.saveTimeout = null;
-		}, 1000); // Save after 1 second of inactivity
+		}, FAVICON_CACHE_SAVE_DEBOUNCE_MS);
 	}
 
 	async flush(): Promise<void> {

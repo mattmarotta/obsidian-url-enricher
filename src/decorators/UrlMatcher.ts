@@ -1,4 +1,5 @@
 import type { SyntaxNode } from "@lezer/common";
+import { URL_CONTEXT_SEARCH_BACKWARDS, URL_CONTEXT_SEARCH_FORWARDS } from "../constants";
 
 /**
  * Represents a matched URL in the document with its position and type
@@ -37,7 +38,7 @@ export function isInCodeBlock(node: SyntaxNode, position: number): boolean {
  */
 export function isInMarkdownLink(text: string, urlStart: number, urlEnd: number, url: string): boolean {
 	// Look backwards to find if there's a ]( before this URL
-	const searchStart = Math.max(0, urlStart - 1000); // Look back up to 1000 chars
+	const searchStart = Math.max(0, urlStart - URL_CONTEXT_SEARCH_BACKWARDS);
 	const beforeText = text.slice(searchStart, urlStart);
 
 	// Find the last occurrence of ]( before our URL
@@ -46,7 +47,7 @@ export function isInMarkdownLink(text: string, urlStart: number, urlEnd: number,
 	if (lastLinkStart !== -1) {
 		// Check if there's a closing ) after our URL without any [ in between
 		const afterUrlPos = urlEnd;
-		const searchEnd = Math.min(text.length, afterUrlPos + 100);
+		const searchEnd = Math.min(text.length, afterUrlPos + URL_CONTEXT_SEARCH_FORWARDS);
 		const afterText = text.slice(afterUrlPos, searchEnd);
 
 		// Find first ) after URL

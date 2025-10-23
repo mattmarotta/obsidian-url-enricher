@@ -86,8 +86,7 @@ export function createFaviconDecorator(
 						this.queueFaviconFetch(url, linkStart, view);
 
 						// Try to get cached favicon
-						const cache = (service as any).cache as Map<string, any> | undefined;
-						const metadata = cache?.get(url);
+						const metadata = service.getCachedMetadata(url);
 						if (metadata && metadata.favicon) {
 							const widget = Decoration.widget({
 								widget: new FaviconWidget(metadata.favicon),
