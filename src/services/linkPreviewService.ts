@@ -1,3 +1,17 @@
+/**
+ * LinkPreviewService - Core service for fetching and enriching link metadata
+ *
+ * This service orchestrates the entire metadata fetching pipeline:
+ * - Fetches HTML from URLs with timeout support
+ * - Parses HTML metadata (Open Graph, Twitter Cards, JSON-LD)
+ * - Resolves and validates favicons
+ * - Applies domain-specific metadata handlers (Wikipedia, Reddit, Twitter, etc.)
+ * - Caches results for performance
+ * - Detects soft 404s and handles errors gracefully
+ *
+ * @module services/linkPreviewService
+ */
+
 import { RequestUrlParam } from "obsidian";
 import type { LinkMetadata } from "./types";
 import {
@@ -15,12 +29,16 @@ import { MetadataValidator } from "./MetadataValidator";
 
 export type { LinkMetadata } from "./types";
 
+/**
+ * Configuration options for the LinkPreviewService
+ */
 export interface LinkPreviewServiceOptions {
+	/** Maximum time to wait for HTTP requests in milliseconds */
 	requestTimeoutMs: number;
 }
 
 /**
- * LinkPreviewService - Main service for fetching and enriching link metadata
+ * Main service for fetching and enriching link metadata
  */
 export class LinkPreviewService {
 	private cache = new Map<string, LinkMetadata>();
@@ -52,14 +70,27 @@ export class LinkPreviewService {
 		this.validator = new MetadataValidator();
 	}
 
+	/**
+	 * Set the persistent favicon cache
+	 * @param cache - FaviconCache instance for storing favicons across sessions
+	 */
 	setPersistentFaviconCache(cache: FaviconCache): void {
 		this.faviconResolver.setPersistentCache(cache);
 	}
 
+	/**
+	 * Update plugin settings
+	 * @param settings - New settings to apply
+	 */
 	updateSettings(settings: InlineLinkPreviewSettings): void {
 		this.settings = settings;
 	}
 
+	/**
+	 * Update service options (e.g., request timeout)
+	 * Note: Changing timeout will clear the cache
+	 * @param options - Partial options to update
+	 */
 	updateOptions(options: Partial<LinkPreviewServiceOptions>): void {
 		const needsCacheReset = options.requestTimeoutMs !== undefined;
 		this.fetcher.updateOptions(options);
@@ -68,10 +99,17 @@ export class LinkPreviewService {
 		}
 	}
 
+	/**
+	 * Register a custom metadata handler for domain-specific enrichment
+	 * @param handler - MetadataHandler to register
+	 */
 	registerMetadataHandler(handler: MetadataHandler): void {
 		this.metadataHandlers.push(handler);
 	}
 
+	/**
+	 * Clear all cached metadata and favicon validation results
+	 */
 	clearCache(): void {
 		this.cache.clear();
 		this.faviconResolver.clearValidationCache();
@@ -79,6 +117,8 @@ export class LinkPreviewService {
 
 	/**
 	 * Check if metadata is cached for a given URL
+	 * @param url - URL to check
+	 * @returns true if metadata is cached, false otherwise
 	 */
 	hasCachedMetadata(url: string): boolean {
 		return this.cache.has(url);
@@ -86,11 +126,20 @@ export class LinkPreviewService {
 
 	/**
 	 * Get cached metadata for a URL (if available)
+	 * @param url - URL to get cached metadata for
+	 * @returns Cached metadata or undefined if not cached
 	 */
 	getCachedMetadata(url: string): LinkMetadata | undefined {
 		return this.cache.get(url);
 	}
 
+	/**
+	 * Get metadata for a URL, fetching from cache or network
+	 * This is the main public API for getting link metadata
+	 *
+	 * @param rawUrl - URL to fetch metadata for
+	 * @returns Promise resolving to link metadata
+	 */
 	async getMetadata(rawUrl: string): Promise<LinkMetadata> {
 		const normalizedUrl = this.normalizeUrl(rawUrl);
 		const cached = this.cache.get(normalizedUrl);

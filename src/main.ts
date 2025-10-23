@@ -1,15 +1,37 @@
+/**
+ * Inline Link Preview Plugin for Obsidian
+ *
+ * Adds rich, dynamic link previews to Obsidian notes in Live Preview mode.
+ * All previews are rendered dynamically without modifying markdown source files.
+ *
+ * @see https://github.com/your-repo/obsidian-inline-link-preview
+ */
+
 import { Plugin } from "obsidian";
 import { createUrlPreviewDecorator, refreshDecorationsEffect as urlPreviewRefreshEffect } from "./editor/urlPreviewDecorator";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
 import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
+import type { PreviewColorMode } from "./settings";
+
+/**
+ * Lookup table for preview color modes
+ */
+const COLOR_MODE_MAP: Record<PreviewColorMode, string> = {
+	none: "transparent",
+	custom: "", // Will be replaced with customPreviewColor
+	grey: "var(--background-modifier-border)"
+};
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
 	linkPreviewService!: LinkPreviewService;
 	faviconCache!: FaviconCache;
 
+	/**
+	 * Plugin initialization - called when the plugin is loaded
+	 */
 	async onload(): Promise<void> {
 		await this.loadSettings();
 		await this.instantiateServices();
@@ -25,6 +47,9 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		this.addSettingTab(new InlineLinkPreviewSettingTab(this.app, this));
 	}
 
+	/**
+	 * Plugin cleanup - called when the plugin is unloaded
+	 */
 	async onunload(): Promise<void> {
 		// Flush favicon cache to disk before unloading
 		if (this.faviconCache) {
@@ -32,11 +57,17 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		}
 	}
 
+	/**
+	 * Load plugin settings from disk and normalize them
+	 */
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 		this.normalizeSettings();
 	}
 
+	/**
+	 * Save plugin settings to disk and update all services
+	 */
 	async saveSettings(): Promise<void> {
 		this.normalizeSettings();
 		await this.saveData(this.settings);
@@ -46,46 +77,48 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		this.linkPreviewService.updateSettings(this.settings);
 	}
 
+	/**
+	 * Update the CSS variable for preview bubble background color
+	 */
 	updateBubbleColorCSS(): void {
-		let color: string;
-
-		switch (this.settings.previewColorMode) {
-			case "none":
-				color = "transparent";
-				break;
-			case "custom":
-				color = this.settings.customPreviewColor;
-				break;
-			case "grey":
-			default:
-				color = "var(--background-modifier-border)";
-				break;
-		}
+		const mode = this.settings.previewColorMode;
+		const color = mode === "custom"
+			? this.settings.customPreviewColor
+			: COLOR_MODE_MAP[mode];
 
 		// Update CSS variable
 		document.documentElement.style.setProperty("--inline-preview-bg", color);
 	}
 
+	/**
+	 * Refresh all preview decorations across all open markdown editors
+	 * Called when settings change to update all visible previews
+	 */
 	refreshDecorations(): void {
-		// Dispatch the refresh StateEffect to all markdown editors
-		// This properly triggers the ViewPlugin update cycle
 		this.app.workspace.iterateAllLeaves((leaf) => {
-			if (leaf.view.getViewType() === "markdown") {
-				const view = leaf.view as MarkdownViewWithEditor;
-				const cm = view.editor?.cm;
-				
-				if (cm) {
-					// Dispatch refresh effect to trigger decoration rebuild
-					cm.dispatch({
-						effects: [
-							urlPreviewRefreshEffect.of(null)
-						]
-					});
-				}
+			// Only process markdown views
+			if (leaf.view.getViewType() !== "markdown") {
+				return;
 			}
+
+			const view = leaf.view as MarkdownViewWithEditor;
+			const cm = view.editor?.cm;
+
+			// Early return if no CodeMirror instance
+			if (!cm) {
+				return;
+			}
+
+			// Dispatch refresh effect to trigger decoration rebuild
+			cm.dispatch({
+				effects: [urlPreviewRefreshEffect.of(null)]
+			});
 		});
 	}
 
+	/**
+	 * Initialize all plugin services (favicon cache and link preview service)
+	 */
 	private async instantiateServices(): Promise<void> {
 		// Initialize favicon cache
 		this.faviconCache = new FaviconCache(
@@ -101,6 +134,10 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		this.linkPreviewService.setPersistentFaviconCache(this.faviconCache);
 	}
 
+	/**
+	 * Normalize and validate settings to ensure they're within acceptable ranges
+	 * Converts string values to numbers and enforces min/max bounds
+	 */
 	private normalizeSettings(): void {
 		const numericCardLength = Number(this.settings.maxCardLength);
 		this.settings.maxCardLength = Number.isFinite(numericCardLength)
