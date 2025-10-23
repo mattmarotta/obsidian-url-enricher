@@ -34,3 +34,7 @@ export const TITLE_SEPARATOR_LENGTH = 3; // " — "
 
 // Console log prefix
 export const LOG_PREFIX = "[inline-link-preview]";
+
+// Cache limits
+export const METADATA_CACHE_MAX_SIZE = 1000; // Max URLs to cache
+export const MAX_CONCURRENT_REQUESTS = 10; // Max parallel metadata fetches

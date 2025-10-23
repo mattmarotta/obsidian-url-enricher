@@ -14,6 +14,14 @@ import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
 import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
 import type { PreviewColorMode } from "./settings";
+import { Logger, LogLevel } from "./utils/logger";
+import {
+	enablePerformanceTracking,
+	disablePerformanceTracking,
+	getAllPerformanceMetrics,
+	resetPerformanceMetrics,
+	isPerformanceTrackingEnabled
+} from "./utils/performance";
 
 /**
  * Lookup table for preview color modes
@@ -45,6 +53,9 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		]);
 
 		this.addSettingTab(new InlineLinkPreviewSettingTab(this.app, this));
+
+		// Register developer console commands
+		this.registerDeveloperCommands();
 	}
 
 	/**
@@ -55,6 +66,9 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		if (this.faviconCache) {
 			await this.faviconCache.flush();
 		}
+
+		// Clean up developer commands
+		this.unregisterDeveloperCommands();
 	}
 
 	/**
@@ -156,5 +170,117 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 
 		this.settings.showFavicon = Boolean(this.settings.showFavicon);
 		this.settings.keepEmoji = Boolean(this.settings.keepEmoji);
+	}
+
+	/**
+	 * Register developer console commands for debugging
+	 * Access via: window.inlineLinkPreview.*
+	 */
+	private registerDeveloperCommands(): void {
+		// Expose debugging API on window object
+		(window as any).inlineLinkPreview = {
+			// Cache inspection
+			getCacheStats: () => {
+				const metadata = this.linkPreviewService.getCacheStats();
+				const favicon = this.faviconCache.getStats();
+				console.log("Metadata Cache:", metadata);
+				console.log("Favicon Cache:", favicon);
+				return { metadata, favicon };
+			},
+
+			// Clear all caches
+			clearAllCaches: () => {
+				this.linkPreviewService.clearCache();
+				this.faviconCache.clear();
+				console.log("All caches cleared");
+			},
+
+			// Logging control
+			setLogLevel: (level: "error" | "warn" | "info" | "debug") => {
+				const levelMap = {
+					error: LogLevel.ERROR,
+					warn: LogLevel.WARN,
+					info: LogLevel.INFO,
+					debug: LogLevel.DEBUG
+				};
+				Logger.setGlobalLevel(levelMap[level] ?? LogLevel.WARN);
+				console.log(`Log level set to: ${level}`);
+			},
+
+			// Performance tracking
+			enablePerformanceTracking: () => {
+				enablePerformanceTracking();
+				console.log("Performance tracking enabled");
+			},
+
+			disablePerformanceTracking: () => {
+				disablePerformanceTracking();
+				console.log("Performance tracking disabled");
+			},
+
+			getPerformanceMetrics: () => {
+				const metrics = getAllPerformanceMetrics();
+				console.table(metrics);
+				return metrics;
+			},
+
+			resetPerformanceMetrics: () => {
+				resetPerformanceMetrics();
+				console.log("Performance metrics reset");
+			},
+
+			isPerformanceTrackingEnabled: () => {
+				const enabled = isPerformanceTrackingEnabled();
+				console.log(`Performance tracking: ${enabled ? "enabled" : "disabled"}`);
+				return enabled;
+			},
+
+			// Refresh decorations
+			refreshDecorations: () => {
+				this.refreshDecorations();
+				console.log("Decorations refreshed");
+			},
+
+			// Help
+			help: () => {
+				console.log(`
+Inline Link Preview - Developer Commands
+=========================================
+
+Cache Management:
+  .getCacheStats()              - View cache statistics
+  .clearAllCaches()             - Clear all caches
+
+Logging:
+  .setLogLevel(level)           - Set log level: "error", "warn", "info", "debug"
+
+Performance:
+  .enablePerformanceTracking()  - Enable performance tracking
+  .disablePerformanceTracking() - Disable performance tracking
+  .getPerformanceMetrics()      - View performance metrics
+  .resetPerformanceMetrics()    - Reset performance metrics
+  .isPerformanceTrackingEnabled() - Check if tracking is enabled
+
+Other:
+  .refreshDecorations()         - Refresh all preview decorations
+  .help()                       - Show this help message
+
+Example:
+  window.inlineLinkPreview.setLogLevel("debug")
+  window.inlineLinkPreview.enablePerformanceTracking()
+  window.inlineLinkPreview.getCacheStats()
+				`);
+			}
+		};
+
+		console.log("Inline Link Preview: Developer commands available at window.inlineLinkPreview");
+		console.log("Type window.inlineLinkPreview.help() for more info");
+	}
+
+	/**
+	 * Clean up developer commands
+	 */
+	private unregisterDeveloperCommands(): void {
+		delete (window as any).inlineLinkPreview;
 	}
 }

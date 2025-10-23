@@ -26,6 +26,8 @@ import { MetadataFetcher, type FetcherOptions } from "./MetadataFetcher";
 import { HtmlParser } from "./HtmlParser";
 import { FaviconResolver } from "./FaviconResolver";
 import { MetadataValidator } from "./MetadataValidator";
+import { LRUCache } from "../utils/LRUCache";
+import { METADATA_CACHE_MAX_SIZE, MAX_CONCURRENT_REQUESTS } from "../constants";
 
 export type { LinkMetadata } from "./types";
 
@@ -41,9 +43,11 @@ export interface LinkPreviewServiceOptions {
  * Main service for fetching and enriching link metadata
  */
 export class LinkPreviewService {
-	private cache = new Map<string, LinkMetadata>();
+	private cache: LRUCache<string, LinkMetadata>;
 	private settings: InlineLinkPreviewSettings;
 	private readonly metadataHandlers: MetadataHandler[];
+	private pendingRequests = new Map<string, Promise<LinkMetadata>>();
+	private activeRequestCount = 0;
 
 	// Extracted modules
 	private fetcher: MetadataFetcher;
@@ -58,6 +62,9 @@ export class LinkPreviewService {
 	) {
 		this.settings = settings;
 		this.metadataHandlers = metadataHandlers;
+
+		// Initialize LRU cache for metadata
+		this.cache = new LRUCache<string, LinkMetadata>(METADATA_CACHE_MAX_SIZE);
 
 		// Initialize modules
 		this.fetcher = new MetadataFetcher(options);
@@ -134,22 +141,67 @@ export class LinkPreviewService {
 	}
 
 	/**
+	 * Get cache statistics for monitoring and debugging
+	 * @returns Cache statistics including hit rate and size
+	 */
+	getCacheStats() {
+		return this.cache.getStats();
+	}
+
+	/**
 	 * Get metadata for a URL, fetching from cache or network
 	 * This is the main public API for getting link metadata
+	 *
+	 * Implements concurrency limiting and request deduplication:
+	 * - Multiple requests for the same URL share a single fetch
+	 * - Maximum concurrent requests limited to prevent overload
 	 *
 	 * @param rawUrl - URL to fetch metadata for
 	 * @returns Promise resolving to link metadata
 	 */
 	async getMetadata(rawUrl: string): Promise<LinkMetadata> {
 		const normalizedUrl = this.normalizeUrl(rawUrl);
+
+		// Check cache first
 		const cached = this.cache.get(normalizedUrl);
 		if (cached) {
 			return cached;
 		}
 
-		const metadata = await this.fetchMetadata(normalizedUrl);
-		this.cache.set(normalizedUrl, metadata);
-		return metadata;
+		// Check if already fetching this URL (request deduplication)
+		const pending = this.pendingRequests.get(normalizedUrl);
+		if (pending) {
+			return pending;
+		}
+
+		// Wait if too many concurrent requests
+		while (this.activeRequestCount >= MAX_CONCURRENT_REQUESTS) {
+			await new Promise(resolve => setTimeout(resolve, 50));
+		}
+
+		// Create new request promise
+		const requestPromise = this.fetchMetadataWithTracking(normalizedUrl);
+		this.pendingRequests.set(normalizedUrl, requestPromise);
+
+		try {
+			const metadata = await requestPromise;
+			this.cache.set(normalizedUrl, metadata);
+			return metadata;
+		} finally {
+			this.pendingRequests.delete(normalizedUrl);
+		}
+	}
+
+	/**
+	 * Fetch metadata with request tracking for concurrency limiting
+	 */
+	private async fetchMetadataWithTracking(url: string): Promise<LinkMetadata> {
+		this.activeRequestCount++;
+		try {
+			return await this.fetchMetadata(url);
+		} finally {
+			this.activeRequestCount--;
+		}
 	}
 
 	private normalizeUrl(url: string): string {
