@@ -10,6 +10,7 @@ Thank you for your interest in contributing to the Inline Link Preview plugin! T
 - [TypeScript Guidelines](#typescript-guidelines)
 - [Testing](#testing)
 - [Git Workflow](#git-workflow)
+- [Version Management & Releases](#version-management--releases)
 - [Pull Request Process](#pull-request-process)
 - [Project Structure](#project-structure)
 - [Performance Considerations](#performance-considerations)
@@ -459,6 +460,81 @@ Reduces main file from 1224 to 120 lines.
 2. **Descriptive messages** - Explain why, not what (code shows what)
 3. **Reference issues** - Use `Closes #123` or `Fixes #456`
 4. **Keep commits clean** - Squash fixup commits before merging
+
+## Version Management & Releases
+
+### Bumping Versions
+
+Use the automated version-bump script to update all version references:
+
+```bash
+npm run set-version 0.9.0
+```
+
+This will automatically update:
+- `manifest.json` - Plugin version
+- `package.json` & `package-lock.json` - npm version
+- `versions.json` - Version-to-minAppVersion mapping
+- `AGENTS.md` - Current version line
+- `CHANGELOG.md` - Creates new unreleased section template
+
+**Output:**
+```
+✓ Updated manifest.json
+✓ Updated package.json
+✓ Updated package-lock.json
+✓ Updated versions.json
+✓ Updated AGENTS.md
+✓ Updated CHANGELOG.md (added unreleased section)
+
+✅ Version bumped to 0.9.0
+
+Next steps:
+1. Fill in CHANGELOG.md with your changes
+2. Commit: git add . && git commit -m "chore: Bump version to 0.9.0"
+3. Tag: git tag 0.9.0
+4. Push: git push origin master --tags
+```
+
+For detailed documentation, see [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md).
+
+### Release Process
+
+1. **Complete your feature work** and ensure all tests pass
+2. **Bump the version:**
+   ```bash
+   npm run set-version 1.0.0
+   ```
+3. **Fill in CHANGELOG.md** with your changes (Added/Changed/Fixed sections)
+4. **Commit version bump:**
+   ```bash
+   git add .
+   git commit -m "chore: Bump version to 1.0.0"
+   ```
+5. **Create and push tag:**
+   ```bash
+   git tag 1.0.0
+   git push origin master --tags
+   ```
+6. **GitHub Actions will automatically:**
+   - Run tests
+   - Build the plugin
+   - Create a GitHub release
+   - Upload plugin files (main.js, manifest.json, styles.css)
+
+### Semantic Versioning
+
+Follow [semantic versioning](https://semver.org/):
+
+- **MAJOR** (1.0.0) - Breaking changes that affect users
+- **MINOR** (0.1.0) - New features (backward compatible)
+- **PATCH** (0.0.1) - Bug fixes (backward compatible)
+
+**Examples:**
+- User-facing feature: `0.8.0 → 0.9.0` (MINOR)
+- Bug fix: `0.8.0 → 0.8.1` (PATCH)
+- Breaking change: `0.9.0 → 1.0.0` (MAJOR)
+- Internal refactoring (no user impact): `0.7.0 → 0.8.0` (MINOR)
 
 ## Pull Request Process
 

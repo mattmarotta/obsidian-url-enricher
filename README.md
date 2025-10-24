@@ -465,7 +465,7 @@ The release bundle consists of `manifest.json`, `main.js`, and optionally `style
 - `npm run dev` – watch mode with incremental builds.
 - `npm run build` – type-check and create a production bundle.
 - `npm test` – run unit tests.
-- `npm run set-version -- <x.y.z>` – update the plugin version across `package.json`, `package-lock.json`, `manifest.json`, and `versions.json`.
+- `npm run set-version <x.y.z>` – update version across all files (package.json, manifest.json, versions.json, AGENTS.md, CHANGELOG.md). See [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) for details.
 
 For detailed contributing guidelines, coding standards, and testing documentation, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
