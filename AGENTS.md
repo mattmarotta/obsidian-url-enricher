@@ -9,7 +9,7 @@ This plugin adds rich, dynamic link previews to Obsidian. It is **completely non
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript)
 - Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian
 - Required release artifacts: `main.js`, `manifest.json`, `styles.css`
-- Current version: 0.7.0
+- Current version: 0.8.0
 
 ## Environment & tooling
 
