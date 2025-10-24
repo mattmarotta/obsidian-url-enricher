@@ -201,8 +201,7 @@ function createDecorationsForUrl(
 				metadata.siteName,
 				metadata.error
 			),
-			side: -1, // Place widget BEFORE the URL
-			block: settings.displayMode === "block"
+			side: -1 // Place widget BEFORE the URL
 		});
 		decorations.push({ from: urlStart, to: urlStart, decoration: cardWidget });
 
