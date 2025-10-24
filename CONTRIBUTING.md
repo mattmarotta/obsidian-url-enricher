@@ -58,6 +58,12 @@ Thank you for your interest in contributing to the Inline Link Preview plugin! T
    ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/obsidian-inline-link-preview"
    ```
 
+7. **⚠️ IMPORTANT: Set up git hooks**
+   ```bash
+   git config core.hooksPath .husky
+   ```
+   This enables pre-commit hooks that run TypeScript validation and tests automatically before each commit.
+
 ## Coding Standards
 
 ### General Principles
@@ -103,6 +109,8 @@ src/
 - **camelCase** for utilities: `stringReplace.ts`
 - **kebab-case** for config: `tsconfig.json`
 - **Index files** for directory exports: `index.ts`
+
+⚠️ **CRITICAL**: Never commit build artifacts (`main.js`, `node_modules/`, `dist/`). Only commit source files.
 
 #### File Structure Template
 ```typescript
@@ -209,6 +217,8 @@ type LinkMetadata = { title: string; description: string | null }; // Should be 
 3. **Explicit return types** - Always specify return types for public methods
 4. **Null safety** - Use `| null` instead of `| undefined` when possible
 
+⚠️ **100% Type Safety**: This codebase has ZERO `any` types. All external data must use `unknown` with type guards. Build will fail with `any` types.
+
 **Good:**
 ```typescript
 function parseMetadata(value: unknown): LinkMetadata | null {
@@ -306,6 +316,8 @@ try {
 - **Maintain 100% pass rate** - All tests must pass before merging
 - **Test edge cases** - Consider null, empty, invalid inputs
 
+⚠️ **CRITICAL**: Both `npm run build` AND `npm test` must pass before committing. Pre-commit hooks check both automatically.
+
 ### Running Tests
 
 ```bash
@@ -396,6 +408,36 @@ const mockEverything = {
 	// ... too much mocking
 };
 ```
+
+### Common Testing Pitfalls
+
+⚠️ **Frontmatter must start on line 1**: When testing frontmatter features, ensure YAML frontmatter starts on the very first line of the test file. This is the #1 reason frontmatter tests fail.
+
+```yaml
+# ❌ WRONG - Will not work!
+# My Note Title
+
+---
+preview-style: card
+---
+
+# ✅ CORRECT - Frontmatter first!
+---
+preview-style: card
+---
+
+# My Note Title
+```
+
+⚠️ **Clear caches when testing metadata changes**: The plugin caches metadata and favicons for 30 days. When testing metadata extraction or favicon handling, always clear caches first:
+
+```javascript
+// In browser console (Cmd+Option+I / Ctrl+Shift+I)
+window.inlineLinkPreview.clearAllCaches()
+window.inlineLinkPreview.refreshDecorations()
+```
+
+Otherwise, you won't see your changes!
 
 ## Git Workflow
 
@@ -497,6 +539,8 @@ Next steps:
 ```
 
 For detailed documentation, see [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md).
+
+⚠️ **IMPORTANT**: Fill in CHANGELOG.md immediately after bumping the version while changes are fresh in your mind!
 
 ### Release Process
 
@@ -672,12 +716,23 @@ export { MyNewService } from "./MyNewService";
 
 ### Adding Constants
 
-Always add constants to `src/constants.ts`:
+⚠️ **ALWAYS** add constants to `src/constants.ts`, never inline as magic numbers:
 
 ```typescript
 // src/constants.ts
 export const MY_NEW_CONSTANT = 42;
 export const MY_CONFIG_SETTING = "default-value";
+```
+
+**Bad:**
+```typescript
+if (cache.size > 1000) { } // ❌ Magic number
+```
+
+**Good:**
+```typescript
+import { CACHE_MAX_SIZE } from "./constants";
+if (cache.size > CACHE_MAX_SIZE) { } // ✅ Named constant
 ```
 
 ### Adding Utilities

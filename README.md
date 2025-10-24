@@ -407,6 +407,42 @@ window.inlineLinkPreview.refreshDecorations()
 
 ## Troubleshooting
 
+### Common Issues
+
+**⚠️ Frontmatter must start on line 1**
+
+The #1 reason frontmatter doesn't work:
+
+```yaml
+# ❌ WRONG - Will not work!
+# My Note Title
+
+---
+preview-style: card
+---
+
+# ✅ CORRECT - Frontmatter first!
+---
+preview-style: card
+---
+
+# My Note Title
+```
+
+**⚠️ Clear cache when testing changes**
+
+If you don't see changes after updating the plugin or modifying metadata:
+
+1. Open browser console: `Cmd+Option+I` (Mac) or `Ctrl+Shift+I` (Windows)
+2. Run: `window.inlineLinkPreview.clearAllCaches()`
+3. Run: `window.inlineLinkPreview.refreshDecorations()`
+
+The plugin caches metadata and favicons for 30 days for performance.
+
+**⚠️ Must be in Live Preview mode**
+
+Previews only appear in **Live Preview mode**, not in Source mode or Reading view.
+
 ### Previews Not Appearing
 - Ensure you're in **Live Preview mode** (not Source mode or Reading view)
 - Check that URLs are on their own line or properly formatted as markdown links
