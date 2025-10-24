@@ -1,6 +1,6 @@
 # Testing Guide
 
-This document describes the testing infrastructure, current test coverage, and testing strategy for the Obsidian Inline Link Preview plugin.
+This document describes the testing infrastructure, current test coverage, and testing strategy for the Obsidian URL Enricher plugin.
 
 ## Table of Contents
 
@@ -192,11 +192,11 @@ Test utilities:
 7. **src/main.ts** (0% coverage, 50 tests)
    - **Settings normalization** (50 tests): Clamping, type conversion, default fallbacks
    - maxCardLength normalization (11 tests)
-   - maxBubbleLength normalization (9 tests)
+   - maxInlineLength normalization (9 tests)
    - requestTimeoutMs normalization (8 tests)
    - Boolean normalization (8 tests)
    - Combined normalization scenarios (3 tests)
-   - Bubble color CSS logic (6 tests)
+   - Preview color CSS logic (6 tests)
    - Settings merge behavior (5 tests)
    - Note: Plugin lifecycle not tested; normalization logic extracted for testing
 
@@ -206,7 +206,7 @@ Test utilities:
 
 - **src/editor/urlRangeDecorator.ts** (1139 lines)
   - CodeMirror widget rendering
-  - Card mode vs bubble mode rendering
+  - Card mode vs inline mode rendering
   - Hover states and animations
   - Content loading and error states
 

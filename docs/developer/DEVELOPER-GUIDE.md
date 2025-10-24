@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide provides practical workflows, checklists, and gotchas for day-to-day development on the Inline Link Preview plugin.
+This guide provides practical workflows, checklists, and gotchas for day-to-day development on the URL Enricher plugin.
 
 ## Quick Reference
 
@@ -502,7 +502,7 @@ window.inlineLinkPreview.getPerformanceMetrics()
 2. Check property names (case-insensitive but must match)
 3. Verify values are in valid ranges:
    - `max-card-length`: 100-5000
-   - `max-bubble-length`: 50-5000
+   - `max-inline-length`: 50-5000
 4. See [FRONTMATTER-TROUBLESHOOTING.md](../features/FRONTMATTER-TROUBLESHOOTING.md)
 
 **Problem: TypeScript errors in tests**

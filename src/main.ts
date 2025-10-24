@@ -1,7 +1,7 @@
 /**
- * Inline Link Preview Plugin for Obsidian
+ * URL Enricher Plugin for Obsidian
  *
- * Adds rich, dynamic link previews to Obsidian notes in Live Preview mode.
+ * Adds rich, non-destructive link previews to Obsidian notes in Live Preview mode.
  * All previews are rendered dynamically without modifying markdown source files.
  *
  * @see https://github.com/your-repo/obsidian-inline-link-preview
@@ -44,8 +44,8 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		await this.loadSettings();
 		await this.instantiateServices();
 
-		// Apply bubble color CSS
-		this.updateBubbleColorCSS();
+		// Apply preview color CSS
+		this.updatePreviewColorCSS();
 
 		// Register the URL preview decorator for Live Preview (favicon decorator removed - non-destructive mode only)
 		this.registerEditorExtension([
@@ -92,9 +92,9 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	}
 
 	/**
-	 * Update the CSS variable for preview bubble background color
+	 * Update the CSS variable for preview background color
 	 */
-	updateBubbleColorCSS(): void {
+	updatePreviewColorCSS(): void {
 		const mode = this.settings.previewColorMode;
 		const color = mode === "custom"
 			? this.settings.customPreviewColor
@@ -151,6 +151,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	/**
 	 * Normalize and validate settings to ensure they're within acceptable ranges
 	 * Converts string values to numbers and enforces min/max bounds
+	 * Also handles migration from old settings (v0.8.0 -> v0.9.0)
 	 */
 	private normalizeSettings(): void {
 		const numericCardLength = Number(this.settings.maxCardLength);
@@ -158,10 +159,22 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			? Math.min(5000, Math.max(100, Math.round(numericCardLength)))
 			: DEFAULT_SETTINGS.maxCardLength;
 
-		const numericBubbleLength = Number(this.settings.maxBubbleLength);
-		this.settings.maxBubbleLength = Number.isFinite(numericBubbleLength)
-			? Math.min(5000, Math.max(50, Math.round(numericBubbleLength)))
-			: DEFAULT_SETTINGS.maxBubbleLength;
+		// Migration: maxBubbleLength -> maxInlineLength (v0.9.0)
+		const settings = this.settings as any;
+		if (settings.maxBubbleLength !== undefined && settings.maxInlineLength === undefined) {
+			settings.maxInlineLength = settings.maxBubbleLength;
+			delete settings.maxBubbleLength;
+		}
+
+		const numericInlineLength = Number(this.settings.maxInlineLength);
+		this.settings.maxInlineLength = Number.isFinite(numericInlineLength)
+			? Math.min(5000, Math.max(50, Math.round(numericInlineLength)))
+			: DEFAULT_SETTINGS.maxInlineLength;
+
+		// Migration: Remove deprecated displayMode (v0.9.0)
+		if (settings.displayMode !== undefined) {
+			delete settings.displayMode;
+		}
 
 		const numericTimeout = Number(this.settings.requestTimeoutMs);
 		this.settings.requestTimeoutMs = Number.isFinite(numericTimeout)
@@ -174,11 +187,11 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 
 	/**
 	 * Register developer console commands for debugging
-	 * Access via: window.inlineLinkPreview.*
+	 * Access via: window.urlEnricher.*
 	 */
 	private registerDeveloperCommands(): void {
-		// Expose debugging API on window object
-		(window as any).inlineLinkPreview = {
+		// Expose debugging API on window object (maintain backwards compatibility with old name)
+		const api = {
 			// Cache inspection
 			getCacheStats: () => {
 				const metadata = this.linkPreviewService.getCacheStats();
@@ -244,8 +257,8 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			// Help
 			help: () => {
 				console.log(`
-Inline Link Preview - Developer Commands
-=========================================
+URL Enricher - Developer Commands
+==================================
 
 Cache Management:
   .getCacheStats()              - View cache statistics
@@ -266,21 +279,26 @@ Other:
   .help()                       - Show this help message
 
 Example:
-  window.inlineLinkPreview.setLogLevel("debug")
-  window.inlineLinkPreview.enablePerformanceTracking()
-  window.inlineLinkPreview.getCacheStats()
+  window.urlEnricher.setLogLevel("debug")
+  window.urlEnricher.enablePerformanceTracking()
+  window.urlEnricher.getCacheStats()
 				`);
 			}
 		};
 
-		console.log("Inline Link Preview: Developer commands available at window.inlineLinkPreview");
-		console.log("Type window.inlineLinkPreview.help() for more info");
+		// Set both new and old names for backwards compatibility
+		(window as any).urlEnricher = api;
+		(window as any).inlineLinkPreview = api;
+
+		console.log("URL Enricher: Developer commands available at window.urlEnricher (also window.inlineLinkPreview for backwards compatibility)");
+		console.log("Type window.urlEnricher.help() for more info");
 	}
 
 	/**
 	 * Clean up developer commands
 	 */
 	private unregisterDeveloperCommands(): void {
+		delete (window as any).urlEnricher;
 		delete (window as any).inlineLinkPreview;
 	}
 }

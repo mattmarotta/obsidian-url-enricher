@@ -11,7 +11,7 @@ import { sanitizeTextContent } from "../utils/text";
 import {
 	ELLIPSIS,
 	DEFAULT_CARD_LENGTH,
-	DEFAULT_BUBBLE_LENGTH,
+	DEFAULT_INLINE_LENGTH,
 	MIN_DESCRIPTION_LENGTH,
 	TITLE_SEPARATOR_LENGTH
 } from "../constants";
@@ -53,9 +53,9 @@ function equalsIgnoreCase(a: string, b: string): boolean {
 function calculateMaxLength(
 	previewStyle: PreviewStyle,
 	maxCardLength: number,
-	maxBubbleLength: number
+	maxInlineLength: number
 ): number {
-	const maxLength = (previewStyle === "card" ? maxCardLength : maxBubbleLength) as unknown;
+	const maxLength = (previewStyle === "card" ? maxCardLength : maxInlineLength) as unknown;
 	let maxLengthValue: number;
 
 	if (typeof maxLength === "string") {
@@ -63,11 +63,11 @@ function calculateMaxLength(
 	} else if (typeof maxLength === "number") {
 		maxLengthValue = maxLength;
 	} else {
-		// Default: 300 for cards, 150 for bubbles
-		maxLengthValue = previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_BUBBLE_LENGTH;
+		// Default: 300 for cards, 150 for inline
+		maxLengthValue = previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_INLINE_LENGTH;
 	}
 
-	return Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_BUBBLE_LENGTH);
+	return Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_INLINE_LENGTH);
 }
 
 /**
@@ -88,13 +88,13 @@ function processMetadata(
 	settings: {
 		previewStyle: PreviewStyle;
 		maxCardLength: number;
-		maxBubbleLength: number;
+		maxInlineLength: number;
 		showFavicon: boolean;
 		includeDescription: boolean;
 		keepEmoji: boolean;
 	}
 ): ProcessedMetadata {
-	const limit = calculateMaxLength(settings.previewStyle, settings.maxCardLength, settings.maxBubbleLength);
+	const limit = calculateMaxLength(settings.previewStyle, settings.maxCardLength, settings.maxInlineLength);
 
 	let title: string | null = null;
 	let description: string | null = null;
@@ -163,13 +163,12 @@ function createDecorationsForUrl(
 	isLoading: boolean,
 	settings: {
 		previewStyle: PreviewStyle;
-		displayMode: import("../settings").DisplayMode;
 		maxCardLength: number;
-		maxBubbleLength: number;
+		maxInlineLength: number;
 	}
 ): Array<{ from: number; to: number; decoration: Decoration }> {
 	const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
-	const limit = calculateMaxLength(settings.previewStyle, settings.maxCardLength, settings.maxBubbleLength);
+	const limit = calculateMaxLength(settings.previewStyle, settings.maxCardLength, settings.maxInlineLength);
 
 	// If there's an error, add error indicator
 	if (metadata.error) {
@@ -196,7 +195,6 @@ function createDecorationsForUrl(
 				metadata.faviconUrl,
 				isLoading,
 				settings.previewStyle,
-				settings.displayMode,
 				limit,
 				metadata.siteName,
 				metadata.error
@@ -207,7 +205,7 @@ function createDecorationsForUrl(
 
 		// Style the URL to be subtle (small, grey, no underline)
 		const urlMark = Decoration.mark({
-			class: "ilp-card-url",
+			class: "url-preview-card-url",
 			attributes: {
 				style: `
 					font-size: 0.85em;
@@ -219,7 +217,7 @@ function createDecorationsForUrl(
 		});
 		decorations.push({ from: urlStart, to: urlEnd, decoration: urlMark });
 	} else {
-		// Bubble mode: Replace URL with bubble (hide URL)
+		// Inline mode: Replace URL with inline preview (hide URL)
 		const replacementWidget = Decoration.replace({
 			widget: new UrlPreviewWidget(
 				url,
@@ -228,7 +226,6 @@ function createDecorationsForUrl(
 				metadata.faviconUrl,
 				isLoading,
 				settings.previewStyle,
-				settings.displayMode,
 				limit,
 				metadata.siteName,
 				metadata.error
@@ -259,19 +256,17 @@ export function buildUrlDecorations(
 
 	// Merge frontmatter config with global settings (frontmatter takes precedence)
 	const previewStyle = pageConfig.previewStyle ?? globalSettings.previewStyle;
-	const displayMode = pageConfig.displayMode ?? globalSettings.displayMode;
 	const maxCardLength = pageConfig.maxCardLength ?? globalSettings.maxCardLength;
-	const maxBubbleLength = pageConfig.maxBubbleLength ?? globalSettings.maxBubbleLength;
+	const maxInlineLength = pageConfig.maxInlineLength ?? globalSettings.maxInlineLength;
 	const showFavicon = pageConfig.showFavicon ?? globalSettings.showFavicon;
 	const includeDescription = pageConfig.includeDescription ?? globalSettings.includeDescription;
 	const keepEmoji = globalSettings.keepEmoji; // Not exposed to frontmatter
 
 	// Debug: Log merged settings
-	console.log('[Inline Link Preview] Merged settings:', {
+	console.log('[URL Enricher] Merged settings:', {
 		previewStyle,
-		displayMode,
 		maxCardLength,
-		maxBubbleLength,
+		maxInlineLength,
 		showFavicon,
 		includeDescription
 	});
@@ -299,8 +294,8 @@ export function buildUrlDecorations(
 		processedRanges.add(rangeKey);
 
 		// Skip if cursor is inside this URL (user is actively editing)
-		// Only skip for bubble mode - card mode keeps preview visible while editing
-		if (previewStyle === "bubble" && cursorPos >= start && cursorPos <= end) {
+		// Only skip for inline mode - card mode keeps preview visible while editing
+		if (previewStyle === "inline" && cursorPos >= start && cursorPos <= end) {
 			return;
 		}
 
@@ -326,7 +321,7 @@ export function buildUrlDecorations(
 			{
 				previewStyle,
 				maxCardLength,
-				maxBubbleLength,
+				maxInlineLength,
 				showFavicon,
 				includeDescription,
 				keepEmoji
@@ -343,9 +338,8 @@ export function buildUrlDecorations(
 			isLoading,
 			{
 				previewStyle,
-				displayMode,
 				maxCardLength,
-				maxBubbleLength
+				maxInlineLength
 			}
 		);
 

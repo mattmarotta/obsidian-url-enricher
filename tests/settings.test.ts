@@ -6,12 +6,11 @@ describe('Settings', () => {
 		it('should have all required fields', () => {
 			expect(DEFAULT_SETTINGS).toHaveProperty('includeDescription');
 			expect(DEFAULT_SETTINGS).toHaveProperty('maxCardLength');
-			expect(DEFAULT_SETTINGS).toHaveProperty('maxBubbleLength');
+			expect(DEFAULT_SETTINGS).toHaveProperty('maxInlineLength');
 			expect(DEFAULT_SETTINGS).toHaveProperty('requestTimeoutMs');
 			expect(DEFAULT_SETTINGS).toHaveProperty('showFavicon');
 			expect(DEFAULT_SETTINGS).toHaveProperty('keepEmoji');
 			expect(DEFAULT_SETTINGS).toHaveProperty('previewStyle');
-			expect(DEFAULT_SETTINGS).toHaveProperty('displayMode');
 			expect(DEFAULT_SETTINGS).toHaveProperty('previewColorMode');
 			expect(DEFAULT_SETTINGS).toHaveProperty('customPreviewColor');
 			expect(DEFAULT_SETTINGS).toHaveProperty('showHttpErrorWarnings');
@@ -65,17 +64,17 @@ describe('Settings', () => {
 				expect(DEFAULT_SETTINGS.maxCardLength).toBeLessThanOrEqual(5000);
 			});
 
-			it('should have maxBubbleLength as number', () => {
-				expect(typeof DEFAULT_SETTINGS.maxBubbleLength).toBe('number');
+			it('should have maxInlineLength as number', () => {
+				expect(typeof DEFAULT_SETTINGS.maxInlineLength).toBe('number');
 			});
 
-			it('should default maxBubbleLength to 150', () => {
-				expect(DEFAULT_SETTINGS.maxBubbleLength).toBe(150);
+			it('should default maxInlineLength to 150', () => {
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBe(150);
 			});
 
-			it('should have maxBubbleLength within valid range (50-5000)', () => {
-				expect(DEFAULT_SETTINGS.maxBubbleLength).toBeGreaterThanOrEqual(50);
-				expect(DEFAULT_SETTINGS.maxBubbleLength).toBeLessThanOrEqual(5000);
+			it('should have maxInlineLength within valid range (50-5000)', () => {
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBeGreaterThanOrEqual(50);
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBeLessThanOrEqual(5000);
 			});
 
 			it('should have requestTimeoutMs as number', () => {
@@ -101,25 +100,14 @@ describe('Settings', () => {
 				expect(typeof DEFAULT_SETTINGS.previewStyle).toBe('string');
 			});
 
-			it('should default previewStyle to "bubble"', () => {
-				expect(DEFAULT_SETTINGS.previewStyle).toBe('bubble');
+			it('should default previewStyle to "inline"', () => {
+				expect(DEFAULT_SETTINGS.previewStyle).toBe('inline');
 			});
 
 			it('should have valid previewStyle value', () => {
-				expect(['bubble', 'card']).toContain(DEFAULT_SETTINGS.previewStyle);
+				expect(['inline', 'card']).toContain(DEFAULT_SETTINGS.previewStyle);
 			});
 
-			it('should have displayMode as string', () => {
-				expect(typeof DEFAULT_SETTINGS.displayMode).toBe('string');
-			});
-
-			it('should default displayMode to "block"', () => {
-				expect(DEFAULT_SETTINGS.displayMode).toBe('block');
-			});
-
-			it('should have valid displayMode value', () => {
-				expect(['inline', 'block']).toContain(DEFAULT_SETTINGS.displayMode);
-			});
 
 			it('should have previewColorMode as string', () => {
 				expect(typeof DEFAULT_SETTINGS.previewColorMode).toBe('string');
@@ -161,9 +149,9 @@ describe('Settings', () => {
 				});
 			});
 
-			it('should have exactly 11 fields', () => {
+			it('should have exactly 10 fields', () => {
 				const keys = Object.keys(DEFAULT_SETTINGS);
-				expect(keys).toHaveLength(11);
+				expect(keys).toHaveLength(10);
 			});
 
 			it('should be a valid InlineLinkPreviewSettings object', () => {
@@ -176,38 +164,22 @@ describe('Settings', () => {
 
 	describe('Settings Validation', () => {
 		describe('PreviewStyle Validation', () => {
-			it('should accept "bubble" as valid', () => {
-				const validStyles: Array<'bubble' | 'card'> = ['bubble', 'card'];
-				expect(validStyles).toContain('bubble');
+			it('should accept "inline" as valid', () => {
+				const validStyles: Array<'inline' | 'card'> = ['inline', 'card'];
+				expect(validStyles).toContain('inline');
 			});
 
 			it('should accept "card" as valid', () => {
-				const validStyles: Array<'bubble' | 'card'> = ['bubble', 'card'];
+				const validStyles: Array<'inline' | 'card'> = ['inline', 'card'];
 				expect(validStyles).toContain('card');
 			});
 
 			it('should only have two valid preview styles', () => {
-				const validStyles: Array<'bubble' | 'card'> = ['bubble', 'card'];
+				const validStyles: Array<'inline' | 'card'> = ['inline', 'card'];
 				expect(validStyles).toHaveLength(2);
 			});
 		});
 
-		describe('DisplayMode Validation', () => {
-			it('should accept "inline" as valid', () => {
-				const validModes: Array<'inline' | 'block'> = ['inline', 'block'];
-				expect(validModes).toContain('inline');
-			});
-
-			it('should accept "block" as valid', () => {
-				const validModes: Array<'inline' | 'block'> = ['inline', 'block'];
-				expect(validModes).toContain('block');
-			});
-
-			it('should only have two valid display modes', () => {
-				const validModes: Array<'inline' | 'block'> = ['inline', 'block'];
-				expect(validModes).toHaveLength(2);
-			});
-		});
 
 		describe('PreviewColorMode Validation', () => {
 			it('should accept "none" as valid', () => {
@@ -242,18 +214,18 @@ describe('Settings', () => {
 				expect(DEFAULT_SETTINGS.maxCardLength).toBeLessThanOrEqual(max);
 			});
 
-			it('should enforce maxBubbleLength minimum of 50', () => {
+			it('should enforce maxInlineLength minimum of 50', () => {
 				const min = 50;
-				expect(DEFAULT_SETTINGS.maxBubbleLength).toBeGreaterThanOrEqual(min);
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBeGreaterThanOrEqual(min);
 			});
 
-			it('should enforce maxBubbleLength maximum of 5000', () => {
+			it('should enforce maxInlineLength maximum of 5000', () => {
 				const max = 5000;
-				expect(DEFAULT_SETTINGS.maxBubbleLength).toBeLessThanOrEqual(max);
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBeLessThanOrEqual(max);
 			});
 
-			it('should have maxBubbleLength less than maxCardLength by default', () => {
-				expect(DEFAULT_SETTINGS.maxBubbleLength).toBeLessThan(DEFAULT_SETTINGS.maxCardLength);
+			it('should have maxInlineLength less than maxCardLength by default', () => {
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBeLessThan(DEFAULT_SETTINGS.maxCardLength);
 			});
 		});
 	});
@@ -270,18 +242,15 @@ describe('Settings', () => {
 				previewStyle: 'card',
 			};
 			expect(settings.previewStyle).toBe('card');
-			expect(settings.displayMode).toBe(DEFAULT_SETTINGS.displayMode);
 		});
 
 		it('should allow creating settings with multiple overrides', () => {
 			const settings: InlineLinkPreviewSettings = {
 				...DEFAULT_SETTINGS,
 				previewStyle: 'card',
-				displayMode: 'inline',
 				maxCardLength: 500,
 			};
 			expect(settings.previewStyle).toBe('card');
-			expect(settings.displayMode).toBe('inline');
 			expect(settings.maxCardLength).toBe(500);
 		});
 
@@ -289,12 +258,11 @@ describe('Settings', () => {
 			const settings: InlineLinkPreviewSettings = {
 				includeDescription: false,
 				maxCardLength: 400,
-				maxBubbleLength: 200,
+				maxInlineLength: 200,
 				requestTimeoutMs: 10000,
 				showFavicon: false,
 				keepEmoji: false,
 				previewStyle: 'card',
-				displayMode: 'inline',
 				previewColorMode: 'custom',
 				customPreviewColor: '#ff0000',
 				showHttpErrorWarnings: false,
@@ -321,20 +289,20 @@ describe('Settings', () => {
 			expect(settings.maxCardLength).toBe(5000);
 		});
 
-		it('should handle minimum maxBubbleLength (50)', () => {
+		it('should handle minimum maxInlineLength (50)', () => {
 			const settings: InlineLinkPreviewSettings = {
 				...DEFAULT_SETTINGS,
-				maxBubbleLength: 50,
+				maxInlineLength: 50,
 			};
-			expect(settings.maxBubbleLength).toBe(50);
+			expect(settings.maxInlineLength).toBe(50);
 		});
 
-		it('should handle maximum maxBubbleLength (5000)', () => {
+		it('should handle maximum maxInlineLength (5000)', () => {
 			const settings: InlineLinkPreviewSettings = {
 				...DEFAULT_SETTINGS,
-				maxBubbleLength: 5000,
+				maxInlineLength: 5000,
 			};
-			expect(settings.maxBubbleLength).toBe(5000);
+			expect(settings.maxInlineLength).toBe(5000);
 		});
 
 		it('should handle all boolean combinations', () => {

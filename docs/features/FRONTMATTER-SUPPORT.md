@@ -1,28 +1,18 @@
 # Frontmatter Support
 
-The Inline Link Preview plugin supports per-page configuration through frontmatter properties. This allows you to customize preview behavior for individual notes without changing global settings.
+The URL Enricher plugin supports per-page configuration through frontmatter properties. This allows you to customize preview behavior for individual notes without changing global settings.
 
 ## Supported Properties
 
-### Preview Style and Display
+### Preview Style
 
 **`preview-style`**
-- **Values**: `bubble` or `card`
-- **Description**: Choose between compact bubble style or detailed card style for this page
+- **Values**: `inline` or `card`
+- **Description**: Choose between compact inline style or detailed card style for this page
 - **Example**:
   ```yaml
   ---
   preview-style: card
-  ---
-  ```
-
-**`preview-display`**
-- **Values**: `inline` or `block`
-- **Description**: Choose whether previews appear inline with text or on a new line
-- **Example**:
-  ```yaml
-  ---
-  preview-display: inline
   ---
   ```
 
@@ -39,14 +29,14 @@ The Inline Link Preview plugin supports per-page configuration through frontmatt
   ---
   ```
 
-**`max-bubble-length`**
+**`max-inline-length`**
 - **Values**: Number between 50 and 5000
-- **Description**: Maximum total characters for bubble-style previews (title + description combined)
+- **Description**: Maximum total characters for inline-style previews (title + description combined)
 - **Note**: Minimum of 50 prevents unusably short previews. Maximum of 5000 prevents performance issues.
 - **Example**:
   ```yaml
   ---
-  max-bubble-length: 200
+  max-inline-length: 200
   ---
   ```
 
@@ -104,7 +94,6 @@ Here's a complete frontmatter example combining multiple settings:
 ---
 title: My Research Notes
 preview-style: card
-preview-display: block
 max-card-length: 350
 show-favicon: true
 include-description: true
@@ -112,9 +101,9 @@ include-description: true
 
 # My Research Notes
 
-This page will show card-style previews on new lines, with a maximum length of 350 characters.
+This page will show card-style previews with a maximum length of 350 characters.
 
-Card previews will show a small, subtle URL that can be edited, while bubble previews hide the URL entirely.
+Card previews will show a small, subtle URL that can be edited, while inline previews hide the URL entirely.
 ```
 
 ## URL Display Behavior
@@ -122,7 +111,7 @@ Card previews will show a small, subtle URL that can be edited, while bubble pre
 The plugin automatically determines how URLs are displayed based on the preview style:
 
 - **Card previews**: URL is replaced with a small, subtle version and the card appears after it (editable)
-- **Bubble previews**: URL is completely hidden and replaced with the bubble preview
+- **Inline previews**: URL is completely hidden and replaced with the inline preview
 
 This behavior cannot be customized per-page—it's determined by the `preview-style` setting.
 

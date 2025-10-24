@@ -1,5 +1,5 @@
 import { WidgetType } from "@codemirror/view";
-import type { PreviewStyle, DisplayMode } from "../settings";
+import type { PreviewStyle } from "../settings";
 import { enrichTextWithStyledElements, cleanMediaUrls } from "./MetadataEnricher";
 
 /**
@@ -12,7 +12,7 @@ export class ErrorIndicatorWidget extends WidgetType {
 
 	toDOM(): HTMLElement {
 		const span = document.createElement("span");
-		span.className = "inline-url-preview-error-indicator";
+		span.className = "url-preview-error-indicator";
 		span.textContent = " ⚠️";
 
 		// Different tooltip based on error type
@@ -41,7 +41,7 @@ export class ErrorIndicatorWidget extends WidgetType {
 }
 
 /**
- * Widget that displays a rich preview (bubble or card) for a URL
+ * Widget that displays a rich preview (inline or card) for a URL
  * Includes title, description, favicon, and site name
  */
 export class UrlPreviewWidget extends WidgetType {
@@ -52,7 +52,6 @@ export class UrlPreviewWidget extends WidgetType {
 		private faviconUrl: string | null,
 		private isLoading: boolean,
 		private previewStyle: PreviewStyle,
-		private displayMode: DisplayMode,
 		private maxLength: number,
 		private siteName: string | null = null,
 		private error: string | null = null
@@ -61,41 +60,26 @@ export class UrlPreviewWidget extends WidgetType {
 	}
 
 	toDOM(): HTMLElement {
-		// Create a wrapper container
-		const wrapper = document.createElement("span");
-		wrapper.style.display = "contents"; // Allows children to participate in parent's layout
-
-		// Add line break for block display mode
-		if (this.displayMode === "block") {
-			const br = document.createElement("br");
-			wrapper.appendChild(br);
-		}
-
 		const container = document.createElement("span");
 
 		// Apply style classes
 		if (this.previewStyle === "card") {
-			container.className = "inline-url-preview inline-url-preview--card";
+			container.className = "url-preview url-preview--card";
 		} else {
-			// Bubble style with display mode
-			if (this.displayMode === "block") {
-				container.className = "inline-url-preview inline-url-preview--bubble inline-url-preview--bubble-block";
-			} else {
-				container.className = "inline-url-preview inline-url-preview--bubble inline-url-preview--bubble-inline";
-			}
+			// Inline style - always flows inline with text
+			container.className = "url-preview url-preview--inline";
 		}
 
 		if (this.isLoading) {
-			container.className += " inline-url-preview--loading";
+			container.className += " url-preview--loading";
 			container.textContent = "Loading...";
-			wrapper.appendChild(container);
-			return wrapper;
+			return container;
 		}
 
 		// Clean media URLs from description
 		const cleanedDescription = this.description ? cleanMediaUrls(this.description) : this.description;
 
-		// Make the preview bubble clickable
+		// Make the preview clickable
 		container.style.cursor = "pointer";
 
 		// Prevent mousedown from moving cursor into the URL
@@ -115,13 +99,13 @@ export class UrlPreviewWidget extends WidgetType {
 		if (this.faviconUrl) {
 			const favicon = document.createElement("img");
 			favicon.src = this.faviconUrl;
-			favicon.className = "inline-url-preview__favicon";
+			favicon.className = "url-preview__favicon";
 			favicon.alt = "";
 
 			// For cards, wrap favicon and title in a header row
 			if (this.previewStyle === "card") {
 				const headerRow = document.createElement("div");
-				headerRow.className = "inline-url-preview__header";
+				headerRow.className = "url-preview__header";
 				headerRow.style.cssText = `
 					display: flex;
 					align-items: center;
@@ -132,7 +116,7 @@ export class UrlPreviewWidget extends WidgetType {
 				// Add title next to favicon for cards
 				if (this.title) {
 					const titleSpan = document.createElement("span");
-					titleSpan.className = "inline-url-preview__title";
+					titleSpan.className = "url-preview__title";
 					titleSpan.textContent = this.title;
 					titleSpan.style.cssText = `
 						flex: 1;
@@ -143,14 +127,14 @@ export class UrlPreviewWidget extends WidgetType {
 
 				container.appendChild(headerRow);
 			} else {
-				// For bubbles, keep favicon inline
+				// For inline style, keep favicon inline
 				container.appendChild(favicon);
 			}
 		}
 
 		// Title and description
 		const textContainer = document.createElement("span");
-		textContainer.className = "inline-url-preview__text";
+		textContainer.className = "url-preview__text";
 
 		// Check if this is Reddit content with special markers
 		const isReddit = !!(cleanedDescription && cleanedDescription.includes("§REDDIT_CARD§"));
@@ -158,7 +142,7 @@ export class UrlPreviewWidget extends WidgetType {
 		if (this.previewStyle === "card") {
 			this.renderCardContent(textContainer, cleanedDescription, isReddit);
 		} else {
-			this.renderBubbleContent(textContainer, cleanedDescription, isReddit);
+			this.renderInlineContent(textContainer, cleanedDescription, isReddit);
 		}
 
 		container.appendChild(textContainer);
@@ -168,8 +152,7 @@ export class UrlPreviewWidget extends WidgetType {
 			this.renderCardFooter(container);
 		}
 
-		wrapper.appendChild(container);
-		return wrapper;
+		return container;
 	}
 
 	/**
@@ -198,7 +181,7 @@ export class UrlPreviewWidget extends WidgetType {
 			// Post title (below subreddit/favicon)
 			if (postTitle) {
 				const postTitleDiv = document.createElement("div");
-				postTitleDiv.className = "inline-url-preview__post-title";
+				postTitleDiv.className = "url-preview__post-title";
 				const enrichedTitle = enrichTextWithStyledElements(postTitle.trim());
 				postTitleDiv.appendChild(enrichedTitle);
 				postTitleDiv.style.cssText = `
@@ -214,7 +197,7 @@ export class UrlPreviewWidget extends WidgetType {
 			// Post content preview
 			if (postContent) {
 				const contentDiv = document.createElement("div");
-				contentDiv.className = "inline-url-preview__description";
+				contentDiv.className = "url-preview__description";
 				const enrichedContent = enrichTextWithStyledElements(postContent.trim());
 				contentDiv.appendChild(enrichedContent);
 				textContainer.appendChild(contentDiv);
@@ -222,7 +205,7 @@ export class UrlPreviewWidget extends WidgetType {
 		} else if (cleanedDescription) {
 			// Standard card: description below title
 			const descDiv = document.createElement("div");
-			descDiv.className = "inline-url-preview__description";
+			descDiv.className = "url-preview__description";
 			const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
 			descDiv.appendChild(enrichedDesc);
 			textContainer.appendChild(descDiv);
@@ -230,49 +213,49 @@ export class UrlPreviewWidget extends WidgetType {
 	}
 
 	/**
-	 * Render content for bubble-style previews
+	 * Render content for inline-style previews
 	 */
-	private renderBubbleContent(textContainer: HTMLElement, cleanedDescription: string | null, isReddit: boolean): void {
+	private renderInlineContent(textContainer: HTMLElement, cleanedDescription: string | null, isReddit: boolean): void {
 		if (isReddit && cleanedDescription) {
-			// Reddit bubble: "r/Subreddit — Post Title"
+			// Reddit inline: "r/Subreddit — Post Title"
 			const parts = cleanedDescription.split("§REDDIT_CARD§");
 			const titlePart = parts[1] ? parts[1].split("§REDDIT_CONTENT§")[0] : "";
 
 			if (this.title) {
 				const titleSpan = document.createElement("span");
-				titleSpan.className = "inline-url-preview__title";
+				titleSpan.className = "url-preview__title";
 				titleSpan.textContent = this.title; // r/Subreddit
 				textContainer.appendChild(titleSpan);
 			}
 
 			if (titlePart) {
 				const separator = document.createElement("span");
-				separator.className = "inline-url-preview__separator";
+				separator.className = "url-preview__separator";
 				separator.textContent = " — ";
 				textContainer.appendChild(separator);
 
 				const descSpan = document.createElement("span");
-				descSpan.className = "inline-url-preview__description";
+				descSpan.className = "url-preview__description";
 				const enrichedTitlePart = enrichTextWithStyledElements(titlePart.trim());
 				descSpan.appendChild(enrichedTitlePart);
 				textContainer.appendChild(descSpan);
 			}
 		} else {
-			// Standard bubble format
+			// Standard inline format
 			if (this.title) {
 				const titleSpan = document.createElement("span");
-				titleSpan.className = "inline-url-preview__title";
+				titleSpan.className = "url-preview__title";
 				titleSpan.textContent = this.title;
 				textContainer.appendChild(titleSpan);
 
 				if (cleanedDescription) {
 					const separator = document.createElement("span");
-					separator.className = "inline-url-preview__separator";
+					separator.className = "url-preview__separator";
 					separator.textContent = " — ";
 					textContainer.appendChild(separator);
 
 					const descSpan = document.createElement("span");
-					descSpan.className = "inline-url-preview__description";
+					descSpan.className = "url-preview__description";
 					const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
 					descSpan.appendChild(enrichedDesc);
 					textContainer.appendChild(descSpan);
@@ -311,7 +294,7 @@ export class UrlPreviewWidget extends WidgetType {
 
 		if (siteName) {
 			const footer = document.createElement("div");
-			footer.className = "inline-url-preview__footer";
+			footer.className = "url-preview__footer";
 			footer.textContent = siteName.toUpperCase();
 			footer.style.cssText = `
 				font-size: 0.68em;
@@ -337,7 +320,6 @@ export class UrlPreviewWidget extends WidgetType {
 			other.faviconUrl === this.faviconUrl &&
 			other.isLoading === this.isLoading &&
 			other.previewStyle === this.previewStyle &&
-			other.displayMode === this.displayMode &&
 			other.siteName === this.siteName &&
 			other.error === this.error
 		);

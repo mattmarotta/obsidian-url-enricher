@@ -31,10 +31,10 @@ preview-style: card
 5. Go to the Console tab
 6. You should see:
    ```
-   [Inline Link Preview] buildDecorations called
-   [Inline Link Preview] Parsing frontmatter: [array of properties]
-   [Inline Link Preview] Parsed config: {previewStyle: "card", ...}
-   [Inline Link Preview] Merged settings: {previewStyle: "card", ...}
+   [URL Enricher] buildDecorations called
+   [URL Enricher] Parsing frontmatter: [array of properties]
+   [URL Enricher] Parsed config: {previewStyle: "card", ...}
+   [URL Enricher] Merged settings: {previewStyle: "card", ...}
    ```
 
 ## If You Still Don't See Console Output
@@ -48,10 +48,9 @@ preview-style: card
 
 ```yaml
 ---
-preview-style: card                    # or bubble
-preview-display: block                 # or inline  
+preview-style: card                    # or inline
 max-card-length: 500                   # 100-5000
-max-bubble-length: 200                 # 50-5000
+max-inline-length: 200                 # 50-5000
 show-favicon: true                     # or false
 include-description: true              # or false
 preview-color-mode: grey               # or none, custom
@@ -59,14 +58,14 @@ custom-preview-color: "#4a4a4a"        # hex color (when using custom mode)
 ---
 ```
 
-**Note**: URL display is automatic—cards show small editable URL, bubbles hide URL entirely.
+**Note**: URL display is automatic—cards show small editable URL, inline previews hide URL entirely.
 
 ## Common Mistakes
 
 1. **Frontmatter not on line 1** - Most common issue!
 2. **Typos in property names** - `preview-style` not `preview_style`
 3. **Invalid values** - Check the valid values list above
-4. **Out of range numbers** - Cards: 100-5000, Bubbles: 50-5000
+4. **Out of range numbers** - Cards: 100-5000, Inline: 50-5000
 5. **Not in Live Preview mode** - Frontmatter only works in Live Preview
 6. **Invalid hex colors** - Must be 6-digit format: `#RRGGBB`
 
@@ -88,7 +87,7 @@ https://reddit.com
 ```
 
 If the frontmatter is working:
-- Previews should be card style (not bubbles)
+- Previews should be card style (not inline)
 - Text should be limited to ~200 characters
 - You should see favicons
 

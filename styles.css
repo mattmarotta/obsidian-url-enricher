@@ -6,8 +6,8 @@ available in the app when your plugin is enabled.
 */
 
 /* Target favicon images using a specific class */
-img.inline-link-favicon,
-img[alt="inline-link-preview-icon"] {
+img.url-preview-favicon,
+img[alt="url-preview-icon"] {
 	width: 1em !important;
 	height: 1em !important;
 	max-width: 1em !important;
@@ -25,7 +25,7 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Dynamic URL Preview Styles - Base */
-.inline-url-preview {
+.url-preview {
 	cursor: pointer;
 	transition: opacity 0.2s ease, transform 0.2s ease;
 	white-space: normal;
@@ -33,18 +33,18 @@ img[alt="inline-link-preview-icon"] {
 	overflow-wrap: break-word;
 }
 
-.inline-url-preview:hover {
+.url-preview:hover {
 	opacity: 1;
 }
 
-.inline-url-preview--loading {
+.url-preview--loading {
 	font-style: italic;
 	opacity: 0.5;
 	white-space: nowrap;
 }
 
-/* Bubble Style - Compact inline preview */
-.inline-url-preview--bubble {
+/* Inline Style - Compact inline preview */
+.url-preview--inline {
 	padding: 0.15em 0.5em;
 	margin: 0 0.25em;
 	background: var(--inline-preview-bg, var(--background-modifier-border));
@@ -54,19 +54,8 @@ img[alt="inline-link-preview-icon"] {
 	opacity: 0.8;
 }
 
-/* Bubble inline mode - flows with text, can wrap across lines */
-.inline-url-preview--bubble-inline {
-	display: inline;
-}
-
-/* Bubble block mode - appears on its own line */
-.inline-url-preview--bubble-block {
-	display: inline-block;
-	max-width: 100%;
-}
-
 /* Card Style - Material Design inspired card preview */
-.inline-url-preview--card {
+.url-preview--card {
 	display: block;
 	padding: 1em 1.25em;
 	margin: 0.75em 0;
@@ -86,7 +75,7 @@ img[alt="inline-link-preview-icon"] {
 	-moz-osx-font-smoothing: grayscale;
 }
 
-.inline-url-preview--card:hover {
+.url-preview--card:hover {
 	/* Subtle lift on hover */
 	transform: translateY(-2px);
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.08);
@@ -94,7 +83,7 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Card header with favicon */
-.inline-url-preview--card .inline-url-preview__favicon {
+.url-preview--card .url-preview__favicon {
 	width: 1.75em;
 	height: 1.75em;
 	margin-right: 0.75em;
@@ -107,7 +96,7 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Card title - now inline with favicon in header */
-.inline-url-preview--card .inline-url-preview__title {
+.url-preview--card .url-preview__title {
 	font-size: 1.05em;
 	font-weight: 600;
 	line-height: 1.4;
@@ -118,12 +107,12 @@ img[alt="inline-link-preview-icon"] {
 	margin: 0;
 }
 
-.inline-url-preview--card .inline-url-preview__separator {
+.url-preview--card .url-preview__separator {
 	display: none;
 }
 
 /* Card description - readable body text */
-.inline-url-preview--card .inline-url-preview__description {
+.url-preview--card .url-preview__description {
 	display: block;
 	margin-top: 0.6em;
 	font-size: 0.94em;
@@ -134,18 +123,18 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Card URL footer - shown at bottom of card */
-.inline-url-preview--card .inline-url-preview__url-footer {
+.url-preview--card .url-preview__url-footer {
 	/* Base styles are inline in the widget */
 	line-height: 1.4;
 	transition: opacity 0.15s ease;
 }
 
-.inline-url-preview--card:hover .inline-url-preview__url-footer {
+.url-preview--card:hover .url-preview__url-footer {
 	opacity: 0.9 !important;
 }
 
 /* URL below card - styled to match previous card footer */
-.ilp-url-below-card {
+.url-preview-url-below-card {
 	font-size: 0.75em !important;
 	color: var(--text-faint) !important;
 	opacity: 0.7 !important;
@@ -155,12 +144,12 @@ img[alt="inline-link-preview-icon"] {
 	transition: opacity 0.15s ease !important;
 }
 
-.ilp-url-below-card:hover {
+.url-preview-url-below-card:hover {
 	opacity: 0.9 !important;
 }
 
 /* Reddit post title in cards */
-.inline-url-preview--card .inline-url-preview__post-title {
+.url-preview--card .url-preview__post-title {
 	font-size: 1.05em;
 	font-weight: 600;
 	line-height: 1.35;
@@ -169,7 +158,7 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Header row for cards (favicon + title side by side) */
-.inline-url-preview--card .inline-url-preview__header {
+.url-preview--card .url-preview__header {
 	display: flex;
 	align-items: center;
 	margin-bottom: 0.6em;
@@ -177,32 +166,32 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Reddit-specific card styling */
-.inline-url-preview--card .inline-url-preview__description::before {
+.url-preview--card .url-preview__description::before {
 	/* Check if description starts with r/ pattern */
 	content: "";
 }
 
 /* Style for Reddit subreddit label when description contains bullet separator */
-.inline-url-preview--card .inline-url-preview__text:has(.inline-url-preview__description:contains("•")) .inline-url-preview__description {
+.url-preview--card .url-preview__text:has(.url-preview__description:contains("•")) .url-preview__description {
 	display: flex;
 	flex-direction: column;
 	gap: 0.5em;
 }
 
 /* Alternative: Use a data attribute for cleaner Reddit detection */
-.inline-url-preview--card[data-domain*="reddit"] .inline-url-preview__description {
+.url-preview--card[data-domain*="reddit"] .url-preview__description {
 	font-size: 0.9em;
 	line-height: 1.6;
 }
 
 /* Material Design ripple effect on click (visual feedback) */
-.inline-url-preview--card:active {
+.url-preview--card:active {
 	transform: translateY(0);
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Small URL widget - completely replaces the URL */
-.inline-url-preview-small-url-widget {
+.url-preview-small-url {
 	font-size: 0.75em !important;
 	color: var(--text-faint) !important;
 	opacity: 0.6 !important;
@@ -214,16 +203,16 @@ img[alt="inline-link-preview-icon"] {
 	margin: 0 !important;
 }
 
-.inline-url-preview-small-url-widget:hover {
+.url-preview-small-url:hover {
 	opacity: 0.9 !important;
 	text-decoration: none !important;
 }
 
 /* Small URL styling for card previews - remove ALL underlines */
 /* Target the mark decoration wrapper */
-.cm-line .inline-url-preview-small-url,
-.cm-content .inline-url-preview-small-url,
-.inline-url-preview-small-url {
+.cm-line .url-preview-small-url,
+.cm-content .url-preview-small-url,
+.url-preview-small-url {
 	font-size: 0.75em !important;
 	color: var(--text-faint) !important;
 	text-decoration: none !important;
@@ -232,7 +221,7 @@ img[alt="inline-link-preview-icon"] {
 }
 
 /* Target everything inside the mark decoration */
-.inline-url-preview-small-url * {
+.url-preview-small-url * {
 	font-size: inherit !important;
 	color: inherit !important;
 	text-decoration: none !important;
@@ -240,30 +229,30 @@ img[alt="inline-link-preview-icon"] {
 	background-image: none !important;
 }
 
-.inline-url-preview-small-url:hover {
+.url-preview-small-url:hover {
 	opacity: 0.9;
 	text-decoration: none !important;
 	border-bottom: none !important;
 }
 
-.inline-url-preview-small-url:hover * {
+.url-preview-small-url:hover * {
 	text-decoration: none !important;
 	border-bottom: none !important;
 }
 
 /* Override all possible link underline sources - target actual link elements inside */
-.inline-url-preview-small-url .cm-link,
-.inline-url-preview-small-url .cm-url,
-.inline-url-preview-small-url .cm-underline,
-.cm-line .inline-url-preview-small-url .cm-link,
-.cm-line .inline-url-preview-small-url .cm-url,
-.cm-content .inline-url-preview-small-url .cm-link,
-.cm-content .inline-url-preview-small-url .cm-url,
-.cm-line a.inline-url-preview-small-url,
-.cm-content a.inline-url-preview-small-url,
-a.inline-url-preview-small-url,
-.cm-link.inline-url-preview-small-url,
-.cm-url.inline-url-preview-small-url {
+.url-preview-small-url .cm-link,
+.url-preview-small-url .cm-url,
+.url-preview-small-url .cm-underline,
+.cm-line .url-preview-small-url .cm-link,
+.cm-line .url-preview-small-url .cm-url,
+.cm-content .url-preview-small-url .cm-link,
+.cm-content .url-preview-small-url .cm-url,
+.cm-line a.url-preview-small-url,
+.cm-content a.url-preview-small-url,
+a.url-preview-small-url,
+.cm-link.url-preview-small-url,
+.cm-url.url-preview-small-url {
 	color: var(--text-faint) !important;
 	text-decoration: none !important;
 	border-bottom: none !important;
@@ -271,13 +260,13 @@ a.inline-url-preview-small-url,
 }
 
 /* Remove underline from internal links too */
-.internal-link.inline-url-preview-small-url,
-.inline-url-preview-small-url .internal-link {
+.internal-link.url-preview-small-url,
+.url-preview-small-url .internal-link {
 	text-decoration: none !important;
 	border-bottom: none !important;
 }
 
-.inline-url-preview__favicon {
+.url-preview__favicon {
 	width: 1em;
 	height: 1em;
 	object-fit: contain;
@@ -291,21 +280,21 @@ a.inline-url-preview-small-url,
 	image-rendering: auto;
 }
 
-.inline-url-preview__text {
+.url-preview__text {
 	display: inline;
 	vertical-align: baseline;
 }
 
-.inline-url-preview__title {
+.url-preview__title {
 	font-weight: 500;
 	color: var(--text-normal);
 }
 
-.inline-url-preview__separator {
+.url-preview__separator {
 	color: var(--text-faint);
 }
 
-.inline-url-preview__description {
+.url-preview__description {
 	color: var(--text-muted);
 	/* Allow description to wrap naturally */
 	white-space: normal;
@@ -313,37 +302,37 @@ a.inline-url-preview-small-url,
 }
 
 /* Error State Styles */
-.inline-url-preview--error {
+.url-preview--error {
 	/* Subtle error indication - don't change background dramatically */
 	opacity: 0.85;
 }
 
-.inline-url-preview--error:hover {
+.url-preview--error:hover {
 	opacity: 1;
 }
 
-.inline-url-preview__error-indicator {
+.url-preview__error-indicator {
 	/* Position for card style is set inline */
 	display: inline-block;
 }
 
 /* Card-specific error positioning */
-.inline-url-preview--card.inline-url-preview--error {
+.url-preview--card.url-preview--error {
 	position: relative;
 }
 
-.inline-url-preview__error-title {
+.url-preview__error-title {
 	font-weight: 600;
 	color: var(--text-error);
 }
 
-.inline-url-preview__error-url {
+.url-preview__error-url {
 	font-family: var(--font-monospace);
 	font-size: 0.85em;
 	color: var(--text-muted);
 }
 
-.inline-url-preview__error-hint {
+.url-preview__error-hint {
 	font-size: 0.75em;
 	color: var(--text-faint);
 	font-style: italic;
@@ -351,13 +340,13 @@ a.inline-url-preview-small-url,
 
 /* Card mode URL styling - subtle appearance below preview card */
 /* Maximum specificity to override all Obsidian link styles */
-.cm-line .ilp-card-url,
-.ilp-card-url.cm-url,
-.ilp-card-url.cm-link,
-.ilp-card-url.cm-hmd-internal-link,
-span.ilp-card-url,
-.ilp-card-url,
-a.ilp-card-url {
+.cm-line .url-preview-card-url,
+.url-preview-card-url.cm-url,
+.url-preview-card-url.cm-link,
+.url-preview-card-url.cm-hmd-internal-link,
+span.url-preview-card-url,
+.url-preview-card-url,
+a.url-preview-card-url {
 	font-size: 0.85em !important;
 	color: var(--text-faint) !important;
 	text-decoration: none !important;
@@ -369,20 +358,20 @@ a.ilp-card-url {
 	pointer-events: auto !important;
 }
 
-.cm-line .ilp-card-url:hover,
-.ilp-card-url.cm-url:hover,
-.ilp-card-url.cm-link:hover,
-.ilp-card-url.cm-hmd-internal-link:hover,
-span.ilp-card-url:hover,
-.ilp-card-url:hover,
-a.ilp-card-url:hover {
+.cm-line .url-preview-card-url:hover,
+.url-preview-card-url.cm-url:hover,
+.url-preview-card-url.cm-link:hover,
+.url-preview-card-url.cm-hmd-internal-link:hover,
+span.url-preview-card-url:hover,
+.url-preview-card-url:hover,
+a.url-preview-card-url:hover {
 	opacity: 0.9 !important;
 	text-decoration: none !important;
 	color: var(--text-faint) !important;
 }
 
 /* Try to override any parent link styling */
-.cm-line:has(.ilp-card-url) .cm-url.ilp-card-url {
+.cm-line:has(.url-preview-card-url) .cm-url.url-preview-card-url {
 	all: unset !important;
 	font-size: 0.85em !important;
 	color: var(--text-faint) !important;
@@ -391,20 +380,20 @@ a.ilp-card-url:hover {
 }
 
 /* Hashtag and Mention Styling - Non-clickable visual enhancement */
-.ilp-hashtag,
-.ilp-mention {
+.url-preview-hashtag,
+.url-preview-mention {
 	font-weight: 500;
 	color: var(--text-accent);
 	/* Subtle visual distinction without being distracting */
 	opacity: 1;
 }
 
-.ilp-hashtag {
+.url-preview-hashtag {
 	/* Hashtags get accent color */
 	color: var(--text-accent);
 }
 
-.ilp-mention {
+.url-preview-mention {
 	/* Mentions get a slightly different treatment */
 	color: var(--text-accent);
 	font-weight: 500;

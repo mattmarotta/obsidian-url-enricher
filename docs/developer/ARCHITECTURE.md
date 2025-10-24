@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Inline Link Preview plugin adds rich, dynamic link previews to Obsidian notes in Live Preview mode. All previews are rendered non-destructively using CodeMirror decorations, meaning the markdown source files are never modified.
+The URL Enricher plugin adds rich, dynamic link previews to Obsidian notes in Live Preview mode. All previews are rendered non-destructively using CodeMirror decorations, meaning the markdown source files are never modified.
 
 ## High-Level Architecture
 
@@ -127,18 +127,13 @@ for each line in document:
 Renders the actual UI widgets in the editor.
 
 **Widget Types:**
-- `UrlPreviewWidget` - Main preview widget (bubble or card)
+- `UrlPreviewWidget` - Main preview widget (inline or card)
 - `ErrorIndicatorWidget` - Error indicators for failed fetches
 
-**Display Modes:**
-- `bubble` - Inline compact preview (default)
+**Preview Styles:**
+- `inline` - Compact inline preview (default)
 - `card` - Expanded card view
 - `hidden` - No preview
-
-**Preview Styles:**
-- `bubble` - Always inline
-- `preview` - Hover-to-expand card
-- `card` - Always expanded card
 
 #### UrlMatcher
 Pattern matching for different URL types.
@@ -167,8 +162,7 @@ Per-note configuration via YAML frontmatter.
 **Supported Fields:**
 ```yaml
 ---
-link-preview-mode: bubble|card|hidden
-link-preview-style: bubble|preview|card
+preview-style: inline|card
 ---
 ```
 
@@ -555,7 +549,7 @@ npm run test:coverage # Run with coverage report
 - `previewColorMode` - Background color mode (none/grey/custom)
 - `customPreviewColor` - Custom color value
 - `maxCardLength` - Max description length for cards (100-5000)
-- `maxBubbleLength` - Max description length for bubbles (50-5000)
+- `maxInlineLength` - Max description length for inline previews (50-5000)
 - `requestTimeoutMs` - HTTP timeout in milliseconds (min 500)
 - `showFavicon` - Display favicons in previews
 - `keepEmoji` - Preserve emojis in preview text
@@ -564,8 +558,7 @@ npm run test:coverage # Run with coverage report
 ### Per-Note Configuration (Frontmatter)
 ```yaml
 ---
-link-preview-mode: bubble|card|hidden
-link-preview-style: bubble|preview|card
+preview-style: inline|card
 ---
 ```
 

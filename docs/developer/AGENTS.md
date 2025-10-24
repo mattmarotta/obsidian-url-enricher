@@ -1,10 +1,10 @@
-# Obsidian Inline Link Preview Plugin
+# Obsidian URL Enricher Plugin
 
 **Quick Reference** for AI agents and developers working on this plugin.
 
 ## Overview
 
-This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as plain text in your notes. The plugin enhances them with live preview bubbles or cards showing metadata (title, description, favicon) in editor view only.
+This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as plain text in your notes. The plugin enhances them with live inline previews or cards showing metadata (title, description, favicon) in editor view only.
 
 - **Current version**: 0.8.0
 - **Entry point**: [src/main.ts](../../src/main.ts) → compiled to `main.js`
@@ -32,7 +32,7 @@ src/
   settings.ts                # Settings interface, defaults, UI
   constants.ts               # Application-wide constants (20+ constants)
   decorators/                # Editor decoration components (5 modules)
-    PreviewWidget.ts         # Widget rendering (bubbles, cards)
+    PreviewWidget.ts         # Widget rendering (inline, cards)
     DecorationBuilder.ts     # Core decoration creation logic
     UrlMatcher.ts            # URL pattern matching
     MetadataEnricher.ts      # Text enrichment (hashtags, emojis)

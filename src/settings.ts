@@ -2,18 +2,16 @@ import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type InlineLinkPreviewPlugin from "./main";
 
 export type PreviewColorMode = "none" | "grey" | "custom";
-export type PreviewStyle = "bubble" | "card";
-export type DisplayMode = "inline" | "block";
+export type PreviewStyle = "inline" | "card";
 
 export interface InlineLinkPreviewSettings {
 	includeDescription: boolean;
 	maxCardLength: number;
-	maxBubbleLength: number;
+	maxInlineLength: number;
 	requestTimeoutMs: number;
 	showFavicon: boolean;
 	keepEmoji: boolean;
 	previewStyle: PreviewStyle;
-	displayMode: DisplayMode;
 	previewColorMode: PreviewColorMode;
 	customPreviewColor: string;
 	showHttpErrorWarnings: boolean;
@@ -22,12 +20,11 @@ export interface InlineLinkPreviewSettings {
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	includeDescription: true,
 	maxCardLength: 300,
-	maxBubbleLength: 150,
+	maxInlineLength: 150,
 	requestTimeoutMs: 7000,
 	showFavicon: true,
 	keepEmoji: true,
-	previewStyle: "bubble",
-	displayMode: "block",
+	previewStyle: "inline",
 	previewColorMode: "grey",
 	customPreviewColor: "#4a4a4a",
 	showHttpErrorWarnings: true,
@@ -41,7 +38,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	private updateBubbleColorCSS(): void {
+	private updatePreviewColorCSS(): void {
 		const settings = this.plugin.settings;
 		let color: string;
 
@@ -67,19 +64,19 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		const settings = this.plugin.settings;
 
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "Inline link preview" });
+		containerEl.createEl("h2", { text: "URL Enricher" });
 
-		// Apply bubble color on display
-		this.updateBubbleColorCSS();
+		// Apply preview color on display
+		this.updatePreviewColorCSS();
 
 		containerEl.createEl("h3", { text: "Preview Appearance" });
 
 		new Setting(containerEl)
 			.setName("Preview style")
-			.setDesc("Choose between compact bubble style or prominent card style.")
+			.setDesc("Choose between compact inline style or prominent card style.")
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("bubble", "Bubble — Compact inline style")
+					.addOption("inline", "Inline — Compact inline style")
 					.addOption("card", "Card — Prominent card style with more details")
 					.setValue(settings.previewStyle)
 					.onChange(async (value) => {
@@ -91,24 +88,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Display mode")
-			.setDesc("Choose whether previews appear inline with text or on a new line. Can be overridden per-page using frontmatter: 'preview-display: inline' or 'preview-display: block'.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("inline", "Inline — Flows with surrounding text")
-					.addOption("block", "New line — Appears on its own line")
-					.setValue(settings.displayMode)
-					.onChange(async (value) => {
-						this.plugin.settings.displayMode = value as DisplayMode;
-						await this.plugin.saveSettings();
-						// Trigger decoration refresh
-						this.plugin.refreshDecorations();
-					}),
-			);
-
-		new Setting(containerEl)
 			.setName("Preview background color")
-			.setDesc("Choose the background color for preview bubbles and cards.")
+			.setDesc("Choose the background color for inline and card previews.")
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption("none", "None (transparent)")
@@ -118,7 +99,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.previewColorMode = value as PreviewColorMode;
 						await this.plugin.saveSettings();
-						this.updateBubbleColorCSS();
+						this.updatePreviewColorCSS();
 						this.display(); // Refresh to show/hide color picker
 					}),
 			);
@@ -127,14 +108,14 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		if (settings.previewColorMode === "custom") {
 			new Setting(containerEl)
 				.setName("Custom preview color")
-				.setDesc("Choose a custom background color for preview bubbles and cards.")
+				.setDesc("Choose a custom background color for inline and card previews.")
 				.addColorPicker((color) =>
 					color
 						.setValue(settings.customPreviewColor)
 						.onChange(async (value) => {
 							this.plugin.settings.customPreviewColor = value;
 							await this.plugin.saveSettings();
-							this.updateBubbleColorCSS();
+							this.updatePreviewColorCSS();
 						}),
 				);
 		}
@@ -176,10 +157,10 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Maximum bubble length")
-			.setDesc("Maximum total characters for bubble-style previews (title + description combined). Bubbles are compact and inline. Min: 50, Max: 5000")
+			.setName("Maximum inline length")
+			.setDesc("Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Min: 50, Max: 5000")
 			.addText((text) => {
-				text.setValue(String(settings.maxBubbleLength));
+				text.setValue(String(settings.maxInlineLength));
 				text.inputEl.type = "number";
 				text.inputEl.min = "50";
 				text.inputEl.max = "5000";
@@ -188,7 +169,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					if (!Number.isFinite(parsed) || parsed < 50) {
 						return;
 					}
-					this.plugin.settings.maxBubbleLength = Math.round(parsed);
+					this.plugin.settings.maxInlineLength = Math.round(parsed);
 					await this.plugin.saveSettings();
 					// Trigger decoration refresh
 					this.plugin.refreshDecorations();
@@ -286,7 +267,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 							this.plugin.faviconCache.clear();
 							await this.plugin.faviconCache.flush();
 						}
-						new Notice("Inline link preview cache cleared.");
+						new Notice("URL Enricher cache cleared.");
 						// Trigger decoration refresh so previews update immediately
 						this.plugin.refreshDecorations();
 						// Refresh the display to update stats

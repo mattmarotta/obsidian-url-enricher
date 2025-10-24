@@ -1,26 +1,22 @@
-# Inline Link Preview
+# URL Enricher
 
-Inline Link Preview adds rich, live preview bubbles or cards for URLs in Obsidian. This plugin is **completely non-destructive** — your markdown source stays unchanged while URLs are enhanced with metadata previews in Live Preview mode.
+URL Enricher adds rich, non-destructive link previews for URLs in Obsidian. This plugin is **completely non-destructive** — your markdown source stays unchanged while URLs are enhanced with metadata previews in Live Preview mode.
 
-When you have a bare URL in your notes like `https://trello.com`, the plugin automatically fetches the page title, description, and favicon, displaying them as an inline preview bubble or prominent card right in your editor — all without modifying your source markdown.
+When you have a bare URL in your notes like `https://trello.com`, the plugin automatically fetches the page title, description, and favicon, displaying them as an inline preview or prominent card right in your editor — all without modifying your source markdown.
 
 ## Features
 
 - **100% Non-Destructive**: URLs remain as plain text in your markdown. All previews are rendered dynamically in Live Preview mode only.
 - **Two Preview Styles**:
-  - **Bubble**: Compact, subtle inline preview that flows with your text (hides the URL)
+  - **Inline**: Compact, subtle inline preview that flows with your text (hides the URL)
   - **Card**: Prominent card-style preview with more visual weight and detail (shows small editable URL)
-- **Flexible Display Modes**:
-  - **Inline**: Previews flow with surrounding text on the same line
-  - **Block**: Previews appear on their own line for better separation
 - **Automatic URL Display**:
   - **Cards**: Show a small, subtle URL (editable) with the card preview
-  - **Bubbles**: Hide the URL completely and replace it with the bubble preview
+  - **Inline**: Hide the URL completely and replace it with the inline preview
 - **Page-Level Configuration**: Override global settings using frontmatter:
   ```yaml
   ---
-  preview-style: card    # or bubble
-  preview-display: inline # or block
+  preview-style: card    # or inline
   ---
   ```
 - **Rich Metadata Display**:
@@ -31,7 +27,7 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
   - Customizable description length with natural word-wrapping
   - Domain-aware enrichments for Wikipedia, Google Search, and Reddit links
 - **Real-Time Updates**: Settings changes apply immediately without page navigation
-- **Clickable Previews**: All preview bubbles and cards are clickable to open URLs
+- **Clickable Previews**: All inline previews and cards are clickable to open URLs
 - **Cursor-Aware Previews**: Previews instantly hide when cursor is inside a URL, preventing accidental edits and providing clear visual feedback during editing
 - **Smart Context Detection**: Automatically generates previews for:
   - Bare URLs: `https://example.com`
@@ -69,36 +65,32 @@ Add frontmatter to your note to customize preview appearance:
 
 ```yaml
 ---
-preview-style: card              # Use prominent card style instead of bubble
-preview-display: inline          # Keep previews inline with text
+preview-style: card              # Use prominent card style instead of inline
 max-card-length: 400             # Maximum characters for card previews
 show-favicon: true               # Show/hide favicons
 include-description: true        # Include/exclude descriptions
 ---
 ```
 
-**Note**: URL display is automatic based on preview style—cards show a small editable URL, bubbles hide the URL entirely.
+**Note**: URL display is automatic based on preview style—cards show a small editable URL, inline previews hide the URL entirely.
 
 These settings override your global preferences for that specific page only. For a complete list of available frontmatter properties and examples, see [FRONTMATTER-SUPPORT.md](docs/features/FRONTMATTER-SUPPORT.md).
 
 ## Settings
 
-Open **Settings → Community plugins → Inline link preview** to configure:
+Open **Settings → Community plugins → URL Enricher** to configure:
 
 ### Core Settings
 - **Dynamic preview mode** – Enable or disable the plugin entirely. When enabled, bare URLs show rich previews in Live Preview mode.
 
 ### Preview Appearance
 - **Preview style** – Choose between:
-  - **Bubble**: Compact, subtle inline style (default)
+  - **Inline**: Compact, subtle inline style (default)
   - **Card**: Prominent card style with more visual weight and site name footer
-- **Display mode** – Choose whether previews appear:
-  - **Inline**: Flows with surrounding text on the same line
-  - **Block**: Appears on its own line (default)
-- **Preview background color** – Customize background color for both bubbles and cards (none, grey, or custom)
+- **Preview background color** – Customize background color for both inline previews and cards (none, grey, or custom)
 
 **Note**:
-- URL display is automatic—cards show a small editable URL, bubbles hide the URL entirely.
+- URL display is automatic—cards show a small editable URL, inline previews hide the URL entirely.
 - Cards display a site name footer (e.g., "WIKIPEDIA", "ANTHROPIC") extracted from page metadata or URL.
 
 ### Preview Content
@@ -117,10 +109,9 @@ Global settings can be overridden per-page using frontmatter. Supported properti
 
 ```yaml
 ---
-preview-style: card              # or bubble
-preview-display: inline          # or block
+preview-style: card              # or inline
 max-card-length: 400             # 100-5000
-max-bubble-length: 200           # 50-5000
+max-inline-length: 200           # 50-5000
 show-favicon: true               # or false
 include-description: true        # or false
 preview-color-mode: grey         # or none, custom
@@ -129,8 +120,8 @@ custom-preview-color: "#4a4a4a"  # hex color when using custom mode
 ```
 
 **Notes**:
-- Minimum values (100 for cards, 50 for bubbles) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
-- URL display is automatic: Cards show a small editable URL, bubbles hide the URL entirely.
+- Minimum values (100 for cards, 50 for inline) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
+- URL display is automatic: Cards show a small editable URL, inline previews hide the URL entirely.
 
 For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](docs/features/FRONTMATTER-SUPPORT.md).
 
@@ -205,7 +196,7 @@ The plugin detects and flags broken URLs with a small warning indicator (⚠️)
 
 **Controlling error warnings:**
 
-Go to **Settings → Inline Link Preview → Preview Content → HTTP Error Warnings**:
+Go to **Settings → URL Enricher → Preview Content → HTTP Error Warnings**:
 - **Enabled (default)**: Show ⚠️ for both HTTP errors and network failures
 - **Disabled**: Only show ⚠️ for network failures; HTTP errors will show fallback previews without warnings
 
@@ -256,15 +247,15 @@ The plugin includes specialized handlers for specific websites to provide richer
 
 ### Wikipedia
 - Fetches article descriptions via Wikipedia API
-- Extracts introductory section text (truncated based on user's max-card-length or max-bubble-length settings)
+- Extracts introductory section text (truncated based on user's max-card-length or max-inline-length settings)
 - Always displays "WIKIPEDIA" as site name (not language codes like "EN")
 - Provides comprehensive context for encyclopedia articles
 
 ### Reddit
 - Custom formatting optimized for Reddit posts
 - **Card view**: Subreddit name beside favicon → Post title (bold) → Content preview
-- **Bubble view**: Shows `r/Subreddit — Post Title` format
-- Separate length limits: 200 chars for cards, 100 chars for bubbles
+- **Inline view**: Shows `r/Subreddit — Post Title` format
+- Separate length limits: 200 chars for cards, 100 chars for inline previews
 - Fetches actual post titles and content (not just page meta tags)
 
 ### Google Search
@@ -465,10 +456,10 @@ Previews only appear in **Live Preview mode**, not in Source mode or Reading vie
 - See [FRONTMATTER-TROUBLESHOOTING.md](docs/features/FRONTMATTER-TROUBLESHOOTING.md) for detailed debugging steps
 
 ### Performance Issues
-- Reduce `max-card-length` or `max-bubble-length` settings to limit preview size
+- Reduce `max-card-length` or `max-inline-length` settings to limit preview size
 - Disable descriptions: Set `include-description` to false
 - Increase `request timeout` if on slow connection
-- Consider using bubble style instead of card style for more compact previews
+- Consider using inline style instead of card style for more compact previews
 - Check performance metrics: `window.inlineLinkPreview.getPerformanceMetrics()`
 
 ### Error Warnings (⚠️)
@@ -491,7 +482,7 @@ Manual installation for testing:
 1. Clone this repository into `<Vault>/.obsidian/plugins/obsidian-inline-link-preview/`.
 2. Run `npm install`.
 3. Run `npm run build` to generate `main.js`.
-4. Enable **Inline Link Preview** inside **Settings → Community plugins**.
+4. Enable **URL Enricher** inside **Settings → Community plugins**.
 
 The release bundle consists of `manifest.json`, `main.js`, and optionally `styles.css`.
 

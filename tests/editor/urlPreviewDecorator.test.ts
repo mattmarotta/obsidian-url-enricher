@@ -19,10 +19,9 @@ const ELLIPSIS = '\u2026';
  * (Copied from urlPreviewDecorator.ts for testing)
  */
 function parsePageConfig(text: string): {
-	previewStyle?: 'bubble' | 'card';
-	displayMode?: 'inline' | 'block';
+	previewStyle?: 'inline' | 'card';
 	maxCardLength?: number;
-	maxBubbleLength?: number;
+	maxInlineLength?: number;
 	showFavicon?: boolean;
 	includeDescription?: boolean;
 	previewColorMode?: 'none' | 'grey' | 'custom';
@@ -57,17 +56,8 @@ function parsePageConfig(text: string): {
 		const styleMatch = line.match(/^preview-style:\s*(.+)$/i);
 		if (styleMatch) {
 			const value = styleMatch[1].trim().toLowerCase();
-			if (value === 'bubble' || value === 'card') {
+			if (value === 'inline' || value === 'card') {
 				config.previewStyle = value;
-			}
-		}
-
-		// Display mode
-		const displayMatch = line.match(/^preview-display:\s*(.+)$/i);
-		if (displayMatch) {
-			const value = displayMatch[1].trim().toLowerCase();
-			if (value === 'inline' || value === 'block') {
-				config.displayMode = value;
 			}
 		}
 
@@ -80,12 +70,12 @@ function parsePageConfig(text: string): {
 			}
 		}
 
-		// Max bubble length
-		const maxBubbleMatch = line.match(/^max-bubble-length:\s*(\d+)$/i);
-		if (maxBubbleMatch) {
-			const value = parseInt(maxBubbleMatch[1], 10);
+		// Max inline length
+		const maxInlineMatch = line.match(/^max-inline-length:\s*(\d+)$/i);
+		if (maxInlineMatch) {
+			const value = parseInt(maxInlineMatch[1], 10);
 			if (value >= 50 && value <= 5000) {
-				config.maxBubbleLength = value;
+				config.maxInlineLength = value;
 			}
 		}
 
@@ -149,9 +139,8 @@ describe('URL Preview Decorator', () => {
 			it('should parse complete frontmatter with all fields', () => {
 				const text = `---
 preview-style: card
-preview-display: block
 max-card-length: 400
-max-bubble-length: 150
+max-inline-length: 150
 show-favicon: true
 include-description: true
 preview-color-mode: custom
@@ -162,21 +151,20 @@ custom-preview-color: #ff0000
 				const config = parsePageConfig(text);
 
 				expect(config.previewStyle).toBe('card');
-				expect(config.displayMode).toBe('block');
 				expect(config.maxCardLength).toBe(400);
-				expect(config.maxBubbleLength).toBe(150);
+				expect(config.maxInlineLength).toBe(150);
 				expect(config.showFavicon).toBe(true);
 				expect(config.includeDescription).toBe(true);
 				expect(config.previewColorMode).toBe('custom');
 				expect(config.customPreviewColor).toBe('#ff0000');
 			});
 
-			it('should parse preview-style: bubble', () => {
+			it('should parse preview-style: inline', () => {
 				const text = `---
-preview-style: bubble
+preview-style: inline
 ---`;
 				const config = parsePageConfig(text);
-				expect(config.previewStyle).toBe('bubble');
+				expect(config.previewStyle).toBe('inline');
 			});
 
 			it('should parse preview-style: card', () => {
@@ -187,21 +175,6 @@ preview-style: card
 				expect(config.previewStyle).toBe('card');
 			});
 
-			it('should parse preview-display: inline', () => {
-				const text = `---
-preview-display: inline
----`;
-				const config = parsePageConfig(text);
-				expect(config.displayMode).toBe('inline');
-			});
-
-			it('should parse preview-display: block', () => {
-				const text = `---
-preview-display: block
----`;
-				const config = parsePageConfig(text);
-				expect(config.displayMode).toBe('block');
-			});
 
 			it('should parse valid max-card-length', () => {
 				const text = `---
@@ -227,20 +200,20 @@ max-card-length: 5000
 				expect(config.maxCardLength).toBe(5000);
 			});
 
-			it('should parse valid max-bubble-length', () => {
+			it('should parse valid max-inline-length', () => {
 				const text = `---
-max-bubble-length: 200
+max-inline-length: 200
 ---`;
 				const config = parsePageConfig(text);
-				expect(config.maxBubbleLength).toBe(200);
+				expect(config.maxInlineLength).toBe(200);
 			});
 
-			it('should parse minimum max-bubble-length (50)', () => {
+			it('should parse minimum max-inline-length (50)', () => {
 				const text = `---
-max-bubble-length: 50
+max-inline-length: 50
 ---`;
 				const config = parsePageConfig(text);
-				expect(config.maxBubbleLength).toBe(50);
+				expect(config.maxInlineLength).toBe(50);
 			});
 
 			it('should parse show-favicon: true', () => {
@@ -314,16 +287,15 @@ Preview-Display: INLINE
 ---`;
 				const config = parsePageConfig(text);
 				expect(config.previewStyle).toBe('card');
-				expect(config.displayMode).toBe('inline');
 			});
 
 			it('should handle extra whitespace in values', () => {
 				const text = `---
-preview-style:   bubble
+preview-style:   inline
 show-favicon:  true
 ---`;
 				const config = parsePageConfig(text);
-				expect(config.previewStyle).toBe('bubble');
+				expect(config.previewStyle).toBe('inline');
 				expect(config.showFavicon).toBe(true);
 			});
 
@@ -336,7 +308,6 @@ max-card-length: 300
 				expect(config.previewStyle).toBe('card');
 				expect(config.maxCardLength).toBe(300);
 				expect(config.showFavicon).toBeUndefined();
-				expect(config.displayMode).toBeUndefined();
 			});
 		});
 
@@ -371,13 +342,6 @@ preview-style: invalid
 				expect(config.previewStyle).toBeUndefined();
 			});
 
-			it('should ignore invalid display-mode values', () => {
-				const text = `---
-preview-display: sideways
----`;
-				const config = parsePageConfig(text);
-				expect(config.displayMode).toBeUndefined();
-			});
 
 			it('should ignore max-card-length below minimum (100)', () => {
 				const text = `---
@@ -395,12 +359,12 @@ max-card-length: 10000
 				expect(config.maxCardLength).toBeUndefined();
 			});
 
-			it('should ignore max-bubble-length below minimum (50)', () => {
+			it('should ignore max-inline-length below minimum (50)', () => {
 				const text = `---
-max-bubble-length: 25
+max-inline-length: 25
 ---`;
 				const config = parsePageConfig(text);
-				expect(config.maxBubbleLength).toBeUndefined();
+				expect(config.maxInlineLength).toBeUndefined();
 			});
 
 			it('should ignore invalid boolean values', () => {
@@ -432,14 +396,14 @@ preview-style: card
 
 			it('should handle multiple --- blocks (only first counts)', () => {
 				const text = `---
-preview-style: bubble
+preview-style: inline
 ---
 Content here
 ---
 preview-style: card
 ---`;
 				const config = parsePageConfig(text);
-				expect(config.previewStyle).toBe('bubble');
+				expect(config.previewStyle).toBe('inline');
 			});
 		});
 	});

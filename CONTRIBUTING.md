@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Thank you for your interest in contributing to the Inline Link Preview plugin! This guide will help you get started and maintain consistency across the codebase.
+Thank you for your interest in contributing to the URL Enricher plugin! This guide will help you get started and maintain consistency across the codebase.
 
 ## Table of Contents
 
@@ -85,7 +85,7 @@ Thank you for your interest in contributing to the Inline Link Preview plugin! T
 **Example:**
 ```typescript
 const config = {
-	name: "inline-link-preview",
+	name: "url-enricher",
 	version: "1.0.0",
 	author: "Your Name",
 };
@@ -187,7 +187,7 @@ function fetch(url: string): Promise<Metadata> { // Too generic
 ```typescript
 class LinkPreviewService { }
 interface MetadataHandler { }
-type PreviewStyle = "bubble" | "preview" | "card";
+type PreviewStyle = "inline" | "card";
 ```
 
 #### Types
@@ -197,7 +197,7 @@ type PreviewStyle = "bubble" | "preview" | "card";
 
 ```typescript
 // Good
-type PreviewMode = "bubble" | "card" | "hidden";
+type PreviewMode = "inline" | "card" | "hidden";
 interface LinkMetadata {
 	readonly title: string;
 	readonly description: string | null;

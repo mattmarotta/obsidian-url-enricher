@@ -26,11 +26,11 @@ describe('Plugin Main', () => {
 				? Math.min(5000, Math.max(100, Math.round(numericCardLength)))
 				: DEFAULT_SETTINGS.maxCardLength;
 
-			// maxBubbleLength normalization
-			const numericBubbleLength = Number(normalized.maxBubbleLength);
-			normalized.maxBubbleLength = Number.isFinite(numericBubbleLength)
-				? Math.min(5000, Math.max(50, Math.round(numericBubbleLength)))
-				: DEFAULT_SETTINGS.maxBubbleLength;
+			// maxInlineLength normalization
+			const numericInlineLength = Number(normalized.maxInlineLength);
+			normalized.maxInlineLength = Number.isFinite(numericInlineLength)
+				? Math.min(5000, Math.max(50, Math.round(numericInlineLength)))
+				: DEFAULT_SETTINGS.maxInlineLength;
 
 			// requestTimeoutMs normalization
 			const numericTimeout = Number(normalized.requestTimeoutMs);
@@ -113,59 +113,59 @@ describe('Plugin Main', () => {
 			});
 		});
 
-		describe('maxBubbleLength Normalization', () => {
+		describe('maxInlineLength Normalization', () => {
 			it('should clamp value below minimum (50)', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 25 };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 25 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(50);
+				expect(normalized.maxInlineLength).toBe(50);
 			});
 
 			it('should clamp value above maximum (5000)', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 10000 };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 10000 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(5000);
+				expect(normalized.maxInlineLength).toBe(5000);
 			});
 
 			it('should keep valid value unchanged', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 150 };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 150 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(150);
+				expect(normalized.maxInlineLength).toBe(150);
 			});
 
 			it('should accept minimum value (50)', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 50 };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 50 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(50);
+				expect(normalized.maxInlineLength).toBe(50);
 			});
 
 			it('should accept maximum value (5000)', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 5000 };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 5000 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(5000);
+				expect(normalized.maxInlineLength).toBe(5000);
 			});
 
 			it('should round decimal values', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 123.4 };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 123.4 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(123);
+				expect(normalized.maxInlineLength).toBe(123);
 			});
 
 			it('should handle string numbers', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: '200' as any };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: '200' as any };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(200);
+				expect(normalized.maxInlineLength).toBe(200);
 			});
 
 			it('should use default for NaN', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: NaN };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: NaN };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(DEFAULT_SETTINGS.maxBubbleLength);
+				expect(normalized.maxInlineLength).toBe(DEFAULT_SETTINGS.maxInlineLength);
 			});
 
 			it('should use default for invalid values', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxBubbleLength: 'invalid' as any };
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 'invalid' as any };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxBubbleLength).toBe(DEFAULT_SETTINGS.maxBubbleLength);
+				expect(normalized.maxInlineLength).toBe(DEFAULT_SETTINGS.maxInlineLength);
 			});
 		});
 
@@ -274,13 +274,13 @@ describe('Plugin Main', () => {
 				const settings = {
 					...DEFAULT_SETTINGS,
 					maxCardLength: 50,      // below min
-					maxBubbleLength: 10000, // above max
+					maxInlineLength: 10000, // above max
 					requestTimeoutMs: 100,  // below min
 					showFavicon: 'yes' as any,
 				};
 				const normalized = normalizeSettings(settings);
 				expect(normalized.maxCardLength).toBe(100);
-				expect(normalized.maxBubbleLength).toBe(5000);
+				expect(normalized.maxInlineLength).toBe(5000);
 				expect(normalized.requestTimeoutMs).toBe(500);
 				expect(normalized.showFavicon).toBe(true);
 			});
@@ -289,14 +289,14 @@ describe('Plugin Main', () => {
 				const settings = {
 					...DEFAULT_SETTINGS,
 					maxCardLength: NaN,
-					maxBubbleLength: 'bad' as any,
+					maxInlineLength: 'bad' as any,
 					requestTimeoutMs: null as any,
 					showFavicon: undefined as any,
 					keepEmoji: 0 as any,
 				};
 				const normalized = normalizeSettings(settings);
 				expect(normalized.maxCardLength).toBe(DEFAULT_SETTINGS.maxCardLength);
-				expect(normalized.maxBubbleLength).toBe(DEFAULT_SETTINGS.maxBubbleLength);
+				expect(normalized.maxInlineLength).toBe(DEFAULT_SETTINGS.maxInlineLength);
 				expect(normalized.requestTimeoutMs).toBe(500); // Number(null) = 0, clamped to min
 				expect(normalized.showFavicon).toBe(false);
 				expect(normalized.keepEmoji).toBe(false);
@@ -307,20 +307,18 @@ describe('Plugin Main', () => {
 					...DEFAULT_SETTINGS,
 					maxCardLength: 50,
 					previewStyle: 'card' as const,
-					displayMode: 'inline' as const,
 				};
 				const normalized = normalizeSettings(settings);
 				expect(normalized.previewStyle).toBe('card');
-				expect(normalized.displayMode).toBe('inline');
 			});
 		});
 	});
 
-	describe('updateBubbleColorCSS (extracted logic)', () => {
+	describe('updatePreviewColorCSS (extracted logic)', () => {
 		/**
 		 * This function replicates the CSS color calculation logic from main.ts
 		 */
-		function calculateBubbleColor(previewColorMode: string, customPreviewColor: string): string {
+		function calculatePreviewColor(previewColorMode: string, customPreviewColor: string): string {
 			switch (previewColorMode) {
 				case 'none':
 					return 'transparent';
@@ -333,35 +331,35 @@ describe('Plugin Main', () => {
 		}
 
 		it('should return transparent for "none" mode', () => {
-			const color = calculateBubbleColor('none', '#000000');
+			const color = calculatePreviewColor('none', '#000000');
 			expect(color).toBe('transparent');
 		});
 
 		it('should return custom color for "custom" mode', () => {
-			const color = calculateBubbleColor('custom', '#ff0000');
+			const color = calculatePreviewColor('custom', '#ff0000');
 			expect(color).toBe('#ff0000');
 		});
 
 		it('should return CSS variable for "grey" mode', () => {
-			const color = calculateBubbleColor('grey', '#000000');
+			const color = calculatePreviewColor('grey', '#000000');
 			expect(color).toBe('var(--background-modifier-border)');
 		});
 
 		it('should default to grey mode for unknown values', () => {
-			const color = calculateBubbleColor('unknown', '#000000');
+			const color = calculatePreviewColor('unknown', '#000000');
 			expect(color).toBe('var(--background-modifier-border)');
 		});
 
 		it('should use custom color value exactly as provided', () => {
 			const customColor = '#123456';
-			const color = calculateBubbleColor('custom', customColor);
+			const color = calculatePreviewColor('custom', customColor);
 			expect(color).toBe(customColor);
 		});
 
 		it('should handle different custom color formats', () => {
-			expect(calculateBubbleColor('custom', '#abc')).toBe('#abc');
-			expect(calculateBubbleColor('custom', '#aabbcc')).toBe('#aabbcc');
-			expect(calculateBubbleColor('custom', 'rgb(255, 0, 0)')).toBe('rgb(255, 0, 0)');
+			expect(calculatePreviewColor('custom', '#abc')).toBe('#abc');
+			expect(calculatePreviewColor('custom', '#aabbcc')).toBe('#aabbcc');
+			expect(calculatePreviewColor('custom', 'rgb(255, 0, 0)')).toBe('rgb(255, 0, 0)');
 		});
 	});
 
@@ -382,7 +380,6 @@ describe('Plugin Main', () => {
 			const loaded = { previewStyle: 'card' as const };
 			const merged = mergeSettings(loaded);
 			expect(merged.previewStyle).toBe('card');
-			expect(merged.displayMode).toBe(DEFAULT_SETTINGS.displayMode);
 		});
 
 		it('should merge partial settings', () => {
@@ -400,12 +397,11 @@ describe('Plugin Main', () => {
 			const loaded = {
 				includeDescription: false,
 				maxCardLength: 400,
-				maxBubbleLength: 200,
+				maxInlineLength: 200,
 				requestTimeoutMs: 10000,
 				showFavicon: false,
 				keepEmoji: false,
 				previewStyle: 'card' as const,
-				displayMode: 'inline' as const,
 				previewColorMode: 'custom' as const,
 				customPreviewColor: '#ff0000',
 				showHttpErrorWarnings: false,

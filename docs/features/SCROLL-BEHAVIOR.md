@@ -92,23 +92,23 @@ Despite being more compact, cards still follow Material Design principles:
 - Elegant hover states
 - Sufficient breathing room
 
-## Alternative: Bubble Style
+## Alternative: Inline Style
 
-If scroll behavior is particularly disruptive for your workflow, consider using **Bubble Style** instead:
+If scroll behavior is particularly disruptive for your workflow, consider using **Inline Style** instead:
 
 ```yaml
 ---
-preview-style: bubble  # More compact, less height impact
+preview-style: inline  # More compact, less height impact
 ---
 ```
 
-Bubble previews:
+Inline previews:
 - Add minimal height (similar to a line of text)
 - Flow inline with content
 - Still show rich metadata (title + description)
 - Cause much less scroll disruption when toggling modes
 
-Configure globally in: **Settings → Inline Link Preview → Preview Style**
+Configure globally in: **Settings → URL Enricher → Preview Style**
 
 ## Technical Notes for Developers
 
@@ -172,7 +172,7 @@ This simple, clean approach:
 - Using cursor position as reference point
 - Minimizing mode switching during editing
 - Using navigation shortcuts after toggling
-- Choosing bubble style for lighter visual impact
+- Choosing inline style for lighter visual impact
 
 **We deliberately avoid** complex scroll preservation because it would:
 - ❌ Add fragile complexity

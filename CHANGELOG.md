@@ -1,6 +1,86 @@
 # Changelog
 
-All notable changes to the Inline Link Preview plugin will be documented in this file.
+All notable changes to URL Enricher will be documented in this file.
+
+## [0.9.0] - TBD
+
+### Breaking Changes
+
+#### Plugin Renamed
+- **New name**: "URL Enricher" (was "Inline Link Preview")
+- **Plugin ID changed**: `url-enricher` from `obsidian-inline-link-preview`
+- **Reason**: Better reflects the non-destructive enrichment functionality
+
+#### Display Mode Removed
+- All previews (both Card and Inline styles) now always flow inline with text
+- No more automatic line breaks or spacing above previews
+- **Removed setting**: "Display mode" (inline/block option)
+- **Removed frontmatter**: `preview-display` property
+- **User control**: Press Enter manually to create line breaks if desired
+- **Benefit**: Eliminates unwanted spacing, simplifies UX
+
+#### Terminology: "Bubble" → "Inline"
+- **Preview style**: "bubble" renamed to "inline" for clarity
+- **Settings**:
+  - `maxBubbleLength` → `maxInlineLength`
+  - UI text: "Maximum bubble length" → "Maximum inline length"
+- **Frontmatter**:
+  - `preview-style: bubble` → `preview-style: inline`
+  - `max-bubble-length` → `max-inline-length`
+- **TypeScript**: `PreviewStyle` type values changed
+- **CSS classes**: All `.inline-url-preview-*` → `.url-preview-*`
+
+#### CSS Class Rationalization
+- **Base class**: `.inline-url-preview` → `.url-preview`
+- **Style modifiers**:
+  - `.inline-url-preview--bubble` → `.url-preview--inline`
+  - `.inline-url-preview--card` → `.url-preview--card`
+- **Element classes**: All `.inline-url-preview__*` → `.url-preview__*`
+- **Utility classes**: All `.ilp-*` → `.url-preview-*`
+- **Removed classes**: `.inline-url-preview--bubble-inline`, `.inline-url-preview--bubble-block` (no longer needed)
+- **Impact**: Custom CSS targeting old classes will need updates
+
+### Migration Guide
+
+#### For Users
+**Settings Migration (Automatic)**:
+- `maxBubbleLength` automatically becomes `maxInlineLength` on plugin load
+- `displayMode` setting automatically removed
+- No user action required
+
+**Frontmatter Updates (Optional)**:
+- Update `preview-style: bubble` → `preview-style: inline` in notes
+- Update `max-bubble-length` → `max-inline-length` in notes
+- Remove `preview-display` property from notes
+- Old properties are silently ignored (no errors)
+
+**Display Changes**:
+- If you used `preview-display: block` for spacing, manually press Enter before/after URLs
+- Cards and inline previews both flow inline - no automatic spacing
+
+#### For Custom CSS Users
+Update any custom CSS targeting plugin classes:
+```css
+/* Old */
+.inline-url-preview { }
+.inline-url-preview--bubble { }
+.inline-url-preview--card { }
+
+/* New */
+.url-preview { }
+.url-preview--inline { }
+.url-preview--card { }
+```
+
+#### For Developers
+- Developer API now available at `window.urlEnricher` (also `window.inlineLinkPreview` for compatibility)
+- All log messages now prefixed with `[url-enricher]` instead of `[inline-link-preview]`
+
+### Benefits
+- **Clearer terminology**: "Inline" better describes the compact preview style
+- **No unwanted spacing**: Previews flow naturally with text
+- **Shorter CSS classes**: Cleaner, more maintainable styles
+- **Simplified codebase**: Removed unnecessary display mode logic
 
 ## [0.8.0] - 2025-10-24
 

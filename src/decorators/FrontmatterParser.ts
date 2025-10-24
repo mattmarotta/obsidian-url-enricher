@@ -1,13 +1,12 @@
-import type { PreviewStyle, DisplayMode, PreviewColorMode } from "../settings";
+import type { PreviewStyle, PreviewColorMode } from "../settings";
 
 /**
  * Page-level configuration that can override global settings via frontmatter
  */
 export interface PageConfig {
 	previewStyle?: PreviewStyle;
-	displayMode?: DisplayMode;
 	maxCardLength?: number;
-	maxBubbleLength?: number;
+	maxInlineLength?: number;
 	showFavicon?: boolean;
 	includeDescription?: boolean;
 	previewColorMode?: PreviewColorMode;
@@ -44,24 +43,15 @@ export function parsePageConfig(text: string): PageConfig {
 	const frontmatter = lines.slice(1, endIndex);
 
 	// Debug: Log frontmatter parsing
-	console.log('[Inline Link Preview] Parsing frontmatter:', frontmatter);
+	console.log('[URL Enricher] Parsing frontmatter:', frontmatter);
 
 	for (const line of frontmatter) {
 		// Preview style
 		const styleMatch = line.match(/^preview-style:\s*(.+)$/i);
 		if (styleMatch) {
 			const value = styleMatch[1].trim().toLowerCase();
-			if (value === 'bubble' || value === 'card') {
+			if (value === 'inline' || value === 'card') {
 				config.previewStyle = value;
-			}
-		}
-
-		// Display mode
-		const displayMatch = line.match(/^preview-display:\s*(.+)$/i);
-		if (displayMatch) {
-			const value = displayMatch[1].trim().toLowerCase();
-			if (value === 'inline' || value === 'block') {
-				config.displayMode = value;
 			}
 		}
 
@@ -74,12 +64,12 @@ export function parsePageConfig(text: string): PageConfig {
 			}
 		}
 
-		// Max bubble length
-		const maxBubbleMatch = line.match(/^max-bubble-length:\s*(\d+)$/i);
-		if (maxBubbleMatch) {
-			const value = parseInt(maxBubbleMatch[1], 10);
+		// Max inline length
+		const maxInlineMatch = line.match(/^max-inline-length:\s*(\d+)$/i);
+		if (maxInlineMatch) {
+			const value = parseInt(maxInlineMatch[1], 10);
 			if (value >= 50 && value <= 5000) {
-				config.maxBubbleLength = value;
+				config.maxInlineLength = value;
 			}
 		}
 
@@ -122,7 +112,7 @@ export function parsePageConfig(text: string): PageConfig {
 	}
 
 	// Debug: Log parsed config
-	console.log('[Inline Link Preview] Parsed config:', config);
+	console.log('[URL Enricher] Parsed config:', config);
 
 	return config;
 }
