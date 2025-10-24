@@ -503,7 +503,7 @@ window.inlineLinkPreview.getPerformanceMetrics()
 3. Verify values are in valid ranges:
    - `max-card-length`: 100-5000
    - `max-bubble-length`: 50-5000
-4. See [FRONTMATTER-TROUBLESHOOTING.md](FRONTMATTER-TROUBLESHOOTING.md)
+4. See [FRONTMATTER-TROUBLESHOOTING.md](../features/FRONTMATTER-TROUBLESHOOTING.md)
 
 **Problem: TypeScript errors in tests**
 ```bash
@@ -584,9 +584,9 @@ it("test1", () => { }); // Non-descriptive
 
 ## See Also
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contributing guidelines and code standards
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contributing guidelines and code standards
 - [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) - Detailed release process
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design
 - [TESTING.md](TESTING.md) - Testing infrastructure and coverage
 - [AGENTS.md](AGENTS.md) - Quick project overview
-- [README.md](README.md) - User-facing documentation
+- [README.md](../../README.md) - User-facing documentation

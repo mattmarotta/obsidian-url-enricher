@@ -538,7 +538,7 @@ Next steps:
 4. Push: git push origin master --tags
 ```
 
-For detailed documentation, see [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md).
+For detailed documentation, see [VERSION-MANAGEMENT.md](docs/developer/VERSION-MANAGEMENT.md).
 
 ⚠️ **IMPORTANT**: Fill in CHANGELOG.md immediately after bumping the version while changes are fresh in your mind!
 

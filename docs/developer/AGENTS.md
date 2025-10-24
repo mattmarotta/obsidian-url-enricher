@@ -7,7 +7,7 @@
 This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as plain text in your notes. The plugin enhances them with live preview bubbles or cards showing metadata (title, description, favicon) in editor view only.
 
 - **Current version**: 0.8.0
-- **Entry point**: [src/main.ts](src/main.ts) → compiled to `main.js`
+- **Entry point**: [src/main.ts](../../src/main.ts) → compiled to `main.js`
 - **Release artifacts**: `main.js`, `manifest.json`, `styles.css`
 
 ## Quick Start
@@ -145,12 +145,12 @@ if (cache.size > METADATA_CACHE_MAX_SIZE) { }
 
 **For Developers**:
 - [DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md) - Workflows, checklists, debugging guide
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contributing guidelines, code standards
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contributing guidelines, code standards
 - [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) - Release process, version bumping
 - [TESTING.md](TESTING.md) - Testing infrastructure, coverage
 
 **For Understanding the System**:
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture, design patterns
-- [README.md](README.md) - User-facing documentation
+- [README.md](../../README.md) - User-facing documentation
 
-**See also**: [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md) for per-page configuration options.
+**See also**: [FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) for per-page configuration options.

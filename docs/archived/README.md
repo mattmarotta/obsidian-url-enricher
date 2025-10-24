@@ -4,9 +4,9 @@ This directory contains historical implementation notes and detailed release doc
 
 **For current documentation, see:**
 - [README.md](../../README.md) - Main user guide
-- [AGENTS.md](../../AGENTS.md) - Technical architecture
+- [AGENTS.md](../developer/AGENTS.md) - Technical architecture
 - [CHANGELOG.md](../../CHANGELOG.md) - Version history
-- [FRONTMATTER-SUPPORT.md](../../FRONTMATTER-SUPPORT.md) - Frontmatter configuration guide
+- [FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) - Frontmatter configuration guide
 
 ---
 

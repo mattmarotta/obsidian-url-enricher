@@ -19,7 +19,7 @@ const PACKAGE_FILE = "package.json";
 const MANIFEST_FILE = "manifest.json";
 const VERSIONS_FILE = "versions.json";
 const LOCK_FILE = "package-lock.json";
-const AGENTS_FILE = "AGENTS.md";
+const AGENTS_FILE = "docs/developer/AGENTS.md";
 const CHANGELOG_FILE = "CHANGELOG.md";
 
 // Update manifest.json

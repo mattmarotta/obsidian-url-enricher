@@ -363,6 +363,6 @@ Key functions:
 
 ## See Also
 
-- [CHANGELOG.md](CHANGELOG.md) - View release history
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contributing guidelines
-- [.github/workflows/release.yml](.github/workflows/release.yml) - Automated release workflow
+- [CHANGELOG.md](../../CHANGELOG.md) - View release history
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contributing guidelines
+- [.github/workflows/release.yml](../../.github/workflows/release.yml) - Automated release workflow

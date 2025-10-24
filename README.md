@@ -79,7 +79,7 @@ include-description: true        # Include/exclude descriptions
 
 **Note**: URL display is automatic based on preview style—cards show a small editable URL, bubbles hide the URL entirely.
 
-These settings override your global preferences for that specific page only. For a complete list of available frontmatter properties and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md).
+These settings override your global preferences for that specific page only. For a complete list of available frontmatter properties and examples, see [FRONTMATTER-SUPPORT.md](docs/features/FRONTMATTER-SUPPORT.md).
 
 ## Settings
 
@@ -132,7 +132,7 @@ custom-preview-color: "#4a4a4a"  # hex color when using custom mode
 - Minimum values (100 for cards, 50 for bubbles) prevent unusably short previews. Maximum value (5000) prevents performance issues with extremely long descriptions.
 - URL display is automatic: Cards show a small editable URL, bubbles hide the URL entirely.
 
-For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](FRONTMATTER-SUPPORT.md).
+For detailed documentation and examples, see [FRONTMATTER-SUPPORT.md](docs/features/FRONTMATTER-SUPPORT.md).
 
 Changes apply immediately to future previews and when you navigate between notes.
 
@@ -462,7 +462,7 @@ Previews only appear in **Live Preview mode**, not in Source mode or Reading vie
 - Frontmatter properties MUST start on **line 1** with `---`
 - Check property names are spelled correctly (case-insensitive)
 - Verify values are valid (e.g., max-card-length: 100-5000)
-- See [FRONTMATTER-TROUBLESHOOTING.md](FRONTMATTER-TROUBLESHOOTING.md) for detailed debugging steps
+- See [FRONTMATTER-TROUBLESHOOTING.md](docs/features/FRONTMATTER-TROUBLESHOOTING.md) for detailed debugging steps
 
 ### Performance Issues
 - Reduce `max-card-length` or `max-bubble-length` settings to limit preview size
@@ -501,7 +501,7 @@ The release bundle consists of `manifest.json`, `main.js`, and optionally `style
 - `npm run dev` – watch mode with incremental builds.
 - `npm run build` – type-check and create a production bundle.
 - `npm test` – run unit tests.
-- `npm run set-version <x.y.z>` – update version across all files (package.json, manifest.json, versions.json, AGENTS.md, CHANGELOG.md). See [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) for details.
+- `npm run set-version <x.y.z>` – update version across all files (package.json, manifest.json, versions.json, AGENTS.md, CHANGELOG.md). See [VERSION-MANAGEMENT.md](docs/developer/VERSION-MANAGEMENT.md) for details.
 
 For detailed contributing guidelines, coding standards, and testing documentation, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -552,7 +552,7 @@ npm run test:coverage
   - Settings normalization and defaults ([main.test.ts](tests/main.test.ts) - 50 tests)
   - Type conversion, clamping, and validation
 
-For comprehensive testing documentation, see [TESTING.md](TESTING.md).
+For comprehensive testing documentation, see [TESTING.md](docs/developer/TESTING.md).
 
 ## Contributing
 
@@ -612,7 +612,7 @@ export function getMetadataHandlers(): MetadataHandler[] {
    - Add a URL from your custom site to a test note
    - Verify the custom metadata appears in the preview
 
-For architecture details and advanced patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For architecture details and advanced patterns, see [ARCHITECTURE.md](docs/developer/ARCHITECTURE.md).
 
 ## License
 
