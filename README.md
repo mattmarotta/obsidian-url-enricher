@@ -1,7 +1,7 @@
 # URL Enricher
 
-[![GitHub release](https://img.shields.io/github/v/release/YOUR_USERNAME/obsidian-url-enricher)](https://github.com/YOUR_USERNAME/obsidian-url-enricher/releases/latest)
-[![License](https://img.shields.io/github/license/YOUR_USERNAME/obsidian-url-enricher)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/mattmarotta/obsidian-url-enricher)](https://github.com/mattmarotta/obsidian-url-enricher/releases/latest)
+[![License](https://img.shields.io/github/license/mattmarotta/obsidian-url-enricher)](LICENSE)
 
 **Add rich, non-destructive link previews to Obsidian URLs**
 
@@ -121,7 +121,7 @@ MIT - See [LICENSE](LICENSE) for details.
 
 - **[Documentation](docs/README.md)** - Complete documentation index
 - **[Changelog](CHANGELOG.md)** - Version history and release notes
-- **[Issues](https://github.com/YOUR_USERNAME/obsidian-url-enricher/issues)** - Report bugs or request features
-- **[Discussions](https://github.com/YOUR_USERNAME/obsidian-url-enricher/discussions)** - Ask questions or share ideas
+- **[Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues)** - Report bugs or request features
+- **[Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions)** - Ask questions or share ideas
 
 **Made with ❤️ for the Obsidian community**
