@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains automated CI/CD workflows for the Inline Link Preview plugin.
+This directory contains automated CI/CD workflows for the URL Enricher plugin.
 
 ## Workflows
 
@@ -97,15 +97,15 @@ To create a new release:
    - Uploads plugin files
 
 5. **GitHub release will be created** at:
-   ```
-   https://github.com/your-username/obsidian-inline-link-preview/releases
-   ```
+  ```
+  https://github.com/your-username/obsidian-url-enricher/releases
+  ```
 
 ### Monitoring Workflows
 
 View workflow runs at:
 ```
-https://github.com/your-username/obsidian-inline-link-preview/actions
+https://github.com/your-username/obsidian-url-enricher/actions
 ```
 
 ## Workflow Status Badges
@@ -113,8 +113,8 @@ https://github.com/your-username/obsidian-inline-link-preview/actions
 Add these badges to your README.md:
 
 ```markdown
-![Test](https://github.com/your-username/obsidian-inline-link-preview/actions/workflows/test.yml/badge.svg)
-![Build](https://github.com/your-username/obsidian-inline-link-preview/actions/workflows/build.yml/badge.svg)
+![Test](https://github.com/your-username/obsidian-url-enricher/actions/workflows/test.yml/badge.svg)
+![Build](https://github.com/your-username/obsidian-url-enricher/actions/workflows/build.yml/badge.svg)
 ```
 
 ## Secrets Configuration

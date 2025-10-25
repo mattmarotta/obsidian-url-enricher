@@ -4,7 +4,7 @@
  * Adds rich, non-destructive link previews to Obsidian notes in Live Preview mode.
  * All previews are rendered dynamically without modifying markdown source files.
  *
- * @see https://github.com/your-repo/obsidian-inline-link-preview
+ * @see https://github.com/your-repo/obsidian-url-enricher
  */
 
 import { Plugin } from "obsidian";

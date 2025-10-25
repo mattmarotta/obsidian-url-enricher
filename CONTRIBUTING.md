@@ -28,8 +28,8 @@ Thank you for your interest in contributing to the URL Enricher plugin! This gui
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/obsidian-inline-link-preview.git
-   cd obsidian-inline-link-preview
+   git clone https://github.com/your-username/obsidian-url-enricher.git
+   cd obsidian-url-enricher
    ```
 
 2. **Install dependencies**
@@ -55,7 +55,7 @@ Thank you for your interest in contributing to the URL Enricher plugin! This gui
 6. **Link to Obsidian vault for testing**
    ```bash
    # Create symlink to your vault's plugins directory
-   ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/obsidian-inline-link-preview"
+   ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/url-enricher"
    ```
 
 7. **⚠️ IMPORTANT: Set up git hooks**

@@ -94,7 +94,7 @@ export class FaviconCache {
 				}
 			}
 		} catch (error) {
-			console.warn("[inline-link-preview] Failed to load favicon cache", error);
+			console.warn("[url-enricher] Failed to load favicon cache", error);
 			this.diskCache = {};
 		}
 	}
@@ -229,7 +229,7 @@ export class FaviconCache {
 			await this.saveData(data);
 			this.dirty = false;
 		} catch (error) {
-			console.warn("[inline-link-preview] Failed to save favicon cache", error);
+			console.warn("[url-enricher] Failed to save favicon cache", error);
 		}
 	}
 

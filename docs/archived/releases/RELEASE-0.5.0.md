@@ -1,5 +1,7 @@
 # Release Notes - v0.5.0
 
+> **Archived context**: This release predates the rename to URL Enricher and intentionally references the original plugin folder `obsidian-inline-link-preview`.
+
 ## What's New in v0.5.0
 
 This maintenance release fixes critical bugs with description length settings and adds important documentation for cache management. v0.5.0 builds on the v0.4.0 complete rewrite that made the plugin 100% non-destructive.
@@ -207,4 +209,3 @@ Potential improvements for future releases:
 **Version:** 0.5.0  
 **Release Date:** October 14, 2025  
 **Minimum Obsidian Version:** 0.15.0
-

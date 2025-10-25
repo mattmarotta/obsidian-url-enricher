@@ -26,6 +26,12 @@ All notable changes to URL Enricher will be documented in this file.
   - Ensures fresh `Unreleased` template is ready for new work
 - **Developer workflow**: Continue logging day-to-day changes under `## [Unreleased]`; the script handles promotion during releases
 
+#### Developer Naming Cleanup
+
+- **Updated**: Runtime log prefixes, favicon widget class, and package metadata now use `url-enricher` naming
+- **Docs**: `CONTRIBUTING.md` setup instructions reference the renamed repository and plugin folder
+- **Purpose**: Aligns developer-facing tooling with the plugin rename while keeping compatibility APIs intact
+
 ## [0.9.1] - 2025-10-25
 
 ### Added

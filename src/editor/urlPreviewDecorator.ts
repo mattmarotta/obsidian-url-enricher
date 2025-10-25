@@ -61,7 +61,7 @@ export function createUrlPreviewDecorator(
 					return Decoration.none;
 				}
 
-				console.log('[Inline Link Preview] buildDecorations called');
+				console.log('[url-enricher] buildDecorations called');
 
 				const builder = new RangeSetBuilder<Decoration>();
 

@@ -41,7 +41,7 @@ jobs:
           mkdir release
           cp main.js manifest.json styles.css release/
           cd release
-          zip -r ../obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip .
+          zip -r ../obsidian-url-enricher-${{ steps.get_version.outputs.VERSION }}.zip .
 
       - name: Extract release notes from CHANGELOG
         id: changelog
@@ -91,7 +91,7 @@ jobs:
             
             **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.PREVIOUS_TAG }}...${{ steps.get_version.outputs.VERSION }}
           files: |
-            obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip
+            obsidian-url-enricher-${{ steps.get_version.outputs.VERSION }}.zip
             main.js
             manifest.json
             styles.css

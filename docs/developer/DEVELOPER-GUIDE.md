@@ -71,7 +71,7 @@ npm run set-version X.Y.Z      # Bump version (updates 6 files)
 5. **Test in real Obsidian**
    ```bash
    # Link to vault for testing
-   ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/obsidian-inline-link-preview"
+   ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/url-enricher"
    npm run dev
    ```
 
@@ -597,7 +597,7 @@ npm run test:watch -- urlPreviewDecorator.test.ts
 
 ```bash
 # 1. Link plugin to test vault
-ln -s "$(pwd)" "/path/to/test-vault/.obsidian/plugins/obsidian-inline-link-preview"
+ln -s "$(pwd)" "/path/to/test-vault/.obsidian/plugins/url-enricher"
 
 # 2. Run dev watch mode
 npm run dev

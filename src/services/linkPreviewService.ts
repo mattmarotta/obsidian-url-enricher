@@ -219,7 +219,7 @@ export class LinkPreviewService {
 					throw new Error(httpError);
 				}
 				// Setting is off - don't treat as error, use fallback metadata
-				console.log(`[inline-link-preview] ${httpError} for ${url}, but HTTP error warnings are disabled`);
+				console.log(`[url-enricher] ${httpError} for ${url}, but HTTP error warnings are disabled`);
 			}
 
 			const contentType = this.fetcher.getHeader(response, "content-type") ?? "";
@@ -264,7 +264,7 @@ export class LinkPreviewService {
 			// Always show network errors, only show HTTP errors if setting is enabled
 			if (isNetworkError || this.settings.showHttpErrorWarnings) {
 				console.warn(
-					"[inline-link-preview] Failed to fetch metadata for URL",
+					"[url-enricher] Failed to fetch metadata for URL",
 					url,
 					errorMessage,
 				);
@@ -277,7 +277,7 @@ export class LinkPreviewService {
 			}
 
 			// HTTP error but warnings disabled - return normal fallback
-			console.log(`[inline-link-preview] HTTP error for ${url}, but warnings are disabled`);
+			console.log(`[url-enricher] HTTP error for ${url}, but warnings are disabled`);
 			return await this.finalizeMetadata(url, this.buildFallbackMetadata(url));
 		}
 	}
@@ -355,7 +355,7 @@ export class LinkPreviewService {
 				}
 			} catch (error) {
 				console.warn(
-					"[inline-link-preview] Metadata handler failed",
+					"[url-enricher] Metadata handler failed",
 					handler.constructor?.name ?? "UnknownHandler",
 					error instanceof Error ? error.message : error,
 				);

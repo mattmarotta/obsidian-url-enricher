@@ -15,7 +15,7 @@ class FaviconWidget extends WidgetType {
 	toDOM(): HTMLElement {
 		const img = document.createElement("img");
 		img.src = this.faviconUrl;
-		img.className = "inline-link-favicon";
+		img.className = "url-preview__favicon";
 		img.alt = "";
 		return img;
 	}
