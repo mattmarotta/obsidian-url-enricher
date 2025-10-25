@@ -32,6 +32,10 @@ All notable changes to URL Enricher will be documented in this file.
 - **Docs**: `CONTRIBUTING.md` setup instructions reference the renamed repository and plugin folder
 - **Purpose**: Aligns developer-facing tooling with the plugin rename while keeping compatibility APIs intact
 
+### Fixed
+
+- **Release workflow**: Correctly resolves the previous tag for GitHub compare links (no more `compare/...VERSION`)
+
 ## [0.9.1] - 2025-10-25
 
 ### Added

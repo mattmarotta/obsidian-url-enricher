@@ -71,8 +71,15 @@ jobs:
           
           # Get previous tag for comparison link
           # Get all tags sorted by version, then get the one before current
-          PREVIOUS_TAG=$(git tag -l --sort=-v:refname | grep -A1 "^${VERSION}$" | tail -n1)
-          if [ "$PREVIOUS_TAG" = "$VERSION" ] || [ -z "$PREVIOUS_TAG" ]; then
+          PREVIOUS_TAG=$(git tag -l --sort=-v:refname | awk -v ver="$VERSION" '
+            $0 == ver {
+              if (getline) {
+                print $0;
+              }
+              exit;
+            }
+          ')
+          if [ -z "$PREVIOUS_TAG" ]; then
             # No previous tag found, use first commit
             PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
