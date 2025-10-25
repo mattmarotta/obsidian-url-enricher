@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-inline-link-preview",
-	"version": "0.9.0",
+	"version": "0.9.1",
 	"description": "Automatically replace bare URLs with inline previews that show the page title and description.",
 	"main": "main.js",
 	"scripts": {

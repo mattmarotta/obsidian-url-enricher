@@ -2,6 +2,27 @@
 
 All notable changes to URL Enricher will be documented in this file.
 
+## [0.9.1] - 2025-10-25
+
+### Added
+
+#### Automated GitHub Release Notes
+
+- **Added**: GitHub Actions now automatically extracts release notes from CHANGELOG.md
+- **Benefit**: CHANGELOG.md is now the single source of truth for release documentation
+- **Impact**: No more manual release note creation - just write good CHANGELOG entries
+- **Format**: Supports both simple (0.8.0-style) and complex (0.9.0-style with nested sections) formats
+- **Documentation**: 
+  - Enhanced `VERSION-MANAGEMENT.md` with Keep a Changelog format guidance
+  - Updated `DEVELOPER-GUIDE.md` with CHANGELOG formatting examples and best practices
+  - Added CHANGELOG format guidelines to `AGENTS.md` for AI agents
+
+### Changed
+-
+
+### Fixed
+-
+
 ## [0.9.0] - 2025-10-24
 
 ### Breaking Changes
