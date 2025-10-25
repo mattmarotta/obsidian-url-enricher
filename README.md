@@ -21,7 +21,7 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
   ```
 - **Rich Metadata Display**:
   - Site favicons displayed at high resolution (128px) for crisp quality
-  - Page titles and descriptions
+  - Page titles and descriptions with styled hashtags (#tag) and mentions (@user)
   - Site name labels in card footers (e.g., "WIKIPEDIA", "REDDIT", "OPENAI")
   - Emoji preservation (optional)
   - Customizable description length with natural word-wrapping
@@ -31,7 +31,7 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
 - **Cursor-Aware Previews**: Previews instantly hide when cursor is inside a URL, preventing accidental edits and providing clear visual feedback during editing
 - **Smart Context Detection**: Automatically generates previews for:
   - Bare URLs: `https://example.com`
-  - Markdown links: `[text](https://example.com)` or `[https://example.com](https://example.com)`
+  - Markdown links: `[custom text](https://example.com)`, `[](https://example.com)`, or `[https://example.com](https://example.com)`
   - Wikilinks with URLs: `[[https://example.com]]` (URL only, not page names like `[[My Page]]`)
 
   And skips URLs in:
@@ -47,8 +47,9 @@ The plugin automatically generates previews for URLs in these formats:
 
 1. **Bare URLs**: `https://example.com`
 2. **Markdown links**:
-   - `[text](https://example.com)` - uses "text" as the title
-   - `[https://example.com](https://example.com)` - fetches metadata title
+   - `[custom text](https://example.com)` - displays fetched page title in preview (custom text visible in source mode)
+   - `[](https://example.com)` - empty link text, displays fetched page title
+   - `[https://example.com](https://example.com)` - displays fetched page title
 3. **Wikilinks with URLs**: `[[https://example.com]]`
    - ⚠️ **Important**: Only URLs are supported, not Obsidian page names
    - ✅ Works: `[[https://github.com]]` (actual URL)

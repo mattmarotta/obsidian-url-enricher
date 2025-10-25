@@ -117,7 +117,8 @@ export class UrlPreviewWidget extends WidgetType {
 				if (this.title) {
 					const titleSpan = document.createElement("span");
 					titleSpan.className = "url-preview__title";
-					titleSpan.textContent = this.title;
+					const enrichedTitle = enrichTextWithStyledElements(this.title);
+					titleSpan.appendChild(enrichedTitle);
 					titleSpan.style.cssText = `
 						flex: 1;
 						margin: 0;
@@ -224,7 +225,8 @@ export class UrlPreviewWidget extends WidgetType {
 			if (this.title) {
 				const titleSpan = document.createElement("span");
 				titleSpan.className = "url-preview__title";
-				titleSpan.textContent = this.title; // r/Subreddit
+				const enrichedTitle = enrichTextWithStyledElements(this.title); // r/Subreddit
+				titleSpan.appendChild(enrichedTitle);
 				textContainer.appendChild(titleSpan);
 			}
 
@@ -245,7 +247,8 @@ export class UrlPreviewWidget extends WidgetType {
 			if (this.title) {
 				const titleSpan = document.createElement("span");
 				titleSpan.className = "url-preview__title";
-				titleSpan.textContent = this.title;
+				const enrichedTitle = enrichTextWithStyledElements(this.title);
+				titleSpan.appendChild(enrichedTitle);
 				textContainer.appendChild(titleSpan);
 
 				if (cleanedDescription) {

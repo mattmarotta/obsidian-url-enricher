@@ -72,9 +72,9 @@ export function enrichTextWithStyledElements(text: string): HTMLElement {
 		const matchedText = match[0];
 
 		if (matchedText.startsWith('#')) {
-			span.className = 'ilp-hashtag';
+			span.className = 'url-preview-hashtag';
 		} else {
-			span.className = 'ilp-mention';
+			span.className = 'url-preview-mention';
 		}
 
 		span.textContent = matchedText;

@@ -106,16 +106,13 @@ function processMetadata(
 		return { title, description, faviconUrl, siteName, error };
 	}
 
-	// Determine title based on link text or metadata
-	if (linkText) {
-		// Custom text provided - use it as title
-		title = sanitizeLinkText(linkText, settings.keepEmoji);
-	} else {
-		// Use metadata title
-		title = metadata.title
-			? sanitizeLinkText(metadata.title, settings.keepEmoji)
-			: deriveTitleFromUrl(url);
-	}
+	// Always prefer fetched metadata title over custom link text for consistency
+	// Fallback chain: metadata title → custom link text → derived from URL
+	title = metadata.title
+		? sanitizeLinkText(metadata.title, settings.keepEmoji)
+		: (linkText
+			? sanitizeLinkText(linkText, settings.keepEmoji)
+			: deriveTitleFromUrl(url));
 
 	description = metadata.description
 		? sanitizeLinkText(metadata.description, settings.keepEmoji)

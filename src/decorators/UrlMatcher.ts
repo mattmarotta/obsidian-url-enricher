@@ -102,7 +102,7 @@ export function* findWikilinkUrls(text: string): Generator<UrlMatch> {
  * Find all markdown-formatted URLs in text: [text](url)
  */
 export function* findMarkdownLinks(text: string): Generator<UrlMatch> {
-	const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+	const markdownLinkRegex = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g;
 	let match;
 
 	while ((match = markdownLinkRegex.exec(text)) !== null) {
@@ -122,7 +122,7 @@ export function* findMarkdownLinks(text: string): Generator<UrlMatch> {
 			start: linkStart,
 			end: linkEnd,
 			type: 'markdown',
-			linkText: linkText !== url ? linkText : undefined
+			linkText: linkText && linkText !== url ? linkText : undefined
 		};
 	}
 }

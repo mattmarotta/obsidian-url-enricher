@@ -82,6 +82,33 @@ Update any custom CSS targeting plugin classes:
 - **Shorter CSS classes**: Cleaner, more maintainable styles
 - **Simplified codebase**: Removed unnecessary display mode logic
 
+### Bug Fixes
+
+#### Hashtag and Mention Styling Now Works
+- **Fixed**: CSS class name mismatch prevented hashtags (#tag) and mentions (@user) from being styled
+- **Changed**: Class names from `ilp-hashtag`/`ilp-mention` to `url-preview-hashtag`/`url-preview-mention`
+- **Impact**: Hashtags and mentions now display with accent color and bold weight in all previews
+
+#### Empty Link Text Support
+- **Fixed**: Empty markdown links `[](https://example.com)` were completely ignored
+- **Changed**: Updated regex to allow zero-length link text
+- **Impact**: `[](url)` now works like a bare URL, displaying fetched page title
+
+#### Titles Now Support Hashtag/Mention Styling
+- **Fixed**: Hashtags and mentions were only styled in descriptions, not titles
+- **Changed**: All titles (card mode, inline mode, Reddit posts) now use `enrichTextWithStyledElements()`
+- **Impact**: Hashtags and mentions stand out in titles as well as descriptions
+
+### Enhancements
+
+#### Custom Link Text Behavior Improved
+- **Changed**: Markdown links with custom text now display fetched page title instead of custom text
+- **Previous**: `[my custom text](https://reddit.com/...)` showed "my custom text" as title
+- **New**: Always shows actual page title from metadata for consistency
+- **Fallback**: Custom text used only when page metadata unavailable
+- **Benefit**: Ensures title, description, favicon, and site name all match actual page content
+- **Note**: Custom link text still visible in source mode
+
 ## [0.8.0] - 2025-10-24
 
 ### Added
