@@ -43,84 +43,67 @@ jobs:
           cd release
           zip -r ../obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip .
 
-      - name: Generate changelog
+      - name: Extract release notes from CHANGELOG
         id: changelog
         run: |
-          # Extract changelog for this version from git log
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PREVIOUS_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
-          else
-            CHANGELOG=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          
+          # Extract the section for this version from CHANGELOG.md
+          # This captures everything between ## [VERSION] and the next ## [
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "## \\[" ver "\\]") found=1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+          
+          if [ -z "$NOTES" ]; then
+            echo "⚠️ No changelog entry found for version $VERSION"
+            NOTES="No changelog entry found. See [CHANGELOG.md](CHANGELOG.md) for details."
           fi
+          
+          # Save to output (handle multiline)
           echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Get previous tag for comparison link
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
-          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          name: ${{ steps.get_version.outputs.VERSION }}
           body: |
-            ## What's Changed
-
             ${{ steps.changelog.outputs.CHANGELOG }}
-
+            
+            ---
+            
             ## Installation
-
+            
             1. Download `obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip`
             2. Extract the files to your vault's `.obsidian/plugins/obsidian-inline-link-preview/` directory
             3. Reload Obsidian
             4. Enable the plugin in Settings > Community Plugins
-
+            
             ## Files
-
+            
             - `main.js` - Plugin code
             - `manifest.json` - Plugin manifest
             - `styles.css` - Plugin styles
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.PREVIOUS_TAG }}...${{ steps.get_version.outputs.VERSION }}
+          files: |
+            obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip
+            main.js
+            manifest.json
+            styles.css
           draft: false
           prerelease: false
-
-      - name: Upload release archive
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip
-          asset_name: obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip
-          asset_content_type: application/zip
-
-      - name: Upload main.js
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./main.js
-          asset_name: main.js
-          asset_content_type: text/javascript
-
-      - name: Upload manifest.json
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./manifest.json
-          asset_name: manifest.json
-          asset_content_type: application/json
-
-      - name: Upload styles.css
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./styles.css
-          asset_name: styles.css
-          asset_content_type: text/css

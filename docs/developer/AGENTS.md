@@ -161,4 +161,11 @@ if (cache.size > METADATA_CACHE_MAX_SIZE) { }
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture, design patterns
 - [README.md](../../README.md) - User-facing documentation
 
+**CHANGELOG Format**:
+- Follows [Keep a Changelog](https://keepachangelog.com/) format where possible
+- Use sections: `### Added`, `### Changed`, `### Fixed`, `### Removed`
+- For breaking changes, use `### Breaking Changes` with nested `####` subsections
+- **Critical**: CHANGELOG.md content becomes GitHub release notes automatically
+- Write in user-facing language, not technical commit messages
+
 **See also**: [FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) for per-page configuration options.

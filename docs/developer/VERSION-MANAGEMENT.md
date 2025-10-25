@@ -6,6 +6,8 @@ This guide explains how to manage plugin versions using the automated `version-b
 
 The version-bump script automates the process of updating version numbers across all files in the project, ensuring consistency and reducing manual errors.
 
+**Key Integration**: CHANGELOG.md content automatically becomes GitHub release notes when you push a version tag. Write for end users!
+
 ## Quick Start
 
 ```bash
@@ -77,6 +79,12 @@ Creates a new unreleased section template at the top:
 
 ```
 
+**⚠️ IMPORTANT**: This section becomes your GitHub release notes!
+- Write in **user-facing language** (not technical commit messages)
+- Follow [Keep a Changelog](https://keepachangelog.com/) format
+- See existing entries (0.8.0, 0.9.0) for examples
+- GitHub Actions automatically extracts this content when you push a tag
+
 ## Output
 
 The script provides clear status for each file:
@@ -92,10 +100,10 @@ The script provides clear status for each file:
 ✅ Version bumped to 0.8.0
 
 Next steps:
-1. Fill in CHANGELOG.md with your changes
+1. Fill in CHANGELOG.md with your changes (becomes GitHub release notes!)
 2. Commit: git add . && git commit -m "chore: Bump version to 0.8.0"
 3. Tag: git tag 0.8.0
-4. Push: git push origin master --tags
+4. Push: git push origin master --tags (triggers automated release)
 ```
 
 ## Smart Features
@@ -152,21 +160,56 @@ npm run set-version 1.0.0
 
 ### Step 2: Fill in CHANGELOG.md
 
-Edit the newly created section:
+Edit the newly created section with **user-facing** release notes:
 
 ```markdown
 ## [1.0.0] - 2025-10-24
 
 ### Added
-- New amazing feature
-- Another cool feature
+- New amazing feature that improves user experience
+- Another cool feature users will love
 
 ### Changed
-- Improved performance
+- Improved performance by 50%
+- Simplified settings UI
 
 ### Fixed
-- Fixed critical bug
+- Fixed critical bug that affected card previews
+- Resolved issue with long URLs
 ```
+
+**⚠️ CRITICAL**: This becomes your GitHub release notes!
+- Write for **end users**, not developers
+- Avoid technical jargon ("refactored", "implemented", etc.)
+- Focus on **user benefits** and **impacts**
+- Follow [Keep a Changelog](https://keepachangelog.com/) format
+
+**Standard sections** (use as needed):
+- `### Added` - New features
+- `### Changed` - Changes to existing functionality
+- `### Fixed` - Bug fixes
+- `### Removed` - Removed features
+- `### Deprecated` - Soon-to-be removed features
+- `### Security` - Security fixes
+
+**For breaking changes**, use nested structure:
+```markdown
+### Breaking Changes
+
+#### Plugin Renamed
+- **Old name**: "Old Name"
+- **New name**: "New Name"
+- **Migration**: Update your settings
+
+#### Setting Removed
+- **Removed**: "Display mode" setting
+- **Reason**: Simplified UX
+- **Alternative**: Use manual line breaks
+```
+
+**Examples**:
+- Simple release: See [CHANGELOG.md](../../CHANGELOG.md) version 0.8.0
+- Complex release with breaking changes: See version 0.9.0
 
 ### Step 3: Commit Changes
 
@@ -188,10 +231,20 @@ git push origin master --tags
 ```
 
 This will trigger the GitHub Actions release workflow, which will:
-- Run tests
-- Build the plugin
-- Create a GitHub release
-- Upload plugin files (main.js, manifest.json, styles.css)
+1. **Extract release notes** from CHANGELOG.md for this version
+2. **Run tests** to ensure everything passes
+3. **Build the plugin** (compile TypeScript, bundle with esbuild)
+4. **Create GitHub release** with CHANGELOG content as release body
+5. **Upload plugin files** (main.js, manifest.json, styles.css)
+6. **Add comparison link** to see full diff from previous version
+
+**What users see**:
+- Your CHANGELOG content formatted as the release description
+- Installation instructions
+- Downloadable plugin files
+- Link to full changelog comparing versions
+
+**No manual release creation needed** - it's all automated from your CHANGELOG!
 
 ## Advanced Usage
 

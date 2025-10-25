@@ -30,12 +30,15 @@ npm run set-version X.Y.Z      # Bump version (updates 6 files)
 
 - [ ] All tests passing
 - [ ] Bump version: `npm run set-version X.Y.Z`
-- [ ] Fill in CHANGELOG.md (user-facing language, not technical jargon)
+- [ ] **Fill in CHANGELOG.md** with user-facing release notes
+  - ⚠️ **IMPORTANT**: This becomes your GitHub release notes automatically!
+  - Use clear, user-friendly language (not technical commit messages)
+  - Follow existing format (see 0.8.0 or 0.9.0 for examples)
 - [ ] Build successful
 - [ ] Commit: `git add . && git commit -m "chore: Bump version to X.Y.Z"`
 - [ ] Tag: `git tag X.Y.Z`
 - [ ] Push: `git push origin master --tags`
-- [ ] GitHub Actions will auto-create release
+- [ ] **GitHub Actions auto-creates release with CHANGELOG content**
 
 **See**: [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) for detailed release workflow
 
@@ -167,6 +170,10 @@ See [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) for complete guide.
 npm run set-version 0.9.0
 
 # 2. Fill in CHANGELOG.md (Added/Changed/Fixed sections)
+# ⚠️ CRITICAL: This becomes your GitHub release notes!
+#    - Use clear, user-friendly language
+#    - Avoid technical jargon or commit messages
+#    - Follow existing format (see 0.8.0 or 0.9.0)
 
 # 3. Commit and tag
 git add .
@@ -174,10 +181,13 @@ git commit -m "chore: Bump version to 0.9.0"
 git tag 0.9.0
 git push origin master --tags
 
-# 4. GitHub Actions auto-creates release
+# 4. GitHub Actions auto-creates release with CHANGELOG content
+#    - Extracts your version section from CHANGELOG.md
+#    - Creates release with proper formatting
+#    - Uploads build artifacts (main.js, manifest.json, styles.css)
 ```
 
-⚠️ **REMINDER**: Fill CHANGELOG immediately while changes are fresh!
+⚠️ **REMINDER**: Fill CHANGELOG immediately while changes are fresh - it's your release notes!
 
 ---
 
@@ -354,6 +364,46 @@ this.plugin.refreshDecorations();
 - Reduced memory usage with smarter caching
 ```
 
+**CHANGELOG format follows Keep a Changelog standard**
+```markdown
+## [0.9.0] - 2025-10-24
+
+### Added
+- New feature description (user benefit)
+
+### Changed
+- What changed and why users care
+
+### Fixed
+- Bug that was fixed (user impact)
+
+### Removed
+- Feature that was removed (migration path if needed)
+```
+
+**For breaking changes, use nested structure**
+```markdown
+## [0.9.0] - 2025-10-24
+
+### Breaking Changes
+
+#### Feature Name Changed
+- **Old**: Previous behavior
+- **New**: New behavior
+- **Migration**: How to update
+
+#### Setting Removed
+- **Removed setting**: "Display mode"
+- **Reason**: Simplified UX
+- **Migration**: Use manual line breaks instead
+```
+
+**CRITICAL: CHANGELOG becomes GitHub release notes**
+- ⚠️ Write for end users, not developers
+- GitHub Actions automatically extracts your version section
+- Formatting is preserved (including nested sections)
+- See [Keep a Changelog](https://keepachangelog.com/) for best practices
+
 **Version script only handles semantic versions**
 ```bash
 # ✅ Works
@@ -366,6 +416,7 @@ npm run set-version 1.0.0-beta.1
 **Fill CHANGELOG.md immediately after version bump**
 - Do it while changes are fresh in memory
 - Easier than trying to remember later
+- It's your release notes - make them good!
 
 ---
 
