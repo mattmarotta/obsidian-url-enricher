@@ -1,7 +1,7 @@
 # URL Enricher
 
 [![GitHub release](https://img.shields.io/github/v/release/mattmarotta/obsidian-url-enricher)](https://github.com/mattmarotta/obsidian-url-enricher/releases/latest)
-[![License](https://img.shields.io/github/license/mattmarotta/obsidian-url-enricher)](LICENSE)
+[![License](https://img.shields.io/github/license/mattmarotta/obsidian-url-enricher?cacheSeconds=3600)](LICENSE)
 
 **Add rich, non-destructive link previews to Obsidian URLs**
 
