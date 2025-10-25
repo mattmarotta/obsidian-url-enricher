@@ -21,8 +21,6 @@ See instant URL previews with title, description, and favicon — all without mo
 
 ![Preview Styles](assets/inline-preview.png) ![Card Style](assets/card-preview.png)
 
-> **Note**: Screenshots coming soon! See [assets/README.md](assets/README.md) for requirements.
-
 ## 🚀 Quick Start
 
 1. **Install** from Obsidian Community Plugins (search "URL Enricher")
