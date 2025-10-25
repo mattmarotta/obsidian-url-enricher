@@ -4,6 +4,17 @@ All notable changes to URL Enricher will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [0.10.0] - 2025-10-25
+
 ### Changed
 
 #### Length Constraint Minimums Removed
