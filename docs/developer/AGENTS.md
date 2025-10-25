@@ -149,17 +149,30 @@ import { METADATA_CACHE_MAX_SIZE } from "./constants";
 if (cache.size > METADATA_CACHE_MAX_SIZE) { }
 ```
 
-## Documentation
+## Documentation Structure (Updated for v1.0.0)
 
-**For Developers**:
+**New Modular Documentation** (as of v1.0.0):
+- **README.md**: Concise (~130 lines, down from 619) with links to detailed docs
+- **assets/**: Visual assets folder (demo.gif, screenshots) - see [assets/README.md](../../assets/README.md)
+- **docs/**: Comprehensive documentation organized by audience
+
+### For Users:
+- [docs/USER-GUIDE.md](../USER-GUIDE.md) - Complete usage guide (~500 lines)
+- [docs/QUICK-REFERENCE.md](../QUICK-REFERENCE.md) - Cheat sheet for settings/commands
+- [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Common issues and solutions
+- [docs/ADVANCED.md](../ADVANCED.md) - Console API, debugging, performance
+- [docs/features/FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) - Per-page configuration
+
+### For Developers:
 - [DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md) - Workflows, checklists, debugging guide
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contributing guidelines, code standards
-- [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) - Release process, version bumping
+- [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) - Release process, version bumping, **pre-release checklist**
 - [TESTING.md](TESTING.md) - Testing infrastructure, coverage
-
-**For Understanding the System**:
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture, design patterns
-- [README.md](../../README.md) - User-facing documentation
+
+**Documentation Index**: [docs/README.md](../README.md) - Navigation hub for all documentation
+
+**Visual Assets Guide**: [assets/README.md](../../assets/README.md) - Instructions for creating demo GIFs and screenshots
 
 **CHANGELOG Format**:
 - Follows [Keep a Changelog](https://keepachangelog.com/) format where possible
@@ -168,4 +181,4 @@ if (cache.size > METADATA_CACHE_MAX_SIZE) { }
 - **Critical**: CHANGELOG.md content becomes GitHub release notes automatically
 - Write in user-facing language, not technical commit messages
 
-**See also**: [FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) for per-page configuration options.
+**Pre-Release Checklist**: See [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md#pre-release-documentation-checklist) for documentation and asset review checklist before releases.

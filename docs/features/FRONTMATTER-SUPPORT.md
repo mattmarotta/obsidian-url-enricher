@@ -154,3 +154,10 @@ If a frontmatter property is not specified, the plugin will use the global setti
 - Invalid values will be ignored, and the plugin will fall back to global settings
 - Changes to frontmatter take effect immediately in Live Preview mode
 - The `keepEmoji` setting is intentionally not exposed to frontmatter (it's a global preference)
+
+## Related Documentation
+
+- **[User Guide](../USER-GUIDE.md)** - Complete plugin usage guide
+- **[Quick Reference](../QUICK-REFERENCE.md)** - Frontmatter properties table and cheat sheet
+- **[Frontmatter Troubleshooting](FRONTMATTER-TROUBLESHOOTING.md)** - Debug frontmatter issues
+- **[Troubleshooting Guide](../TROUBLESHOOTING.md)** - Common issues and solutions

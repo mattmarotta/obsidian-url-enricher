@@ -246,6 +246,138 @@ This will trigger the GitHub Actions release workflow, which will:
 
 **No manual release creation needed** - it's all automated from your CHANGELOG!
 
+## Pre-Release Documentation Checklist
+
+Before each release, verify documentation and visual assets are up-to-date. This ensures users see accurate screenshots and documentation that matches the current version.
+
+### Documentation Review
+
+- [ ] **README.md** reflects current features and quick start instructions
+- [ ] **CHANGELOG.md** has complete release notes for this version
+- [ ] **docs/USER-GUIDE.md** matches current functionality
+- [ ] **docs/QUICK-REFERENCE.md** has accurate settings and commands
+- [ ] All documentation links are working (run link checker if available)
+
+### Visual Assets Review
+
+- [ ] **`assets/demo.gif`** shows current UI and behavior
+- [ ] **`assets/settings-ui-1.png`** and **`assets/settings-ui-2.png`** matche current settings panel layout
+- [ ] **`assets/inline-preview.png`** shows current inline preview style
+- [ ] **`assets/card-preview.png`** shows current card preview style
+- [ ] All screenshots show current Obsidian theme/styling
+- [ ] No outdated UI elements visible in screenshots
+
+### Settings Changes Check
+
+Run through these checks if UI or settings changed:
+
+- [ ] If settings panel layout changed → update `settings-ui-1.png` and `settings-ui-2.png`
+- [ ] If preview styles changed significantly → update preview screenshots
+- [ ] If new major features added → consider updating `demo.gif`
+- [ ] If frontmatter properties added/changed → update `QUICK-REFERENCE.md`
+- [ ] If console API commands added/changed → update `QUICK-REFERENCE.md` and `ADVANCED.md`
+
+### When to Update Screenshots
+
+**Always update when:**
+- Settings panel layout changes (new settings, reorganization)
+- New settings are added or removed
+- Preview style appearance changes significantly (colors, spacing, layout)
+- Plugin UI has visual bugs that were fixed
+
+**Optional update when:**
+- Minor text changes in settings descriptions
+- Small styling tweaks (<5% visual difference)
+- Non-visible functionality changes (internal refactoring)
+
+**Never update when:**
+- Only code changes (no UI impact)
+- Documentation-only changes
+- Test updates
+
+### Screenshot and GIF Creation Tools
+
+**Screenshots:**
+- **macOS**: `Cmd+Shift+4` (selection), `Cmd+Shift+5` (screenshot tool)
+- **Windows**: Snipping Tool, `Win+Shift+S`
+- **Linux**: gnome-screenshot, Spectacle, Flameshot
+
+**GIF Recording:**
+- **macOS**: QuickTime Player (record) + [Gifski](https://gif.ski) (convert), [Kap](https://getkap.co), LICEcap
+- **Windows**: [ScreenToGif](https://www.screentogif.com/), [ShareX](https://getsharex.com/)
+- **Cross-platform**: [OBS Studio](https://obsproject.com/), [Peek](https://github.com/phw/peek) (Linux)
+
+**GIF Optimization:**
+- Keep file size under 5MB for GitHub
+- Use tools like Gifski, gifsicle, or online optimizers
+- Balance quality vs file size (aim for 720p-1080p source, 60-120% speed)
+
+### Documentation Standards
+
+When updating documentation:
+- **Consistency**: Ensure terminology is consistent across all docs
+- **Accuracy**: All code examples must work with current version
+- **Completeness**: Cover all user-facing features
+- **Clarity**: Write for users, not developers
+- **Links**: Verify all internal links work
+
+### Pre-Release Checklist Summary
+
+Run this quick check before creating a release:
+
+```bash
+# 1. Visual check
+ls assets/
+# Verify: demo.gif, inline-preview.png, card-preview.png, settings-ui-1.png, settings-ui-2.png
+
+# 2. Build check
+npm run build
+npm test
+
+# 3. Documentation check
+# - Open README.md - does it match current features?
+# - Open docs/QUICK-REFERENCE.md - are settings accurate?
+# - Open CHANGELOG.md - are release notes complete?
+
+# 4. If all checks pass:
+npm run set-version X.Y.Z
+# Fill in CHANGELOG.md
+git add .
+git commit -m "chore: Bump version to X.Y.Z"
+git tag X.Y.Z
+git push origin master --tags
+```
+
+### Asset Update Workflow
+
+If screenshots/GIF need updating before release:
+
+1. **Capture new assets** using tools above
+2. **Optimize** (compress images, optimize GIF size)
+3. **Replace** old files in `assets/` directory
+4. **Commit** asset changes before version bump:
+   ```bash
+   git add assets/
+   git commit -m "docs: Update screenshots for v X.Y.Z"
+   ```
+5. **Then proceed** with normal release workflow
+
+### Common Documentation Mistakes
+
+**❌ Don't:**
+- Ship with outdated screenshots showing old UI
+- Reference features that don't exist yet
+- Include broken links to non-existent docs
+- Use screenshots from development/debug builds
+- Forget to update version numbers in examples
+
+**✅ Do:**
+- Test all documentation links before release
+- Verify screenshots match production UI
+- Keep README concise and up-to-date
+- Update QUICK-REFERENCE when settings change
+- Review CHANGELOG for completeness
+
 ## Advanced Usage
 
 ### Using in Scripts
