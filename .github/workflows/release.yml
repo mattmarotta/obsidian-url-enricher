@@ -70,7 +70,12 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           
           # Get previous tag for comparison link
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          # Get all tags sorted by version, then get the one before current
+          PREVIOUS_TAG=$(git tag -l --sort=-v:refname | grep -A1 "^${VERSION}$" | tail -n1)
+          if [ "$PREVIOUS_TAG" = "$VERSION" ] || [ -z "$PREVIOUS_TAG" ]; then
+            # No previous tag found, use first commit
+            PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
           echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
@@ -83,19 +88,6 @@ jobs:
             ${{ steps.changelog.outputs.CHANGELOG }}
             
             ---
-            
-            ## Installation
-            
-            1. Download `obsidian-inline-link-preview-${{ steps.get_version.outputs.VERSION }}.zip`
-            2. Extract the files to your vault's `.obsidian/plugins/obsidian-inline-link-preview/` directory
-            3. Reload Obsidian
-            4. Enable the plugin in Settings > Community Plugins
-            
-            ## Files
-            
-            - `main.js` - Plugin code
-            - `manifest.json` - Plugin manifest
-            - `styles.css` - Plugin styles
             
             **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.PREVIOUS_TAG }}...${{ steps.get_version.outputs.VERSION }}
           files: |
