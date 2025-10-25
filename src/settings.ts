@@ -156,15 +156,15 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Maximum card length")
-			.setDesc("Maximum total characters for card-style previews (title + description combined). Cards show more detailed information. Min: 100, Max: 5000")
+			.setDesc("Maximum total characters for card-style previews (title + description combined). Cards show more detailed information. Recommended: 100+, Max: 5000")
 			.addText((text) => {
 				text.setValue(String(settings.maxCardLength));
 				text.inputEl.type = "number";
-				text.inputEl.min = "100";
+				text.inputEl.min = "1";
 				text.inputEl.max = "5000";
 				text.onChange(async (value) => {
 					const parsed = Number(value);
-					if (!Number.isFinite(parsed) || parsed < 100) {
+					if (!Number.isFinite(parsed) || parsed < 1) {
 						return;
 					}
 					this.plugin.settings.maxCardLength = Math.round(parsed);
@@ -176,15 +176,15 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Maximum inline length")
-			.setDesc("Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Min: 50, Max: 5000")
+			.setDesc("Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Recommended: 50+, Max: 5000")
 			.addText((text) => {
 				text.setValue(String(settings.maxInlineLength));
 				text.inputEl.type = "number";
-				text.inputEl.min = "50";
+				text.inputEl.min = "1";
 				text.inputEl.max = "5000";
 				text.onChange(async (value) => {
 					const parsed = Number(value);
-					if (!Number.isFinite(parsed) || parsed < 50) {
+					if (!Number.isFinite(parsed) || parsed < 1) {
 						return;
 					}
 					this.plugin.settings.maxInlineLength = Math.round(parsed);

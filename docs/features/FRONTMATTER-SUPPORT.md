@@ -43,9 +43,9 @@ Even a single property will activate the plugin. You can use any supported front
 ### Maximum Length
 
 **`max-card-length`**
-- **Values**: Number between 100 and 5000
+- **Values**: Number between 1 and 5000
 - **Description**: Maximum total characters for card-style previews (title + description combined)
-- **Note**: Minimum of 100 prevents unusably short previews. Maximum of 5000 prevents performance issues.
+- **Note**: Recommended minimum of 100 for readability. Maximum of 5000 prevents performance issues.
 - **Example**:
   ```yaml
   ---
@@ -54,9 +54,9 @@ Even a single property will activate the plugin. You can use any supported front
   ```
 
 **`max-inline-length`**
-- **Values**: Number between 50 and 5000
+- **Values**: Number between 1 and 5000
 - **Description**: Maximum total characters for inline-style previews (title + description combined)
-- **Note**: Minimum of 50 prevents unusably short previews. Maximum of 5000 prevents performance issues.
+- **Note**: Recommended minimum of 50 for readability. Maximum of 5000 prevents performance issues.
 - **Example**:
   ```yaml
   ---

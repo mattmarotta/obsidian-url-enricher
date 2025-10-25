@@ -2,6 +2,22 @@
 
 All notable changes to URL Enricher will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+#### Length Constraint Minimums Removed
+
+- **Previous behavior**: `max-card-length` required minimum of 100, `max-inline-length` required minimum of 50
+- **New behavior**: Both settings now accept any value from 1 to 5000
+- **Reason**: Users setting values like 90 were confused when they silently fell back to global defaults (300/150)
+- **Recommendation**: Values of 100+ for cards and 50+ for inline are still recommended for readability
+- **Impact**:
+  - Settings UI now shows "Recommended: 100+" instead of hard minimums
+  - Frontmatter values below old minimums (e.g., `max-card-length: 90`) are now respected
+  - Documentation updated to reflect recommended ranges instead of enforced minimums
+- **Migration**: No action needed - existing settings continue to work as before
+
 ## [0.9.1] - 2025-10-25
 
 ### Added
@@ -12,7 +28,7 @@ All notable changes to URL Enricher will be documented in this file.
 - **Benefit**: CHANGELOG.md is now the single source of truth for release documentation
 - **Impact**: No more manual release note creation - just write good CHANGELOG entries
 - **Format**: Supports both simple (0.8.0-style) and complex (0.9.0-style with nested sections) formats
-- **Documentation**: 
+- **Documentation**:
   - Enhanced `VERSION-MANAGEMENT.md` with Keep a Changelog format guidance
   - Updated `DEVELOPER-GUIDE.md` with CHANGELOG formatting examples and best practices
   - Added CHANGELOG format guidelines to `AGENTS.md` for AI agents

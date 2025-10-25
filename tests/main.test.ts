@@ -23,13 +23,13 @@ describe('Plugin Main', () => {
 			// maxCardLength normalization
 			const numericCardLength = Number(normalized.maxCardLength);
 			normalized.maxCardLength = Number.isFinite(numericCardLength)
-				? Math.min(5000, Math.max(100, Math.round(numericCardLength)))
+				? Math.min(5000, Math.max(1, Math.round(numericCardLength)))
 				: DEFAULT_SETTINGS.maxCardLength;
 
 			// maxInlineLength normalization
 			const numericInlineLength = Number(normalized.maxInlineLength);
 			normalized.maxInlineLength = Number.isFinite(numericInlineLength)
-				? Math.min(5000, Math.max(50, Math.round(numericInlineLength)))
+				? Math.min(5000, Math.max(1, Math.round(numericInlineLength)))
 				: DEFAULT_SETTINGS.maxInlineLength;
 
 			// requestTimeoutMs normalization
@@ -46,10 +46,10 @@ describe('Plugin Main', () => {
 		}
 
 		describe('maxCardLength Normalization', () => {
-			it('should clamp value below minimum (100)', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxCardLength: 50 };
+			it('should clamp value below minimum (1)', () => {
+				const settings = { ...DEFAULT_SETTINGS, maxCardLength: 0 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxCardLength).toBe(100);
+				expect(normalized.maxCardLength).toBe(1);
 			});
 
 			it('should clamp value above maximum (5000)', () => {
@@ -64,7 +64,13 @@ describe('Plugin Main', () => {
 				expect(normalized.maxCardLength).toBe(300);
 			});
 
-			it('should accept minimum value (100)', () => {
+			it('should accept minimum value (1)', () => {
+				const settings = { ...DEFAULT_SETTINGS, maxCardLength: 1 };
+				const normalized = normalizeSettings(settings);
+				expect(normalized.maxCardLength).toBe(1);
+			});
+
+			it('should accept recommended minimum value (100)', () => {
 				const settings = { ...DEFAULT_SETTINGS, maxCardLength: 100 };
 				const normalized = normalizeSettings(settings);
 				expect(normalized.maxCardLength).toBe(100);
@@ -97,7 +103,7 @@ describe('Plugin Main', () => {
 			it('should clamp null to minimum (Number(null) = 0)', () => {
 				const settings = { ...DEFAULT_SETTINGS, maxCardLength: null as any };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxCardLength).toBe(100); // Number(null) = 0, clamped to min
+				expect(normalized.maxCardLength).toBe(1); // Number(null) = 0, clamped to min
 			});
 
 			it('should use default for undefined', () => {
@@ -114,10 +120,10 @@ describe('Plugin Main', () => {
 		});
 
 		describe('maxInlineLength Normalization', () => {
-			it('should clamp value below minimum (50)', () => {
-				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 25 };
+			it('should clamp value below minimum (1)', () => {
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 0 };
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxInlineLength).toBe(50);
+				expect(normalized.maxInlineLength).toBe(1);
 			});
 
 			it('should clamp value above maximum (5000)', () => {
@@ -132,7 +138,13 @@ describe('Plugin Main', () => {
 				expect(normalized.maxInlineLength).toBe(150);
 			});
 
-			it('should accept minimum value (50)', () => {
+			it('should accept minimum value (1)', () => {
+				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 1 };
+				const normalized = normalizeSettings(settings);
+				expect(normalized.maxInlineLength).toBe(1);
+			});
+
+			it('should accept recommended minimum value (50)', () => {
 				const settings = { ...DEFAULT_SETTINGS, maxInlineLength: 50 };
 				const normalized = normalizeSettings(settings);
 				expect(normalized.maxInlineLength).toBe(50);
@@ -273,13 +285,13 @@ describe('Plugin Main', () => {
 			it('should normalize multiple fields at once', () => {
 				const settings = {
 					...DEFAULT_SETTINGS,
-					maxCardLength: 50,      // below min
+					maxCardLength: 0,       // below min
 					maxInlineLength: 10000, // above max
 					requestTimeoutMs: 100,  // below min
 					showFavicon: 'yes' as any,
 				};
 				const normalized = normalizeSettings(settings);
-				expect(normalized.maxCardLength).toBe(100);
+				expect(normalized.maxCardLength).toBe(1);
 				expect(normalized.maxInlineLength).toBe(5000);
 				expect(normalized.requestTimeoutMs).toBe(500);
 				expect(normalized.showFavicon).toBe(true);

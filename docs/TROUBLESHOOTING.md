@@ -233,14 +233,14 @@ Values must be within valid ranges:
 ---
 # ❌ Wrong
 preview-style: medium           # Must be 'inline' or 'card'
-max-card-length: 50             # Too low (min is 100)
+max-card-length: 0              # Too low (min is 1)
 max-card-length: 10000          # Too high (max is 5000)
 show-favicon: yes               # Must be 'true' or 'false'
 custom-preview-color: "blue"    # Must be hex code like "#0000ff"
 
 # ✅ Correct
 preview-style: card             # or 'inline'
-max-card-length: 400            # 100-5000
+max-card-length: 400            # 1-5000 (recommended: 100+)
 show-favicon: true              # or false
 custom-preview-color: "#4a4a4a" # hex code
 ---

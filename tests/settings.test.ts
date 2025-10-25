@@ -67,8 +67,8 @@ describe('Settings', () => {
 				expect(DEFAULT_SETTINGS.maxCardLength).toBe(300);
 			});
 
-			it('should have maxCardLength within valid range (100-5000)', () => {
-				expect(DEFAULT_SETTINGS.maxCardLength).toBeGreaterThanOrEqual(100);
+			it('should have maxCardLength within valid range (1-5000)', () => {
+				expect(DEFAULT_SETTINGS.maxCardLength).toBeGreaterThanOrEqual(1);
 				expect(DEFAULT_SETTINGS.maxCardLength).toBeLessThanOrEqual(5000);
 			});
 
@@ -80,8 +80,8 @@ describe('Settings', () => {
 				expect(DEFAULT_SETTINGS.maxInlineLength).toBe(150);
 			});
 
-			it('should have maxInlineLength within valid range (50-5000)', () => {
-				expect(DEFAULT_SETTINGS.maxInlineLength).toBeGreaterThanOrEqual(50);
+			it('should have maxInlineLength within valid range (1-5000)', () => {
+				expect(DEFAULT_SETTINGS.maxInlineLength).toBeGreaterThanOrEqual(1);
 				expect(DEFAULT_SETTINGS.maxInlineLength).toBeLessThanOrEqual(5000);
 			});
 
@@ -212,8 +212,8 @@ describe('Settings', () => {
 		});
 
 		describe('Numeric Constraints', () => {
-			it('should enforce maxCardLength minimum of 100', () => {
-				const min = 100;
+			it('should enforce maxCardLength minimum of 1', () => {
+				const min = 1;
 				expect(DEFAULT_SETTINGS.maxCardLength).toBeGreaterThanOrEqual(min);
 			});
 
@@ -222,8 +222,8 @@ describe('Settings', () => {
 				expect(DEFAULT_SETTINGS.maxCardLength).toBeLessThanOrEqual(max);
 			});
 
-			it('should enforce maxInlineLength minimum of 50', () => {
-				const min = 50;
+			it('should enforce maxInlineLength minimum of 1', () => {
+				const min = 1;
 				expect(DEFAULT_SETTINGS.maxInlineLength).toBeGreaterThanOrEqual(min);
 			});
 
@@ -281,7 +281,15 @@ describe('Settings', () => {
 	});
 
 	describe('Settings Edge Cases', () => {
-		it('should handle minimum maxCardLength (100)', () => {
+		it('should handle minimum maxCardLength (1)', () => {
+			const settings: InlineLinkPreviewSettings = {
+				...DEFAULT_SETTINGS,
+				maxCardLength: 1,
+			};
+			expect(settings.maxCardLength).toBe(1);
+		});
+
+		it('should handle recommended minimum maxCardLength (100)', () => {
 			const settings: InlineLinkPreviewSettings = {
 				...DEFAULT_SETTINGS,
 				maxCardLength: 100,
@@ -297,7 +305,15 @@ describe('Settings', () => {
 			expect(settings.maxCardLength).toBe(5000);
 		});
 
-		it('should handle minimum maxInlineLength (50)', () => {
+		it('should handle minimum maxInlineLength (1)', () => {
+			const settings: InlineLinkPreviewSettings = {
+				...DEFAULT_SETTINGS,
+				maxInlineLength: 1,
+			};
+			expect(settings.maxInlineLength).toBe(1);
+		});
+
+		it('should handle recommended minimum maxInlineLength (50)', () => {
 			const settings: InlineLinkPreviewSettings = {
 				...DEFAULT_SETTINGS,
 				maxInlineLength: 50,

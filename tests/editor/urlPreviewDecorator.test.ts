@@ -65,7 +65,7 @@ function parsePageConfig(text: string): {
 		const maxCardMatch = line.match(/^max-card-length:\s*(\d+)$/i);
 		if (maxCardMatch) {
 			const value = parseInt(maxCardMatch[1], 10);
-			if (value >= 100 && value <= 5000) {
+			if (value >= 1 && value <= 5000) {
 				config.maxCardLength = value;
 			}
 		}
@@ -74,7 +74,7 @@ function parsePageConfig(text: string): {
 		const maxInlineMatch = line.match(/^max-inline-length:\s*(\d+)$/i);
 		if (maxInlineMatch) {
 			const value = parseInt(maxInlineMatch[1], 10);
-			if (value >= 50 && value <= 5000) {
+			if (value >= 1 && value <= 5000) {
 				config.maxInlineLength = value;
 			}
 		}
@@ -184,7 +184,15 @@ max-card-length: 500
 				expect(config.maxCardLength).toBe(500);
 			});
 
-			it('should parse minimum max-card-length (100)', () => {
+			it('should parse minimum max-card-length (1)', () => {
+				const text = `---
+max-card-length: 1
+---`;
+				const config = parsePageConfig(text);
+				expect(config.maxCardLength).toBe(1);
+			});
+
+			it('should parse recommended minimum max-card-length (100)', () => {
 				const text = `---
 max-card-length: 100
 ---`;
@@ -208,7 +216,15 @@ max-inline-length: 200
 				expect(config.maxInlineLength).toBe(200);
 			});
 
-			it('should parse minimum max-inline-length (50)', () => {
+			it('should parse minimum max-inline-length (1)', () => {
+				const text = `---
+max-inline-length: 1
+---`;
+				const config = parsePageConfig(text);
+				expect(config.maxInlineLength).toBe(1);
+			});
+
+			it('should parse recommended minimum max-inline-length (50)', () => {
 				const text = `---
 max-inline-length: 50
 ---`;
@@ -343,9 +359,9 @@ preview-style: invalid
 			});
 
 
-			it('should ignore max-card-length below minimum (100)', () => {
+			it('should ignore max-card-length below minimum (1)', () => {
 				const text = `---
-max-card-length: 50
+max-card-length: 0
 ---`;
 				const config = parsePageConfig(text);
 				expect(config.maxCardLength).toBeUndefined();
@@ -359,9 +375,9 @@ max-card-length: 10000
 				expect(config.maxCardLength).toBeUndefined();
 			});
 
-			it('should ignore max-inline-length below minimum (50)', () => {
+			it('should ignore max-inline-length below minimum (1)', () => {
 				const text = `---
-max-inline-length: 25
+max-inline-length: 0
 ---`;
 				const config = parsePageConfig(text);
 				expect(config.maxInlineLength).toBeUndefined();

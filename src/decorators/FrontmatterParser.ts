@@ -59,7 +59,7 @@ export function parsePageConfig(text: string): PageConfig {
 		const maxCardMatch = line.match(/^max-card-length:\s*(\d+)$/i);
 		if (maxCardMatch) {
 			const value = parseInt(maxCardMatch[1], 10);
-			if (value >= 100 && value <= 5000) {
+			if (value >= 1 && value <= 5000) {
 				config.maxCardLength = value;
 			}
 		}
@@ -68,7 +68,7 @@ export function parsePageConfig(text: string): PageConfig {
 		const maxInlineMatch = line.match(/^max-inline-length:\s*(\d+)$/i);
 		if (maxInlineMatch) {
 			const value = parseInt(maxInlineMatch[1], 10);
-			if (value >= 50 && value <= 5000) {
+			if (value >= 1 && value <= 5000) {
 				config.maxInlineLength = value;
 			}
 		}

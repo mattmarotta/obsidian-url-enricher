@@ -156,7 +156,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	private normalizeSettings(): void {
 		const numericCardLength = Number(this.settings.maxCardLength);
 		this.settings.maxCardLength = Number.isFinite(numericCardLength)
-			? Math.min(5000, Math.max(100, Math.round(numericCardLength)))
+			? Math.min(5000, Math.max(1, Math.round(numericCardLength)))
 			: DEFAULT_SETTINGS.maxCardLength;
 
 		// Migration: maxBubbleLength -> maxInlineLength (v0.9.0)
@@ -168,7 +168,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 
 		const numericInlineLength = Number(this.settings.maxInlineLength);
 		this.settings.maxInlineLength = Number.isFinite(numericInlineLength)
-			? Math.min(5000, Math.max(50, Math.round(numericInlineLength)))
+			? Math.min(5000, Math.max(1, Math.round(numericInlineLength)))
 			: DEFAULT_SETTINGS.maxInlineLength;
 
 		// Migration: Remove deprecated displayMode (v0.9.0)

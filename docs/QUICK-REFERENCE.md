@@ -9,8 +9,8 @@ Use these properties in your note frontmatter to override global settings:
 | Property | Values | Description | Example |
 |----------|--------|-------------|---------|
 | `preview-style` | `inline`, `card` | Preview style for this page | `preview-style: card` |
-| `max-card-length` | 100-5000 | Max characters for card previews | `max-card-length: 400` |
-| `max-inline-length` | 50-5000 | Max characters for inline previews | `max-inline-length: 200` |
+| `max-card-length` | 1-5000 (recommended: 100+) | Max characters for card previews | `max-card-length: 400` |
+| `max-inline-length` | 1-5000 (recommended: 50+) | Max characters for inline previews | `max-inline-length: 200` |
 | `show-favicon` | `true`, `false` | Show/hide favicons | `show-favicon: false` |
 | `include-description` | `true`, `false` | Show/hide descriptions | `include-description: true` |
 | `preview-color-mode` | `none`, `grey`, `custom` | Background color mode | `preview-color-mode: grey` |
