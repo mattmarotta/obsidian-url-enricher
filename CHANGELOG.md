@@ -2,6 +2,20 @@
 
 All notable changes to URL Enricher will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Frontmatter-only activation mode**: New "Require frontmatter to activate" setting allows opt-in per page. When enabled, the plugin only shows previews on pages with frontmatter properties. This is useful for users who only want previews in specific notes (e.g., research, bookmarks) rather than across their entire vault.
+
+### Fixed
+- **Title truncation**: Titles now respect max length settings. Previously, very long titles (e.g., from Instagram) bypassed truncation and exceeded configured limits. Both title and description are now intelligently truncated to fit within the maximum length:
+  - If title alone exceeds max length → title is truncated, description removed
+  - If title + description exceed max length → both are truncated intelligently
+  - Titles are preserved up to the limit; descriptions are truncated or removed as needed
+
+### Changed
+- Title truncation priority: When content exceeds max length, titles are always preserved (truncated if needed), and descriptions are added only if space permits.
+
 ## [0.9.0] - TBD
 
 ### Breaking Changes

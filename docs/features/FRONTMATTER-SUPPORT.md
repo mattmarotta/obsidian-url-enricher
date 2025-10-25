@@ -2,6 +2,30 @@
 
 The URL Enricher plugin supports per-page configuration through frontmatter properties. This allows you to customize preview behavior for individual notes without changing global settings.
 
+## Frontmatter-Only Mode (Opt-In Per Page)
+
+By default, URL Enricher activates on all pages in your vault. If you prefer to use the plugin only on specific pages, enable **"Require frontmatter to activate"** in settings:
+
+**Settings → URL Enricher → Plugin Activation → Require frontmatter to activate**
+
+When enabled:
+- Pages **with** frontmatter properties → Plugin active, shows previews
+- Pages **without** frontmatter → Plugin inactive, no previews
+
+This is useful if you:
+- Only want previews in certain types of notes (research, bookmarks, etc.)
+- Want to reduce visual clutter in most notes
+- Prefer explicit opt-in behavior
+
+**Example:** To activate the plugin on a specific page, add any frontmatter property:
+```yaml
+---
+preview-style: inline
+---
+```
+
+Even a single property will activate the plugin. You can use any supported frontmatter property (see below).
+
 ## Supported Properties
 
 ### Preview Style

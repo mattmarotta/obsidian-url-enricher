@@ -405,6 +405,7 @@ describe('Plugin Main', () => {
 				previewColorMode: 'custom' as const,
 				customPreviewColor: '#ff0000',
 				showHttpErrorWarnings: false,
+				requireFrontmatter: true,
 			};
 			const merged = mergeSettings(loaded);
 			expect(merged).toEqual(loaded);

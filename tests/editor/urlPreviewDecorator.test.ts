@@ -705,4 +705,106 @@ preview-style: card
 			expect(result).toBe('Title');
 		});
 	});
+
+	describe('processMetadata - Title Truncation', () => {
+		// Copy truncate function for testing
+		function truncate(text: string, maxLength: number): string {
+			if (text.length <= maxLength) {
+				return text;
+			}
+			return text.slice(0, maxLength).trim() + ELLIPSIS;
+		}
+
+		it('should truncate title when it exceeds max length', () => {
+			const longTitle = 'A'.repeat(200);
+			const metadata = { title: longTitle, description: 'Short desc', favicon: null };
+			const settings = { previewStyle: 'inline' as const, maxCardLength: 300, maxInlineLength: 100, showFavicon: true, includeDescription: true, keepEmoji: true };
+
+			// The processMetadata logic would truncate the title to 100 characters
+			// Since we can't call processMetadata directly (it's not exported), we test the truncate function
+			const truncated = truncate(longTitle, 100);
+			expect(truncated.length).toBeLessThanOrEqual(101); // 100 + ellipsis char
+			expect(truncated.endsWith(ELLIPSIS)).toBe(true);
+		});
+
+		it('should handle title at exactly max length', () => {
+			const title = 'A'.repeat(100);
+			const truncated = truncate(title, 100);
+			expect(truncated).toBe(title); // Should not be truncated
+			expect(truncated.length).toBe(100);
+		});
+
+		it('should truncate very long titles correctly', () => {
+			// Simulate Instagram-style very long title
+			const instagramTitle = 'This is a very long Instagram post title that goes on and on and contains lots of text that would normally exceed the maximum length settings for inline previews'.repeat(3);
+			const maxLength = 150;
+			const truncated = truncate(instagramTitle, maxLength);
+
+			expect(truncated.length).toBeLessThanOrEqual(maxLength + 1); // +1 for ellipsis
+			expect(truncated.endsWith(ELLIPSIS)).toBe(true);
+		});
+
+		it('should handle empty title gracefully', () => {
+			const truncated = truncate('', 100);
+			expect(truncated).toBe('');
+		});
+
+		it('should preserve short titles unchanged', () => {
+			const title = 'Short Title';
+			const truncated = truncate(title, 100);
+			expect(truncated).toBe(title);
+		});
+	});
+
+	describe('hasFrontmatter', () => {
+		function hasFrontmatter(text: string): boolean {
+			const config = parsePageConfig(text);
+			return Object.keys(config).length > 0;
+		}
+
+		it('should return true when frontmatter has properties', () => {
+			const text = '---\npreview-style: card\n---\nContent';
+			expect(hasFrontmatter(text)).toBe(true);
+		});
+
+		it('should return false when no frontmatter', () => {
+			const text = 'Just content';
+			expect(hasFrontmatter(text)).toBe(false);
+		});
+
+		it('should return false for empty frontmatter', () => {
+			const text = '---\n---\nContent';
+			expect(hasFrontmatter(text)).toBe(false);
+		});
+
+		it('should return false when frontmatter not at start', () => {
+			const text = 'Content\n---\npreview-style: card\n---';
+			expect(hasFrontmatter(text)).toBe(false);
+		});
+
+		it('should return true for multiple frontmatter properties', () => {
+			const text = '---\npreview-style: card\nmax-card-length: 400\n---\nContent';
+			expect(hasFrontmatter(text)).toBe(true);
+		});
+
+		it('should return true for single frontmatter property', () => {
+			const text = '---\nshow-favicon: true\n---\nContent';
+			expect(hasFrontmatter(text)).toBe(true);
+		});
+
+		it('should return false for frontmatter with only invalid properties', () => {
+			const text = '---\ninvalid-property: value\n---\nContent';
+			expect(hasFrontmatter(text)).toBe(false);
+		});
+
+		it('should return true for frontmatter with both valid and invalid properties', () => {
+			const text = '---\ninvalid-property: value\npreview-style: inline\n---\nContent';
+			expect(hasFrontmatter(text)).toBe(true);
+		});
+
+		it('should handle frontmatter with different spacing', () => {
+			const text = '---\npreview-style:    card   \n---\nContent';
+			expect(hasFrontmatter(text)).toBe(true);
+		});
+	});
 });

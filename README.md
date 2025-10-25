@@ -81,8 +81,8 @@ These settings override your global preferences for that specific page only. For
 
 Open **Settings → Community plugins → URL Enricher** to configure:
 
-### Core Settings
-- **Dynamic preview mode** – Enable or disable the plugin entirely. When enabled, bare URLs show rich previews in Live Preview mode.
+### Plugin Activation
+- **Require frontmatter to activate** – When enabled, the plugin only shows previews on pages with frontmatter properties. This allows you to opt-in per page by adding frontmatter to specific notes. Default: OFF (plugin works on all pages).
 
 ### Preview Appearance
 - **Preview style** – Choose between:
@@ -439,6 +439,13 @@ Previews only appear in **Live Preview mode**, not in Source mode or Reading vie
 - Ensure you're in **Live Preview mode** (not Source mode or Reading view)
 - Check that URLs are on their own line or properly formatted as markdown links
 - The plugin is non-destructive: URLs must remain as plain text URLs in your markdown
+- If "Require frontmatter to activate" is enabled, add frontmatter to your note:
+  ```yaml
+  ---
+  preview-style: inline
+  ---
+  ```
+  Even one frontmatter property will activate the plugin for that page.
 
 ### Previews Show Wrong Content
 - Clear metadata cache: `window.inlineLinkPreview.clearAllCaches()` in browser console

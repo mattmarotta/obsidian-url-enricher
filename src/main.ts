@@ -183,6 +183,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 
 		this.settings.showFavicon = Boolean(this.settings.showFavicon);
 		this.settings.keepEmoji = Boolean(this.settings.keepEmoji);
+		this.settings.requireFrontmatter = Boolean(this.settings.requireFrontmatter);
 	}
 
 	/**

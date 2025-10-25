@@ -48,6 +48,14 @@ describe('Settings', () => {
 			it('should default showHttpErrorWarnings to true', () => {
 				expect(DEFAULT_SETTINGS.showHttpErrorWarnings).toBe(true);
 			});
+
+			it('should have requireFrontmatter as boolean', () => {
+				expect(typeof DEFAULT_SETTINGS.requireFrontmatter).toBe('boolean');
+			});
+
+			it('should default requireFrontmatter to false', () => {
+				expect(DEFAULT_SETTINGS.requireFrontmatter).toBe(false);
+			});
 		});
 
 		describe('Numeric Fields', () => {
@@ -149,9 +157,9 @@ describe('Settings', () => {
 				});
 			});
 
-			it('should have exactly 10 fields', () => {
+			it('should have exactly 11 fields', () => {
 				const keys = Object.keys(DEFAULT_SETTINGS);
-				expect(keys).toHaveLength(10);
+				expect(keys).toHaveLength(11);
 			});
 
 			it('should be a valid InlineLinkPreviewSettings object', () => {

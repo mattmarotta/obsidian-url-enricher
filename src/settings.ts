@@ -15,6 +15,7 @@ export interface InlineLinkPreviewSettings {
 	previewColorMode: PreviewColorMode;
 	customPreviewColor: string;
 	showHttpErrorWarnings: boolean;
+	requireFrontmatter: boolean;
 }
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
@@ -28,6 +29,7 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	previewColorMode: "grey",
 	customPreviewColor: "#4a4a4a",
 	showHttpErrorWarnings: true,
+	requireFrontmatter: false,
 };
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
@@ -68,6 +70,22 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		// Apply preview color on display
 		this.updatePreviewColorCSS();
+
+		containerEl.createEl("h3", { text: "Plugin Activation" });
+
+		new Setting(containerEl)
+			.setName("Require frontmatter to activate")
+			.setDesc("Only show previews on pages with frontmatter properties. When enabled, the plugin is opt-in per page.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(settings.requireFrontmatter)
+					.onChange(async (value) => {
+						this.plugin.settings.requireFrontmatter = value;
+						await this.plugin.saveSettings();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
+					}),
+			);
 
 		containerEl.createEl("h3", { text: "Preview Appearance" });
 

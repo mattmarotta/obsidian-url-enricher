@@ -116,3 +116,13 @@ export function parsePageConfig(text: string): PageConfig {
 
 	return config;
 }
+
+/**
+ * Check if document has any frontmatter properties defined
+ * @param text - Document text to check for frontmatter
+ * @returns true if page has frontmatter with at least one property, false otherwise
+ */
+export function hasFrontmatter(text: string): boolean {
+	const config = parsePageConfig(text);
+	return Object.keys(config).length > 0;
+}

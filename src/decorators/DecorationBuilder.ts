@@ -3,7 +3,7 @@ import type { EditorView } from "@codemirror/view";
 import { syntaxTree } from "@codemirror/language";
 import type { InlineLinkPreviewSettings, PreviewStyle } from "../settings";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import { parsePageConfig } from "./FrontmatterParser";
+import { parsePageConfig, hasFrontmatter } from "./FrontmatterParser";
 import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock } from "./UrlMatcher";
 import { UrlPreviewWidget, ErrorIndicatorWidget } from "./PreviewWidget";
 import { stripEmoji } from "./MetadataEnricher";
@@ -123,8 +123,13 @@ function processMetadata(
 		description = null;
 	}
 
+	// Truncate title if it exceeds max length on its own
+	if (title.length > limit && limit > 0) {
+		title = truncate(title, limit);
+		description = null; // No room for description when title is truncated
+	}
 	// Truncate to fit within maximum length for preview style
-	if (description && limit > 0) {
+	else if (description && limit > 0) {
 		const combined = `${title} — ${description}`;
 		if (combined.length > limit) {
 			const titleLength = title.length + TITLE_SEPARATOR_LENGTH;
@@ -250,6 +255,11 @@ export function buildUrlDecorations(
 
 	// Parse page-level configuration from frontmatter
 	const pageConfig = parsePageConfig(text);
+
+	// Check if frontmatter-only mode is enabled
+	if (globalSettings.requireFrontmatter && !hasFrontmatter(text)) {
+		return []; // Return empty decorations - plugin is opt-in via frontmatter
+	}
 
 	// Merge frontmatter config with global settings (frontmatter takes precedence)
 	const previewStyle = pageConfig.previewStyle ?? globalSettings.previewStyle;
