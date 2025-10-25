@@ -25,7 +25,7 @@ When you have a bare URL in your notes like `https://trello.com`, the plugin aut
   - Site name labels in card footers (e.g., "WIKIPEDIA", "REDDIT", "OPENAI")
   - Emoji preservation (optional)
   - Customizable description length with natural word-wrapping
-  - Domain-aware enrichments for Wikipedia, Google Search, and Reddit links
+  - Domain-aware enrichments for Wikipedia, Google Search, Reddit, Twitter/X, and LinkedIn links
 - **Real-Time Updates**: Settings changes apply immediately without page navigation
 - **Clickable Previews**: All inline previews and cards are clickable to open URLs
 - **Cursor-Aware Previews**: Previews instantly hide when cursor is inside a URL, preventing accidental edits and providing clear visual feedback during editing

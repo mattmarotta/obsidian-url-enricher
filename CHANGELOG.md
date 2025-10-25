@@ -109,6 +109,20 @@ Update any custom CSS targeting plugin classes:
 - **Benefit**: Ensures title, description, favicon, and site name all match actual page content
 - **Note**: Custom link text still visible in source mode
 
+#### LinkedIn Title Cleaning
+- **Added**: New LinkedIn metadata handler for cleaner, more readable titles
+- **Problem**: LinkedIn titles start with hashtags: `#tag1 #tag2 | Author | 17 comments — Content`
+- **Solution**: Automatically cleans to: `Author — Content`
+- **Features**:
+  - Removes leading hashtag blocks
+  - Removes comment counts ("17 comments", "1 comment")
+  - Preserves hashtags that appear naturally in content
+  - Extracts author name and content preview
+  - Works with posts, articles, company pages, and profiles
+- **Example**:
+  - Before: `#personalbranding #careerbranding | Hina Arora | 17 comments — We are using the ChatGPT...`
+  - After: `Hina Arora — We are using the ChatGPT...`
+
 ## [0.8.0] - 2025-10-24
 
 ### Added

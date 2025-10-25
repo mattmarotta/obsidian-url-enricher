@@ -1,5 +1,6 @@
 import type { MetadataHandlerContext, MetadataHandler } from "./metadataHandler";
 import { GoogleSearchMetadataHandler } from "./googleSearchMetadataHandler";
+import { LinkedInMetadataHandler } from "./linkedinMetadataHandler";
 import { RedditMetadataHandler } from "./redditMetadataHandler";
 import { TwitterMetadataHandler } from "./twitterMetadataHandler";
 import { WikipediaMetadataHandler } from "./wikipediaMetadataHandler";
@@ -12,5 +13,6 @@ export function createDefaultMetadataHandlers(): MetadataHandler[] {
 		new RedditMetadataHandler(),
 		new GoogleSearchMetadataHandler(),
 		new TwitterMetadataHandler(),
+		new LinkedInMetadataHandler(),
 	];
 }

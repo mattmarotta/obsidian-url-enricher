@@ -4,6 +4,7 @@ import { WikipediaMetadataHandler } from '../../src/services/metadataHandlers/wi
 import { RedditMetadataHandler } from '../../src/services/metadataHandlers/redditMetadataHandler';
 import { GoogleSearchMetadataHandler } from '../../src/services/metadataHandlers/googleSearchMetadataHandler';
 import { TwitterMetadataHandler } from '../../src/services/metadataHandlers/twitterMetadataHandler';
+import { LinkedInMetadataHandler } from '../../src/services/metadataHandlers/linkedinMetadataHandler';
 import type { LinkMetadata } from '../../src/services/types';
 import { DEFAULT_SETTINGS } from '../../src/settings';
 
@@ -1731,3 +1732,311 @@ describe('Metadata Handlers', () => {
 		});
 	});
 });
+
+	describe('LinkedInMetadataHandler', () => {
+		let handler: LinkedInMetadataHandler;
+		let mockRequest: ReturnType<typeof vi.fn>;
+		let context: MetadataHandlerContext;
+		let metadata: LinkMetadata;
+
+		beforeEach(() => {
+			handler = new LinkedInMetadataHandler();
+			mockRequest = vi.fn();
+			metadata = {
+				title: '',
+				description: null,
+				favicon: null,
+				siteName: null,
+			};
+		});
+
+		describe('matches', () => {
+			it('should match linkedin.com', () => {
+				expect(handler.matches({
+					url: new URL('https://linkedin.com/posts/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://linkedin.com/posts/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should match www.linkedin.com', () => {
+				expect(handler.matches({
+					url: new URL('https://www.linkedin.com/posts/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://www.linkedin.com/posts/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should match mobile.linkedin.com', () => {
+				expect(handler.matches({
+					url: new URL('https://mobile.linkedin.com/posts/username'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://mobile.linkedin.com/posts/username',
+					settings: {} as any,
+				})).toBe(true);
+			});
+
+			it('should not match non-LinkedIn domains', () => {
+				expect(handler.matches({
+					url: new URL('https://example.com'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://example.com',
+					settings: {} as any,
+				})).toBe(false);
+			});
+
+			it('should not match linkedin-like domains', () => {
+				expect(handler.matches({
+					url: new URL('https://notlinkedin.com'),
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					originalUrl: 'https://notlinkedin.com',
+					settings: {} as any,
+				})).toBe(false);
+			});
+		});
+
+		describe('title cleaning', () => {
+			it('should clean title with hashtags, author, comments, and content', async () => {
+				metadata.title = '#personalbranding #careerbranding #hinaarora | Hina Arora | 17 comments — We are using the ChatGPT...';
+				const url = new URL('https://linkedin.com/posts/hinaaroraa_personalbranding-activity-123');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('Hina Arora — We are using the ChatGPT...');
+			});
+
+			it('should preserve hashtags that appear in content', async () => {
+				metadata.title = '#coding | John Doe | 5 comments — Check out #Python tips and #JavaScript tricks';
+				const url = new URL('https://linkedin.com/posts/johndoe-activity-456');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('John Doe — Check out #Python tips and #JavaScript tricks');
+			});
+
+			it('should handle title with author but no content', async () => {
+				metadata.title = '#tags #more | Author Name';
+				const url = new URL('https://linkedin.com/posts/author-activity-789');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('Author Name');
+			});
+
+			it('should handle title with content but no clear author', async () => {
+				metadata.title = '#tags — Great post about coding';
+				const url = new URL('https://linkedin.com/posts/activity-999');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('Great post about coding');
+			});
+
+			it('should handle article titles without hashtags', async () => {
+				metadata.title = 'How to Code Better | John Doe — A comprehensive guide';
+				const url = new URL('https://linkedin.com/pulse/how-to-code-better');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('John Doe — A comprehensive guide');
+			});
+
+			it('should handle malformed title gracefully', async () => {
+				metadata.title = 'Just some random text without structure';
+				const url = new URL('https://linkedin.com/posts/random');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('Just some random text without structure');
+			});
+
+			it('should handle title with only hashtags', async () => {
+				metadata.title = '#tag1 #tag2 #tag3';
+				const url = new URL('https://linkedin.com/posts/hashtags-only');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBeTruthy();
+			});
+
+			it('should not modify title if no title present', async () => {
+				metadata.title = null;
+				const url = new URL('https://linkedin.com/posts/no-title');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBeNull();
+			});
+
+			it('should handle title with multiple pipes and dashes', async () => {
+				metadata.title = '#tech #ai | Author | Company | 42 comments — Amazing AI breakthrough — mind-blowing';
+				const url = new URL('https://linkedin.com/posts/complex-structure');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toContain('Author');
+				expect(metadata.title).toContain('—');
+				expect(metadata.title).not.toContain('#tech');
+				expect(metadata.title).not.toContain('comments');
+			});
+
+			it('should remove comment counts', async () => {
+				metadata.title = 'Author Name | 1 comment — Single comment post';
+				const url = new URL('https://linkedin.com/posts/one-comment');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.title).toBe('Author Name — Single comment post');
+			expect(metadata.title).not.toContain('1 comment');
+			});
+		});
+
+		describe('site name', () => {
+			it('should set siteName to LinkedIn if not already set', async () => {
+				metadata.title = '#tag | Author — Content';
+				const url = new URL('https://linkedin.com/posts/test');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.siteName).toBe('LinkedIn');
+			});
+
+			it('should not override existing siteName', async () => {
+				metadata.title = '#tag | Author — Content';
+				metadata.siteName = 'Custom Site Name';
+				const url = new URL('https://linkedin.com/posts/test');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.siteName).toBe('Custom Site Name');
+			});
+		});
+
+		describe('description handling', () => {
+			it('should preserve existing description', async () => {
+				metadata.title = '#tag | Author — Content';
+				metadata.description = 'Existing description text';
+				const url = new URL('https://linkedin.com/posts/test');
+
+				context = {
+					originalUrl: url.href,
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+				expect(metadata.description).toBe('Existing description text');
+			});
+		});
+	});
