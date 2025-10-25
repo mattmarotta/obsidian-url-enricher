@@ -64,9 +64,9 @@ Updates the version line:
 ```
 
 ### 6. **CHANGELOG.md**
-Creates a new unreleased section template at the top:
+Promotes the current `Unreleased` notes into the new version section and seeds a fresh template for future work:
 ```markdown
-## [0.8.0] - 2025-10-24
+## [Unreleased]
 
 ### Added
 -
@@ -76,6 +76,9 @@ Creates a new unreleased section template at the top:
 
 ### Fixed
 -
+
+## [0.8.0] - 2025-10-24
+- <your existing Unreleased entries are moved here automatically>
 
 ```
 
@@ -95,7 +98,7 @@ The script provides clear status for each file:
 ✓ Updated package-lock.json
 ✓ Updated versions.json
 ✓ Updated AGENTS.md
-✓ Updated CHANGELOG.md (added unreleased section)
+✓ Updated CHANGELOG.md (promoted Unreleased entries)
 
 ✅ Version bumped to 0.8.0
 
@@ -121,7 +124,11 @@ If the version already exists in CHANGELOG.md, it won't create a duplicate:
 ℹ Version 0.8.0 already exists in CHANGELOG.md
 ```
 
-### 2. Error Handling
+### 2. Automatic Unreleased Promotion
+
+The script moves everything under `## [Unreleased]` into the new version section, then recreates a blank `Unreleased` template. Keep logging day-to-day changes under `Unreleased`; they will ship automatically the next time you bump the version.
+
+### 3. Error Handling
 
 The script handles missing or malformed files gracefully:
 
@@ -136,7 +143,7 @@ The script handles missing or malformed files gracefully:
 
 The script continues even if optional files fail, ensuring core version files are always updated.
 
-### 3. Validation
+### 4. Validation
 
 Version format is validated before making any changes:
 

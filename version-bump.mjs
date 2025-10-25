@@ -69,7 +69,7 @@ try {
 	console.warn(`⚠ Could not update ${AGENTS_FILE}: ${error.message}`);
 }
 
-// Update CHANGELOG.md - Add new unreleased section at top
+// Update CHANGELOG.md - Promote Unreleased section (if present) and add new version section
 try {
 	let changelogContent = readFileSync(CHANGELOG_FILE, "utf8");
 
@@ -81,10 +81,8 @@ try {
 		const firstVersionMatch = changelogContent.match(/^## \[/m);
 
 		if (firstVersionMatch) {
-			const today = new Date().toISOString().split('T')[0];
-			const newSection = `## [${targetVersion}] - ${today}
-
-### Added
+			const today = new Date().toISOString().split("T")[0];
+			const emptySection = `### Added
 -
 
 ### Changed
@@ -94,15 +92,42 @@ try {
 -
 
 `;
-			// Insert new section before the first existing version
-			const insertPosition = firstVersionMatch.index;
+
+			const unreleasedRegex = /^## \[Unreleased\]\s*\n([\s\S]*?)(?=^## \[|\Z)/m;
+			const unreleasedMatch = changelogContent.match(unreleasedRegex);
+
+			let newSectionBody = emptySection;
+			let insertPosition = firstVersionMatch.index;
+
+			if (unreleasedMatch) {
+				const [unreleasedBlock, unreleasedBodyRaw] = unreleasedMatch;
+				const unreleasedContent = unreleasedBodyRaw.trim();
+
+				if (unreleasedContent.length > 0) {
+					newSectionBody = `${unreleasedContent}\n\n`;
+				}
+
+				const placeholder = `## [Unreleased]\n\n${emptySection}`;
+				const startIndex = unreleasedMatch.index;
+				const endIndex = startIndex + unreleasedBlock.length;
+
+				changelogContent =
+					changelogContent.slice(0, startIndex) +
+					placeholder +
+					changelogContent.slice(endIndex);
+
+				insertPosition = startIndex + placeholder.length;
+			}
+
+			const newSection = `## [${targetVersion}] - ${today}\n\n${newSectionBody}`;
+
 			changelogContent =
 				changelogContent.slice(0, insertPosition) +
 				newSection +
 				changelogContent.slice(insertPosition);
 
 			writeFileSync(CHANGELOG_FILE, changelogContent);
-			console.log(`✓ Updated ${CHANGELOG_FILE} (added unreleased section)`);
+			console.log(`✓ Updated ${CHANGELOG_FILE} (promoted Unreleased entries)`);
 		} else {
 			console.warn(`⚠ Could not find version header in ${CHANGELOG_FILE}`);
 		}

@@ -34,6 +34,7 @@ npm run set-version X.Y.Z      # Bump version (updates 6 files)
   - ⚠️ **IMPORTANT**: This becomes your GitHub release notes automatically!
   - Use clear, user-friendly language (not technical commit messages)
   - Follow existing format (see 0.8.0 or 0.9.0 for examples)
+  - Add entries under `## [Unreleased]`; the version bump script will promote them into the new release section and reset the template for you
 - [ ] Build successful
 - [ ] Commit: `git add . && git commit -m "chore: Bump version to X.Y.Z"`
 - [ ] Tag: `git tag X.Y.Z`
@@ -108,7 +109,7 @@ npm run set-version X.Y.Z      # Bump version (updates 6 files)
    npm test
    ```
 
-4. **Update CHANGELOG.md** under "Fixed" section
+4. **Update CHANGELOG.md** under `## [Unreleased]` → "Fixed" section
    - Use user-facing language
    - ❌ "Fixed null pointer in urlPreviewDecorator.ts"
    - ✅ "Fixed previews not showing for certain URL formats"
@@ -426,13 +427,13 @@ npm run set-version 1.0.0-beta.1
 
 Update these files:
 - [ ] **README.md** - Main features section
-- [ ] **CHANGELOG.md** - Under "Added" in current version
+- [ ] **CHANGELOG.md** - Under `## [Unreleased]` → "Added"
 - [ ] **ARCHITECTURE.md** (if architecture changed)
 
 ### When Fixing a Bug
 
 Update these files:
-- [ ] **CHANGELOG.md** - Under "Fixed" in current version
+- [ ] **CHANGELOG.md** - Under `## [Unreleased]` → "Fixed"
 - [ ] **TESTING.md** (if added regression test)
 
 ### When Refactoring Code
@@ -440,14 +441,14 @@ Update these files:
 Update these files:
 - [ ] **ARCHITECTURE.md** (if structure changed)
 - [ ] **AGENTS.md** (if file structure changed)
-- [ ] **CHANGELOG.md** - Under "Changed" (if user-impacting)
+- [ ] **CHANGELOG.md** - Under `## [Unreleased]` → "Changed" (if user-impacting)
 
 ### When Adding Developer Tooling
 
 Update these files:
 - [ ] **CONTRIBUTING.md** - Development process section
 - [ ] **DEVELOPER-GUIDE.md** (this file) - Workflows section
-- [ ] **CHANGELOG.md** - Under "Added" (developer tools)
+- [ ] **CHANGELOG.md** - Under `## [Unreleased]` → "Added" (developer tools)
 
 ### When Changing Tests
 

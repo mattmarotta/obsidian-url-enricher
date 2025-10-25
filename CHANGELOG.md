@@ -18,6 +18,14 @@ All notable changes to URL Enricher will be documented in this file.
   - Documentation updated to reflect recommended ranges instead of enforced minimums
 - **Migration**: No action needed - existing settings continue to work as before
 
+#### Version Bump Script Promotes Unreleased Entries
+
+- **Improvement**: `version-bump.mjs` now moves the `Unreleased` notes into the new version section automatically when bumping
+- **Benefits**:
+  - Keeps changelog tidy without manual copy/paste
+  - Ensures fresh `Unreleased` template is ready for new work
+- **Developer workflow**: Continue logging day-to-day changes under `## [Unreleased]`; the script handles promotion during releases
+
 ## [0.9.1] - 2025-10-25
 
 ### Added
