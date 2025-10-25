@@ -53,12 +53,12 @@ console.log(`✓ Updated ${VERSIONS_FILE}`);
 // Update AGENTS.md
 try {
 	let agentsContent = readFileSync(AGENTS_FILE, "utf8");
-	const versionLineRegex = /^- Current version: \d+\.\d+\.\d+$/m;
+	const versionLineRegex = /^- \*\*Current version\*\*: \d+\.\d+\.\d+$/m;
 
 	if (versionLineRegex.test(agentsContent)) {
 		agentsContent = agentsContent.replace(
 			versionLineRegex,
-			`- Current version: ${targetVersion}`
+			`- **Current version**: ${targetVersion}`
 		);
 		writeFileSync(AGENTS_FILE, agentsContent);
 		console.log(`✓ Updated ${AGENTS_FILE}`);

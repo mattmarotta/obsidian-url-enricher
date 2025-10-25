@@ -6,9 +6,11 @@
 
 This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as plain text in your notes. The plugin enhances them with live inline previews or cards showing metadata (title, description, favicon) in editor view only.
 
-- **Current version**: 0.8.0
+- **Current version**: 0.9.0
+- **Plugin ID**: `url-enricher` (renamed from `obsidian-inline-link-preview` in 0.9.0)
 - **Entry point**: [src/main.ts](../../src/main.ts) → compiled to `main.js`
 - **Release artifacts**: `main.js`, `manifest.json`, `styles.css`
+- **Developer API**: `window.urlEnricher` (also `window.inlineLinkPreview` for compatibility)
 
 ## Quick Start
 
@@ -59,13 +61,19 @@ tests/
 
 **Non-Destructive Decorations**: CodeMirror 6 ViewPlugin adds visual previews without modifying markdown source. URLs remain as plain text.
 
+**Preview Styles**: Two styles available:
+- **Inline** (renamed from "bubble" in 0.9.0): Compact preview with favicon + title
+- **Card**: Full preview with image, title, description, favicon, URL
+
 **Type Safety**: 100% type-safe codebase. Zero `any` types. Use `unknown` with type guards for external data.
 
 **LRU Cache**: Memory-bounded metadata cache (max 1000 items) with automatic eviction.
 
 **Concurrency Limiting**: Max 10 parallel HTTP requests to prevent server overload.
 
-**Performance Tracking**: Optional profiling via `window.inlineLinkPreview` API (disabled by default).
+**Performance Tracking**: Optional profiling via `window.urlEnricher` API (disabled by default).
+
+**CSS Classes**: Base class is `.url-preview` with modifiers `.url-preview--inline` and `.url-preview--card` (simplified in 0.9.0).
 
 ## ⚠️ Critical Gotchas
 
@@ -80,7 +88,7 @@ preview-style: card
 
 # ✅ CORRECT - Frontmatter first!
 ---
-preview-style: card
+preview-style: card  # Use "inline" or "card" (was "bubble" before 0.9.0)
 ---
 
 # My Note Title
@@ -89,8 +97,8 @@ preview-style: card
 **2. Clear cache when testing metadata changes**
 ```javascript
 // In browser console (Cmd+Option+I / Ctrl+Shift+I)
-window.inlineLinkPreview.clearAllCaches()
-window.inlineLinkPreview.refreshDecorations()
+window.urlEnricher.clearAllCaches()  // or window.inlineLinkPreview for compatibility
+window.urlEnricher.refreshDecorations()
 ```
 Cache persists for 30 days. You won't see changes without clearing!
 
