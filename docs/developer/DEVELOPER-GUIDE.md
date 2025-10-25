@@ -29,6 +29,7 @@ npm run set-version X.Y.Z      # Bump version (updates 6 files)
 ### Release Checklist
 
 - [ ] All tests passing
+- [ ] Update **/assets** folder if necessary
 - [ ] Bump version: `npm run set-version X.Y.Z`
 - [ ] **Fill in CHANGELOG.md** with user-facing release notes
   - ⚠️ **IMPORTANT**: This becomes your GitHub release notes automatically!
