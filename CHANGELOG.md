@@ -13,6 +13,17 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [0.10.2] - 2025-10-26
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+- **Release workflow**: Correctly resolves the previous tag for GitHub compare links (takes the next newest tag after the release tag, with repo-root fallback when no prior tag exists)
+
 ## [0.10.1] - 2025-10-26
 
 ### Added
