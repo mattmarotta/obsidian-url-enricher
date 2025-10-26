@@ -45,7 +45,7 @@ All notable changes to URL Enricher will be documented in this file.
 
 ### Fixed
 
-- **Release workflow**: Correctly resolves the previous tag for GitHub compare links (no more `compare/...VERSION`)
+- **Release workflow**: Correctly resolves the previous tag for GitHub compare links (takes the next newest tag after the release tag, with repo-root fallback when no prior tag exists)
 
 ## [0.9.1] - 2025-10-25
 

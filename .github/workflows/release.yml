@@ -73,10 +73,12 @@ jobs:
           # Get all tags sorted by version, then get the one before current
           PREVIOUS_TAG=$(git tag -l --sort=-v:refname | awk -v ver="$VERSION" '
             $0 == ver {
-              if (getline) {
-                print $0;
-              }
-              exit;
+              found=1
+              next
+            }
+            found {
+              print $0
+              exit
             }
           ')
           if [ -z "$PREVIOUS_TAG" ]; then
