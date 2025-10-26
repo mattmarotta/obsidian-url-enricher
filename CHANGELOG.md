@@ -13,6 +13,17 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [0.10.1] - 2025-10-26
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+- **Release workflow**: Correctly resolves the previous tag for GitHub compare links (takes the next newest tag after the release tag, with repo-root fallback when no prior tag exists)
+
 ## [0.10.0] - 2025-10-25
 
 ### Changed
@@ -43,9 +54,6 @@ All notable changes to URL Enricher will be documented in this file.
 - **Docs**: `CONTRIBUTING.md` setup instructions reference the renamed repository and plugin folder
 - **Purpose**: Aligns developer-facing tooling with the plugin rename while keeping compatibility APIs intact
 
-### Fixed
-
-- **Release workflow**: Correctly resolves the previous tag for GitHub compare links (takes the next newest tag after the release tag, with repo-root fallback when no prior tag exists)
 
 ## [0.9.1] - 2025-10-25
 
