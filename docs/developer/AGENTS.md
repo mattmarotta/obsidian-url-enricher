@@ -41,7 +41,7 @@ src/
     FrontmatterParser.ts     # Per-note configuration
   editor/
     urlPreviewDecorator.ts   # CodeMirror ViewPlugin coordinator (120 lines)
-  services/                  # Business logic services (5 modules)
+  services/                  # Business logic services (6 modules + shared types)
     linkPreviewService.ts    # Core metadata fetching with LRU cache
     MetadataFetcher.ts       # HTTP request handling
     HtmlParser.ts            # HTML metadata parsing
@@ -49,6 +49,7 @@ src/
     MetadataValidator.ts     # Soft 404 detection
     faviconCache.ts          # Persistent favicon cache (30-day expiration)
     metadataHandlers/        # Domain-specific metadata extraction
+    types.ts                 # Shared service contracts
   utils/                     # Utility functions (8 modules)
     LRUCache.ts              # Generic LRU cache (max 1000 items)
     logger.ts                # Structured logging (4 log levels)

@@ -19,7 +19,7 @@ Thank you for your interest in contributing to the URL Enricher plugin! This gui
 
 ### Prerequisites
 
-- Node.js 16+ and npm
+- Node.js 18+ and npm
 - TypeScript 4.9+
 - Basic understanding of Obsidian plugin API
 - Familiarity with CodeMirror 6
@@ -28,7 +28,7 @@ Thank you for your interest in contributing to the URL Enricher plugin! This gui
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/obsidian-url-enricher.git
+   git clone https://github.com/mattmarotta/obsidian-url-enricher.git
    cd obsidian-url-enricher
    ```
 

@@ -89,11 +89,11 @@ See [User Guide](docs/USER-GUIDE.md) for complete settings reference and [Frontm
 ## 🛠️ Development
 
 ```bash
-npm install          # Install dependencies
-npm run dev          # Watch mode with hot reload
-npm run build        # Production build
-npm test             # Run all 558 tests
-npm run set-version  # Bump version across all files
+npm install                 # Install dependencies
+npm run dev                 # Watch mode with hot reload
+npm run build               # Production build
+npm test                    # Run all 558 tests
+npm run set-version X.Y.Z   # Bump version across all files
 ```
 
 **Testing**: 558 tests across 12 test files with comprehensive coverage of utilities, services, and business logic.

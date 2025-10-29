@@ -590,7 +590,7 @@ Result: All utility files have excellent test coverage (90%+ except text.ts whic
 **Intentionally Skipped** (as planned):
 - ❌ Widget rendering (DOM/UI code)
 - ❌ CodeMirror decoration internals
-- ❌ faviconDecorator.ts (simple wrapper, mostly UI)
+- ❌ Legacy favicon decorator (removed; UI-only experiment)
 
 Result: All testable business logic in editor files covered. Widget rendering appropriately excluded.
 
