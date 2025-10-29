@@ -120,9 +120,12 @@ Obsidian wikilink syntax with URLs:
 ### What Gets Skipped
 
 The plugin automatically skips URLs in:
-- Image embeds: `![alt text](https://example.com/image.png)`
-- Code blocks: ` ```code``` `
-- Inline code: `` `https://example.com` ``
+- **Image embeds:** `![alt text](https://example.com/image.png)`
+- **Code blocks:** ` ```code``` `
+- **Inline code:** `` `https://example.com` ``
+- **Markdown tables:** URLs inside table cells (Obsidian renders tables as HTML widgets, not editable text)
+
+**Why tables are skipped:** Obsidian renders markdown tables as HTML widgets in Live Preview mode. The plugin uses CodeMirror decorations which only apply to text in the editor layer, not content inside rendered widgets. Use URLs outside tables or in lists if you need enriched previews.
 
 ## Features in Detail
 

@@ -124,8 +124,8 @@ Welcome to the URL Enricher documentation! This directory contains all documenta
 
 **More help:**
 - See [Troubleshooting Guide](TROUBLESHOOTING.md)
-- Check [GitHub Issues](https://github.com/YOUR_REPO/issues)
-- Join [Discussions](https://github.com/YOUR_REPO/discussions)
+- Check [GitHub Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues)
+- Join [Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions)
 
 ### Console API Quick Reference
 
@@ -173,9 +173,9 @@ docs/
 
 ## 🔗 External Resources
 
-- **[GitHub Repository](https://github.com/YOUR_REPO)**
-- **[Report Issues](https://github.com/YOUR_REPO/issues)**
-- **[Discussions](https://github.com/YOUR_REPO/discussions)**
+- **[GitHub Repository](https://github.com/mattmarotta/obsidian-url-enricher)**
+- **[Report Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues)**
+- **[Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions)**
 - **[Changelog](../CHANGELOG.md)**
 - **[License](../LICENSE)** - MIT License
 

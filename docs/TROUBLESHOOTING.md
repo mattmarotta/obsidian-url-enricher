@@ -12,6 +12,7 @@ Common issues and solutions for the URL Enricher plugin.
 - [Performance Issues](#performance-issues)
 - [Error Warnings](#error-warnings)
 - [Cache Issues](#cache-issues)
+- [Known Limitations](#known-limitations)
 - [Getting More Help](#getting-more-help)
 
 ## Quick Fixes
@@ -430,6 +431,52 @@ There's no setting to disable caching, as it's essential for performance. Howeve
 - Clear cache frequently with console commands
 - Reduce cache lifetime (requires modifying source code)
 
+## Known Limitations
+
+These are intentional design decisions or technical constraints that cannot be easily resolved:
+
+### URLs Inside Markdown Tables
+
+**Issue:** URLs inside markdown tables display as standard Obsidian links (blue underlined text), not as enriched previews.
+
+**Why:** Obsidian renders markdown tables as HTML widgets in Live Preview mode. The plugin uses CodeMirror decorations which can only be applied to text in the editor layer, not to content inside rendered HTML widgets.
+
+**This is the same reason URLs inside code blocks aren't enriched** - they're in a special rendering context that the decorator cannot access.
+
+**Example:**
+```markdown
+| Link | Description |
+|------|-------------|
+| https://example.com | This URL won't be enriched |
+```
+
+**Workaround:** Use URLs outside of tables if you need enriched previews:
+```markdown
+## My Links
+
+https://example.com
+Description: This URL will be enriched
+
+Or use a list:
+- https://example.com - This URL will be enriched
+```
+
+### Reading Mode and Source Mode
+
+**Issue:** Previews only work in Live Preview mode.
+
+**Why:** The plugin is built specifically for Live Preview using CodeMirror 6 decorations. Reading mode and Source mode use different rendering systems.
+
+**This is by design** - the plugin provides non-destructive, editor-layer previews without modifying your markdown.
+
+### Already-Formatted Links
+
+**Issue:** Links with custom text `[my text](url)` may not show enriched previews (depends on settings).
+
+**Why:** The plugin preserves your custom link text by default. If you've explicitly written custom text, enriching the URL would override your intent.
+
+**Workaround:** Use bare URLs or wikilink format `[[https://example.com]]` if you want enrichment.
+
 ## Getting More Help
 
 ### Check Console Logs
@@ -466,12 +513,12 @@ If you've tried everything and still have issues:
    - Example URL that's not working
 
 2. **Report on GitHub:**
-   - [GitHub Issues](https://github.com/YOUR_REPO/issues)
+   - [GitHub Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues)
    - Search existing issues first
    - Provide all gathered information
 
 3. **Join Community:**
-   - [GitHub Discussions](https://github.com/YOUR_REPO/discussions)
+   - [GitHub Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions)
    - Obsidian community forums
 
 ### Debug Mode
