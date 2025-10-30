@@ -5,6 +5,17 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [1.1.0] - 2025-10-30
+
+### Added
 - Obsidian plugin approval requirements to agents.md and contributing.md
 
 ### Changed
