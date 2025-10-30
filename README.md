@@ -8,7 +8,9 @@
 
 Transform plain URLs into beautiful previews with title, description, and favicon — without modifying your markdown.
 
-![Demo](assets/demo.gif)
+![inline demo](assets/inline-preview.gif)
+
+![card demo](assets/card-preview.gif)
 
 ## Quick Start
 
