@@ -13,6 +13,55 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [1.0.0] - 2025-10-30
+
+### Added
+
+#### Demo Vault
+- **Comprehensive example vault** in `examples/demo-vault/` with 6 demonstration files:
+  - `card-previews.md` - Card-style preview examples
+  - `inline-previews.md` - Inline-style preview examples
+  - `domain-enhancements.md` - Domain-specific features (Reddit, Wikipedia, LinkedIn, Twitter)
+  - `edge-cases.md` - Edge cases and special scenarios
+  - `frontmatter-variations.md` - Per-note configuration examples
+  - `mixed-content.md` - Real-world mixed content examples
+- **README in demo vault** with detailed usage instructions and feature demonstrations
+
+#### Visual Assets
+- **New demo GIFs** added to `assets/`:
+  - `card-preview.gif` - Shows card-style preview functionality
+  - `inline-preview.gif` - Demonstrates inline-style preview behavior
+- **Updated README** with embedded demo GIFs for quick feature overview
+
+#### Development Tools
+- **.nvmrc file** - Specifies Node.js version (v18.20.5) for consistent development environment
+
+### Changed
+
+#### Documentation Restructure
+- **Major reorganization** for improved navigation and maintainability:
+  - Consolidated multi-directory structure into root-level documentation
+  - Moved `AGENTS.md` to repository root for better visibility
+  - Created unified `TROUBLESHOOTING.md` at root (consolidated from multiple sources)
+  - Relocated `TESTING.md` to `tests/` directory alongside test files
+  - Simplified `CONTRIBUTING.md` (reduced from 919 lines to focused contributor guide)
+  - Enhanced `README.md` with demo GIFs, clearer structure, and improved examples
+  - Updated `assets/README.md` with current asset inventory
+
+#### Repository Cleanup
+- **Removed generated artifacts**:
+  - Deleted entire `coverage/` directory (HTML coverage reports now excluded from repository)
+  - Removed `docs-archive/` directory (outdated documentation)
+  - Cleaned up old screenshot PNGs from `assets/` (replaced with GIFs)
+- **Updated .gitignore** to exclude coverage directory going forward
+
+#### Code Cleanup
+- **Removed unused code**: Deleted `src/editor/faviconDecorator.ts` (obsolete favicon decoration logic)
+- **Import cleanup**: Updated `src/main.ts` to remove unused faviconDecorator import
+
+### Fixed
+- **Documentation**: Added known limitation about rendering links in tables to troubleshooting documentation
+
 ## [0.10.2] - 2025-10-26
 
 ### Added
