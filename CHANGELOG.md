@@ -5,6 +5,17 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [1.0.1] - 2025-10-30
+
+### Added
 - more robust error and missing file handling in the version bump script
 - privacy and network usage to readme
 - important Obsidian resources to agents.md

@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-url-enricher",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Automatically replace bare URLs with inline previews that show the page title and description.",
 	"main": "main.js",
 	"scripts": {
