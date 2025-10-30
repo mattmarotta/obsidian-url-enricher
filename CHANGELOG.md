@@ -5,13 +5,13 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
--
+- more robust error and missing file handling in the version bump script
 
 ### Changed
 -
 
 ### Fixed
--
+- version bump script looking in wrong place for agents.md
 
 ## [1.0.0] - 2025-10-30
 

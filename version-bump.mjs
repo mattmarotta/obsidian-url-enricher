@@ -19,57 +19,114 @@ const PACKAGE_FILE = "package.json";
 const MANIFEST_FILE = "manifest.json";
 const VERSIONS_FILE = "versions.json";
 const LOCK_FILE = "package-lock.json";
-const AGENTS_FILE = "docs/developer/AGENTS.md";
+const AGENTS_FILE_PATHS = ["AGENTS.md", "docs/developer/AGENTS.md", "docs/AGENTS.md"];
 const CHANGELOG_FILE = "CHANGELOG.md";
 
-// Update manifest.json
-const manifest = readJson(MANIFEST_FILE);
-const minAppVersion = manifest.minAppVersion;
-manifest.version = targetVersion;
-writeJson(MANIFEST_FILE, manifest);
-console.log(`✓ Updated ${MANIFEST_FILE}`);
+// Track which files were updated
+const updatedFiles = [];
+const failedFiles = [];
+const skippedFiles = [];
 
-// Update package.json
-const packageJson = readJson(PACKAGE_FILE);
-packageJson.version = targetVersion;
-writeJson(PACKAGE_FILE, packageJson);
-console.log(`✓ Updated ${PACKAGE_FILE}`);
-
-// Update package-lock.json
-const lock = readJson(LOCK_FILE);
-lock.version = targetVersion;
-if (lock.packages && lock.packages[""]) {
-	lock.packages[""].version = targetVersion;
-}
-writeJson(LOCK_FILE, lock);
-console.log(`✓ Updated ${LOCK_FILE}`);
-
-// Update versions.json
-const versions = readJson(VERSIONS_FILE);
-versions[targetVersion] = minAppVersion;
-writeJson(VERSIONS_FILE, versions);
-console.log(`✓ Updated ${VERSIONS_FILE}`);
-
-// Update AGENTS.md
+// Update manifest.json (required)
+let minAppVersion;
 try {
-	let agentsContent = readFileSync(AGENTS_FILE, "utf8");
-	const versionLineRegex = /^- \*\*Current version\*\*: \d+\.\d+\.\d+$/m;
-
-	if (versionLineRegex.test(agentsContent)) {
-		agentsContent = agentsContent.replace(
-			versionLineRegex,
-			`- **Current version**: ${targetVersion}`
-		);
-		writeFileSync(AGENTS_FILE, agentsContent);
-		console.log(`✓ Updated ${AGENTS_FILE}`);
-	} else {
-		console.warn(`⚠ Could not find version line in ${AGENTS_FILE}`);
+	const manifest = readJson(MANIFEST_FILE);
+	if (!manifest.minAppVersion) {
+		console.error(`✗ ${MANIFEST_FILE} is missing 'minAppVersion' field`);
+		console.error("This field is required for Obsidian plugin compatibility. Aborting.");
+		process.exit(1);
 	}
+	minAppVersion = manifest.minAppVersion;
+	manifest.version = targetVersion;
+	writeJson(MANIFEST_FILE, manifest);
+	console.log(`✓ Updated ${MANIFEST_FILE}`);
+	updatedFiles.push(MANIFEST_FILE);
 } catch (error) {
-	console.warn(`⚠ Could not update ${AGENTS_FILE}: ${error.message}`);
+	console.error(`✗ Failed to update ${MANIFEST_FILE}: ${error.message}`);
+	console.error("This file is required for the plugin to work. Aborting.");
+	failedFiles.push(MANIFEST_FILE);
+	process.exit(1);
 }
 
-// Update CHANGELOG.md - Promote Unreleased section (if present) and add new version section
+// Update package.json (required)
+try {
+	const packageJson = readJson(PACKAGE_FILE);
+	packageJson.version = targetVersion;
+	writeJson(PACKAGE_FILE, packageJson);
+	console.log(`✓ Updated ${PACKAGE_FILE}`);
+	updatedFiles.push(PACKAGE_FILE);
+} catch (error) {
+	console.error(`✗ Failed to update ${PACKAGE_FILE}: ${error.message}`);
+	console.error("This file is required for npm packages. Aborting.");
+	failedFiles.push(PACKAGE_FILE);
+	process.exit(1);
+}
+
+// Update package-lock.json (optional but recommended)
+try {
+	const lock = readJson(LOCK_FILE);
+	lock.version = targetVersion;
+	if (lock.packages && lock.packages[""]) {
+		lock.packages[""].version = targetVersion;
+	}
+	writeJson(LOCK_FILE, lock);
+	console.log(`✓ Updated ${LOCK_FILE}`);
+	updatedFiles.push(LOCK_FILE);
+} catch (error) {
+	console.warn(`⚠ Could not update ${LOCK_FILE}: ${error.message}`);
+	console.warn("This is optional but recommended. Run 'npm install' to regenerate it.");
+	skippedFiles.push(`${LOCK_FILE} (${error.message})`);
+}
+
+// Update versions.json (required)
+try {
+	const versions = readJson(VERSIONS_FILE);
+	versions[targetVersion] = minAppVersion;
+	writeJson(VERSIONS_FILE, versions);
+	console.log(`✓ Updated ${VERSIONS_FILE}`);
+	updatedFiles.push(VERSIONS_FILE);
+} catch (error) {
+	console.error(`✗ Failed to update ${VERSIONS_FILE}: ${error.message}`);
+	console.error("This file is required for Obsidian plugin compatibility. Aborting.");
+	failedFiles.push(VERSIONS_FILE);
+	process.exit(1);
+}
+
+// Update AGENTS.md (check multiple possible locations, optional)
+let agentsFileFound = false;
+for (const agentsPath of AGENTS_FILE_PATHS) {
+	try {
+		let agentsContent = readFileSync(agentsPath, "utf8");
+		const versionLineRegex = /^- \*\*Current version\*\*: \d+\.\d+\.\d+$/m;
+
+		if (versionLineRegex.test(agentsContent)) {
+			agentsContent = agentsContent.replace(
+				versionLineRegex,
+				`- **Current version**: ${targetVersion}`
+			);
+			writeFileSync(agentsPath, agentsContent);
+			console.log(`✓ Updated ${agentsPath}`);
+			updatedFiles.push(agentsPath);
+			agentsFileFound = true;
+			break;
+		} else {
+			console.warn(`⚠ Could not find version line in ${agentsPath}`);
+			skippedFiles.push(`${agentsPath} (version line not found)`);
+			agentsFileFound = true;
+			break;
+		}
+	} catch (error) {
+		// File doesn't exist at this path, try next one
+		continue;
+	}
+}
+
+if (!agentsFileFound) {
+	console.warn(`⚠ Could not find AGENTS.md in any expected location: ${AGENTS_FILE_PATHS.join(", ")}`);
+	skippedFiles.push("AGENTS.md (file not found)");
+}
+
+// Update CHANGELOG.md - Promote Unreleased section (if present) and add new version section (optional)
 try {
 	let changelogContent = readFileSync(CHANGELOG_FILE, "utf8");
 
@@ -128,17 +185,38 @@ try {
 
 			writeFileSync(CHANGELOG_FILE, changelogContent);
 			console.log(`✓ Updated ${CHANGELOG_FILE} (promoted Unreleased entries)`);
+			updatedFiles.push(CHANGELOG_FILE);
 		} else {
 			console.warn(`⚠ Could not find version header in ${CHANGELOG_FILE}`);
+			console.warn("CHANGELOG.md exists but doesn't have the expected format.");
+			skippedFiles.push(`${CHANGELOG_FILE} (invalid format)`);
 		}
 	} else {
 		console.log(`ℹ Version ${targetVersion} already exists in ${CHANGELOG_FILE}`);
+		updatedFiles.push(CHANGELOG_FILE);
 	}
 } catch (error) {
 	console.warn(`⚠ Could not update ${CHANGELOG_FILE}: ${error.message}`);
+	console.warn("This is optional but recommended. You may need to update it manually.");
+	skippedFiles.push(`${CHANGELOG_FILE} (${error.message})`);
 }
 
+// Print summary
 console.log(`\n✅ Version bumped to ${targetVersion}`);
+console.log(`\n📊 Summary:`);
+console.log(`  ✓ Successfully updated: ${updatedFiles.length} file(s)`);
+if (updatedFiles.length > 0) {
+	updatedFiles.forEach(file => console.log(`    - ${file}`));
+}
+if (skippedFiles.length > 0) {
+	console.log(`  ⚠ Skipped: ${skippedFiles.length} file(s)`);
+	skippedFiles.forEach(file => console.log(`    - ${file}`));
+}
+if (failedFiles.length > 0) {
+	console.log(`  ✗ Failed: ${failedFiles.length} file(s)`);
+	failedFiles.forEach(file => console.log(`    - ${file}`));
+}
+
 console.log(`\nNext steps:`);
 console.log(`1. Fill in CHANGELOG.md with your changes`);
 console.log(`2. Commit: git add . && git commit -m "chore: Bump version to ${targetVersion}"`);
