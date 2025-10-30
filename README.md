@@ -12,11 +12,7 @@ Transform plain URLs into beautiful previews with title, description, and favico
 
 ## Quick Start
 
-1. **Install** from **Settings → Community plugins → Browse** (search "URL Enricher")
-2. **Paste a URL** in your note: `https://github.com`
-3. **Switch to Live Preview mode** to see the preview
-
-That's it! Click previews to edit URLs, click away to restore.
+**Plugin works only in Live Preview mode** 
 
 Head to Settings > URL Enricher to customize global behaviour, or use frontmatter to customize per page.
 
@@ -55,7 +51,7 @@ custom-preview-color: "#4a4a4a"       # Hex color (with quotes!)
 ### ✨ What You Get
 
 - **100% Non-Destructive** - Markdown source never modified
-- **Cursor-Aware** - Click to edit, click away to preview
+- **Cursor-Aware** - Inline previews switch to editing mode when cursor in/around url
 - **Automatic Metadata** - Fetches title, description, favicon
 - **Per-Page Config** - Override settings with frontmatter
 - **Domain Enhancements** - Special handling for Wikipedia, Reddit, Twitter, LinkedIn, Google
