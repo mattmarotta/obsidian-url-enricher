@@ -1,418 +1,146 @@
 # Contributing Guide
 
-Thank you for your interest in contributing to the URL Enricher plugin! This guide will help you get started and maintain consistency across the codebase.
+Thank you for contributing to URL Enricher! This guide covers setup, standards, and workflows.
 
-## Table of Contents
-
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Coding Standards](#coding-standards)
-- [TypeScript Guidelines](#typescript-guidelines)
-- [Testing](#testing)
-- [Git Workflow](#git-workflow)
-- [Version Management & Releases](#version-management--releases)
-- [Pull Request Process](#pull-request-process)
-- [Project Structure](#project-structure)
-- [Performance Considerations](#performance-considerations)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- TypeScript 4.9+
-- Basic understanding of Obsidian plugin API
-- Familiarity with CodeMirror 6
-
-### Development Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/mattmarotta/obsidian-url-enricher.git
-   cd obsidian-url-enricher
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Build the plugin**
-   ```bash
-   npm run build
-   ```
-
-4. **Run tests**
-   ```bash
-   npm test
-   ```
-
-5. **Development build with watch mode**
-   ```bash
-   npm run dev
-   ```
-
-6. **Link to Obsidian vault for testing**
-   ```bash
-   # Create symlink to your vault's plugins directory
-   ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/url-enricher"
-   ```
-
-7. **⚠️ IMPORTANT: Set up git hooks**
-   ```bash
-   git config core.hooksPath .husky
-   ```
-   This enables pre-commit hooks that run TypeScript validation and tests automatically before each commit.
-
-## Coding Standards
-
-### General Principles
-
-1. **Readability First** - Code should be self-documenting
-2. **Single Responsibility** - Each function/class should have one clear purpose
-3. **DRY (Don't Repeat Yourself)** - Extract common logic into utilities
-4. **KISS (Keep It Simple)** - Prefer simple solutions over clever ones
-5. **Type Safety** - Never use `any` types (100% type-safe codebase)
-
-### Code Style
-
-- **Indentation:** Tabs (not spaces)
-- **Line Length:** 100 characters max (soft limit)
-- **Semicolons:** Required
-- **Quotes:** Double quotes for strings (except for template literals)
-- **Trailing Commas:** Use in multi-line objects/arrays
-
-**Example:**
-```typescript
-const config = {
-	name: "url-enricher",
-	version: "1.0.0",
-	author: "Your Name",
-};
-```
-
-### File Organization
-
-#### Directory Structure
-```
-src/
-├── decorators/     # Editor decoration components
-├── services/       # Business logic services
-├── utils/          # Shared utilities
-├── types/          # TypeScript type definitions
-├── editor/         # CodeMirror integration
-└── main.ts         # Plugin entry point
-```
-
-#### File Naming Conventions
-- **PascalCase** for classes: `LinkPreviewService.ts`
-- **camelCase** for utilities: `stringReplace.ts`
-- **kebab-case** for config: `tsconfig.json`
-- **Index files** for directory exports: `index.ts`
-
-⚠️ **CRITICAL**: Never commit build artifacts (`main.js`, `node_modules/`, `dist/`). Only commit source files.
-
-#### File Structure Template
-```typescript
-/**
- * Module description - What this file does
- *
- * More detailed explanation if needed.
- *
- * @module path/to/module
- */
-
-// 1. External imports
-import { Plugin } from "obsidian";
-
-// 2. Internal imports (organized by directory)
-import { LinkPreviewService } from "./services/linkPreviewService";
-import { createLogger } from "./utils/logger";
-
-// 3. Type definitions
-export interface MyInterface {
-	property: string;
-}
-
-// 4. Constants
-const MAX_RETRIES = 3;
-
-// 5. Implementation
-export class MyClass {
-	// ...
-}
-
-// 6. Helper functions (if any)
-function helperFunction() {
-	// ...
-}
-```
-
-### Naming Conventions
-
-#### Variables and Functions
-- **camelCase** for variables and functions: `getUserData()`
-- **SCREAMING_SNAKE_CASE** for constants: `MAX_CONCURRENT_REQUESTS`
-- **Prefix booleans** with `is`, `has`, `should`: `isValid`, `hasError`, `shouldRetry`
-- **Prefix private members** with underscore (optional): `_privateMethod()`
-
-**Good:**
-```typescript
-const isLoading = true;
-const maxRetries = 3;
-const userSettings = loadUserSettings();
-
-function fetchMetadata(url: string): Promise<Metadata> {
-	// ...
-}
-```
-
-**Bad:**
-```typescript
-const loading = true; // Unclear type
-const max = 3; // What max?
-const settings = loadUserSettings(); // What kind of settings?
-
-function fetch(url: string): Promise<Metadata> { // Too generic
-	// ...
-}
-```
-
-#### Classes and Interfaces
-- **PascalCase** for classes and interfaces
-- **Prefix interfaces** with `I` only if needed to avoid naming conflicts
-- **Suffix types** descriptively: `Handler`, `Service`, `Cache`, `Builder`
-
-**Good:**
-```typescript
-class LinkPreviewService { }
-interface MetadataHandler { }
-type PreviewStyle = "inline" | "card";
-```
-
-#### Types
-- **Use `type` for unions, intersections, and primitives**
-- **Use `interface` for object shapes**
-- **Prefer `readonly`** for immutable properties
-
-```typescript
-// Good
-type PreviewMode = "inline" | "card" | "hidden";
-interface LinkMetadata {
-	readonly title: string;
-	readonly description: string | null;
-}
-
-// Bad
-interface PreviewMode { } // Should be type
-type LinkMetadata = { title: string; description: string | null }; // Should be interface
-```
-
-## TypeScript Guidelines
-
-### Type Safety Rules
-
-1. **NEVER use `any`** - Use `unknown` and type guards instead
-2. **Enable strict mode** - All strict TypeScript flags enabled
-3. **Explicit return types** - Always specify return types for public methods
-4. **Null safety** - Use `| null` instead of `| undefined` when possible
-
-⚠️ **100% Type Safety**: This codebase has ZERO `any` types. All external data must use `unknown` with type guards. Build will fail with `any` types.
-
-**Good:**
-```typescript
-function parseMetadata(value: unknown): LinkMetadata | null {
-	if (!isValidMetadata(value)) {
-		return null;
-	}
-	return value;
-}
-
-function isValidMetadata(value: unknown): value is LinkMetadata {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"title" in value &&
-		typeof value.title === "string"
-	);
-}
-```
-
-**Bad:**
-```typescript
-function parseMetadata(value: any): any { // Never use 'any'
-	return value;
-}
-```
-
-### Type Guards
-
-Use type guards to narrow `unknown` types:
-
-```typescript
-function isString(value: unknown): value is string {
-	return typeof value === "string";
-}
-
-function isValidUrl(value: unknown): value is URL {
-	return value instanceof URL;
-}
-
-function isLinkMetadata(value: unknown): value is LinkMetadata {
-	return (
-		typeof value === "object" &&
-		value !== null &&
-		"title" in value &&
-		"description" in value
-	);
-}
-```
-
-### Generics
-
-Use generics for reusable, type-safe components:
-
-```typescript
-class LRUCache<K, V> {
-	private cache = new Map<K, V>();
-
-	get(key: K): V | undefined {
-		return this.cache.get(key);
-	}
-
-	set(key: K, value: V): void {
-		this.cache.set(key, value);
-	}
-}
-```
-
-### Error Handling
-
-Always type errors properly:
-
-```typescript
-// Good
-try {
-	await fetchData();
-} catch (error) {
-	const errorMessage = error instanceof Error ? error.message : String(error);
-	logger.error("Failed to fetch data", errorMessage);
-}
-
-// Bad
-try {
-	await fetchData();
-} catch (error: any) { // Never use 'any'
-	console.log(error.message); // Unsafe property access
-}
-```
-
-## Testing
-
-### Testing Requirements
-
-- **All new features** must include tests
-- **Bug fixes** should include regression tests
-- **Maintain 100% pass rate** - All tests must pass before merging
-- **Test edge cases** - Consider null, empty, invalid inputs
-
-⚠️ **CRITICAL**: Both `npm run build` AND `npm test` must pass before committing. Pre-commit hooks check both automatically.
-
-### Running Tests
+## Quick Setup
 
 ```bash
-npm test                  # Run all tests
-npm run test:coverage     # Run with coverage report
-npm test -- --watch       # Run in watch mode
+git clone https://github.com/mattmarotta/obsidian-url-enricher.git
+cd obsidian-url-enricher
+npm install
+npm run dev    # Watch mode
 ```
 
-### Test Organization
-
-Tests should mirror the source structure:
-
-```
-tests/
-├── decorators/
-│   ├── DecorationBuilder.test.ts
-│   └── UrlMatcher.test.ts
-├── services/
-│   ├── linkPreviewService.test.ts
-│   └── HtmlParser.test.ts
-└── utils/
-    ├── LRUCache.test.ts
-    └── text.test.ts
+**Link to test vault:**
+```bash
+ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/url-enricher"
 ```
 
-### Test Writing Guidelines
+**⚠️ IMPORTANT: Enable git hooks**
+```bash
+git config core.hooksPath .husky
+```
 
-#### Test Structure
-Use **Arrange-Act-Assert** pattern:
+This runs TypeScript validation and tests before each commit.
+
+## Before You Commit
+
+- [ ] `npm run build` passes (no TypeScript errors)
+- [ ] `npm test` passes (all 558 tests)
+- [ ] Used conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
+- [ ] Updated relevant documentation
+
+**Both checks are required!** Pre-commit hooks verify this automatically.
+
+## Code Standards
+
+### Type Safety
+- **NEVER use `any`** - Use `unknown` with type guards instead
+- 100% type-safe codebase (build fails with `any` types)
+- Enable strict mode for all TypeScript
 
 ```typescript
-describe("LinkPreviewService", () => {
-	describe("getMetadata", () => {
-		it("should return cached metadata if available", async () => {
-			// Arrange
-			const service = new LinkPreviewService(options, settings);
-			const url = "https://example.com";
-			const cachedMetadata = { title: "Example", description: null };
-			service.cache.set(url, cachedMetadata);
+// ❌ Wrong
+function parseData(value: any) { }
 
-			// Act
-			const result = await service.getMetadata(url);
-
-			// Assert
-			expect(result).toEqual(cachedMetadata);
-		});
-	});
-});
+// ✅ Correct
+function parseData(value: unknown): Data | null {
+  if (!isValidData(value)) return null;
+  return value;
+}
 ```
 
-#### Test Naming
-- **Describe blocks:** Component/function name
-- **Test cases:** Should describe behavior in plain English
-
-**Good:**
-```typescript
-describe("UrlMatcher", () => {
-	it("should match wikilinks with display text", () => { });
-	it("should ignore URLs inside code blocks", () => { });
-	it("should return empty array for text without URLs", () => { });
-});
-```
-
-**Bad:**
-```typescript
-describe("UrlMatcher", () => {
-	it("test1", () => { }); // Non-descriptive
-	it("wikilinks", () => { }); // Incomplete description
-});
-```
-
-#### Mocking
-
-Use minimal mocking - prefer real implementations when possible:
+### Constants
+- **Always add to `constants.ts`** - Never inline magic numbers
+- Use descriptive names
 
 ```typescript
-// Good - Mock only external dependencies
-const mockRequest = jest.fn().mockResolvedValue({
-	status: 200,
-	text: "<html>...</html>",
-});
+// ❌ Wrong
+if (cache.size > 1000) { }
 
-// Bad - Over-mocking
-const mockEverything = {
-	service: jest.fn(),
-	cache: jest.fn(),
-	parser: jest.fn(),
-	// ... too much mocking
-};
+// ✅ Correct
+import { CACHE_MAX_SIZE } from "./constants";
+if (cache.size > CACHE_MAX_SIZE) { }
 ```
 
-### Common Testing Pitfalls
+### Style
+- Tabs for indentation
+- Double quotes for strings
+- Semicolons required
+- 100 character line length (soft limit)
 
-⚠️ **Frontmatter must start on line 1**: When testing frontmatter features, ensure YAML frontmatter starts on the very first line of the test file. This is the #1 reason frontmatter tests fail.
+### Testing
+- All new features must include tests
+- Bug fixes should include regression tests
+- Maintain 100% pass rate
 
+See tests/ for examples. Follow existing patterns.
+
+## Common Commands
+
+```bash
+npm install                    # Install dependencies
+npm run dev                    # Watch mode (rebuilds on changes)
+npm run build                  # Production build
+npm test                       # Run all tests
+npm run test:watch             # Test watch mode
+npm run test:coverage          # Coverage report
+npm run set-version X.Y.Z      # Bump version across all files
+```
+
+## Release Checklist
+
+**For maintainers only:**
+
+- [ ] All tests passing
+- [ ] Bump version: `npm run set-version X.Y.Z`
+- [ ] **Fill in CHANGELOG.md** with user-facing release notes
+  - Use clear, non-technical language
+  - Organize: Added / Changed / Fixed / Removed
+  - This becomes your GitHub release notes automatically!
+- [ ] Build successful: `npm run build`
+- [ ] Commit: `git add . && git commit -m "chore: Bump version to X.Y.Z"`
+- [ ] Tag: `git tag X.Y.Z`
+- [ ] Push: `git push origin master --tags`
+- [ ] GitHub Actions auto-creates release with CHANGELOG content
+
+**⚠️ Fill CHANGELOG immediately after version bump while changes are fresh!**
+
+## Common Gotchas
+
+### Setup & Environment
+
+**Git hooks require manual setup**
+```bash
+git config core.hooksPath .husky
+# Verify: git config core.hooksPath  # Should output: .husky
+```
+
+**Never commit build artifacts**
+- ❌ `main.js` (generated)
+- ❌ `node_modules/` (dependencies)
+- ✅ Only commit source files
+
+### Code
+
+**100% Type Safety Required**
+- Build fails with `any` types
+- Use `unknown` with type guards
+- Always specify return types for public methods
+
+**Decorations are view-only**
+- Cannot modify markdown source files
+- Decorations are purely visual (CodeMirror ViewPlugin)
+- URLs remain as plain text in the file
+
+**Multiple file updates when adding decorators**
+- Add widget class to `PreviewWidget.ts`
+- Update `DecorationBuilder.ts` to use it
+- Add tests for both
+
+### Testing & Debugging
+
+**Frontmatter MUST start on line 1**
 ```yaml
 # ❌ WRONG - Will not work!
 # My Note Title
@@ -421,7 +149,7 @@ const mockEverything = {
 preview-style: card
 ---
 
-# ✅ CORRECT - Frontmatter first!
+# ✅ CORRECT
 ---
 preview-style: card
 ---
@@ -429,458 +157,145 @@ preview-style: card
 # My Note Title
 ```
 
-⚠️ **Clear caches when testing metadata changes**: The plugin caches metadata and favicons for 30 days. When testing metadata extraction or favicon handling, always clear caches first:
+This is the #1 reason frontmatter tests fail!
 
+**Clear caches when testing metadata changes**
 ```javascript
 // In browser console (Cmd+Option+I / Ctrl+Shift+I)
 window.inlineLinkPreview.clearAllCaches()
 window.inlineLinkPreview.refreshDecorations()
 ```
 
-Otherwise, you won't see your changes!
+The plugin caches metadata and favicons for 30 days. You won't see changes without clearing!
 
-## Git Workflow
-
-### Branch Naming
-
-- **Feature branches:** `feature/description` (e.g., `feature/add-twitter-handler`)
-- **Bug fixes:** `fix/description` (e.g., `fix/cache-expiration-bug`)
-- **Refactoring:** `refactor/description` (e.g., `refactor/split-large-files`)
-- **Documentation:** `docs/description` (e.g., `docs/update-readme`)
-
-### Commit Messages
-
-Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-
-```
-<type>(<scope>): <description>
-
-[optional body]
-
-[optional footer]
-```
-
-**Types:**
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `refactor:` - Code refactoring
-- `docs:` - Documentation changes
-- `test:` - Adding/updating tests
-- `perf:` - Performance improvements
-- `chore:` - Maintenance tasks
-
-**Examples:**
-```
-feat(services): Add Twitter metadata handler
-
-Implements domain-specific enrichment for Twitter/X URLs.
-Extracts username and tweet ID from URLs.
-
-Closes #123
-```
-
-```
-fix(cache): Fix favicon cache expiration logic
-
-The expiration check was using incorrect timestamp comparison.
-Now correctly expires entries after 30 days.
-```
-
-```
-refactor(decorators): Split urlPreviewDecorator into modules
-
-- Extract PreviewWidget to separate file
-- Extract UrlMatcher to separate file
-- Extract DecorationBuilder to separate file
-
-Reduces main file from 1224 to 120 lines.
-```
-
-### Commit Best Practices
-
-1. **Atomic commits** - One logical change per commit
-2. **Descriptive messages** - Explain why, not what (code shows what)
-3. **Reference issues** - Use `Closes #123` or `Fixes #456`
-4. **Keep commits clean** - Squash fixup commits before merging
-
-## Version Management & Releases
-
-### Bumping Versions
-
-Use the automated version-bump script to update all version references:
-
+**Both checks required before commit**
 ```bash
-npm run set-version 0.9.0
+# ❌ Only running one
+npm run build
+
+# ✅ Run both
+npm run build && npm test
+
+# ✅ Or let pre-commit hook do it
+git commit -m "feat: my change"  # Runs both automatically
 ```
 
-This will automatically update:
-- `manifest.json` - Plugin version
-- `package.json` & `package-lock.json` - npm version
-- `versions.json` - Version-to-minAppVersion mapping
-- `AGENTS.md` - Current version line
-- `CHANGELOG.md` - Creates new unreleased section template
+### Documentation
 
-**Output:**
-```
-✓ Updated manifest.json
-✓ Updated package.json
-✓ Updated package-lock.json
-✓ Updated versions.json
-✓ Updated AGENTS.md
-✓ Updated CHANGELOG.md (added unreleased section)
+**CHANGELOG must use user-facing language**
+```markdown
+# ❌ Technical jargon
+- Refactored urlPreviewDecorator.ts into modules
 
-✅ Version bumped to 0.9.0
-
-Next steps:
-1. Fill in CHANGELOG.md with your changes
-2. Commit: git add . && git commit -m "chore: Bump version to 0.9.0"
-3. Tag: git tag 0.9.0
-4. Push: git push origin master --tags
+# ✅ User-facing language
+- Improved preview rendering performance
 ```
 
-For detailed documentation, see [VERSION-MANAGEMENT.md](docs/developer/VERSION-MANAGEMENT.md).
+### Performance
 
-⚠️ **IMPORTANT**: Fill in CHANGELOG.md immediately after bumping the version while changes are fresh in your mind!
+**LRU cache has max size (1000 items)**
+- Monitor with: `window.inlineLinkPreview.getCacheStats()`
 
-### Release Process
-
-1. **Complete your feature work** and ensure all tests pass
-2. **Bump the version:**
-   ```bash
-   npm run set-version 1.0.0
-   ```
-3. **Fill in CHANGELOG.md** with your changes (Added/Changed/Fixed sections)
-4. **Commit version bump:**
-   ```bash
-   git add .
-   git commit -m "chore: Bump version to 1.0.0"
-   ```
-5. **Create and push tag:**
-   ```bash
-   git tag 1.0.0
-   git push origin master --tags
-   ```
-6. **GitHub Actions will automatically:**
-   - Run tests
-   - Build the plugin
-   - Create a GitHub release
-   - Upload plugin files (main.js, manifest.json, styles.css)
-
-### Semantic Versioning
-
-Follow [semantic versioning](https://semver.org/):
-
-- **MAJOR** (1.0.0) - Breaking changes that affect users
-- **MINOR** (0.1.0) - New features (backward compatible)
-- **PATCH** (0.0.1) - Bug fixes (backward compatible)
-
-**Examples:**
-- User-facing feature: `0.8.0 → 0.9.0` (MINOR)
-- Bug fix: `0.8.0 → 0.8.1` (PATCH)
-- Breaking change: `0.9.0 → 1.0.0` (MAJOR)
-- Internal refactoring (no user impact): `0.7.0 → 0.8.0` (MINOR)
+**Concurrency limited to 10 parallel requests**
+- Prevents overwhelming servers
+- Defined in `MAX_CONCURRENT_REQUESTS` constant
 
 ## Pull Request Process
 
 ### Before Submitting
 
-1. **Run tests** - Ensure all tests pass
-   ```bash
-   npm test
-   ```
-
-2. **Run build** - Ensure code compiles without errors
-   ```bash
-   npm run build
-   ```
-
-3. **Update documentation** - Update README, ARCHITECTURE.md if needed
-
-4. **Self-review** - Review your own changes first
+1. Run tests: `npm test`
+2. Run build: `npm run build`
+3. Update documentation if needed
+4. Self-review your changes
 
 ### PR Template
 
-When creating a pull request, include:
-
 ```markdown
 ## Description
-Brief description of what this PR does.
+Brief description of changes.
 
 ## Motivation
-Why is this change necessary? What problem does it solve?
+Why is this change necessary?
 
 ## Changes
-- List of specific changes made
-- Be detailed and specific
+- Specific change 1
+- Specific change 2
 
 ## Testing
-- How was this tested?
-- What edge cases were considered?
-
-## Screenshots (if applicable)
-Add screenshots for UI changes.
+How was this tested?
 
 ## Checklist
-- [ ] Tests added/updated and passing
+- [ ] Tests pass
 - [ ] Build successful
 - [ ] Documentation updated
 - [ ] No TypeScript errors
-- [ ] Self-reviewed code
-- [ ] Follows coding standards
 ```
-
-### Review Process
-
-- **Be respectful** - Constructive feedback only
-- **Be specific** - Reference line numbers and explain suggestions
-- **Be responsive** - Address review comments promptly
-- **Be patient** - Reviews may take time
 
 ### After Approval
 
-1. **Squash commits** if needed (maintainer will do this)
-2. **Ensure CI passes** (if configured)
-3. **Maintainer will merge** after approval
+Maintainer will squash commits and merge.
+
+## Adding Custom Metadata Handlers
+
+Want to add support for a new website?
+
+1. **Create handler file:** `src/services/metadataHandlers/myHandler.ts`
+
+```typescript
+export class MyHandler implements MetadataHandler {
+  async matches(context: MetadataHandlerContext): Promise<boolean> {
+    return context.url.hostname === "example.com";
+  }
+
+  async enrich(context: MetadataHandlerContext): Promise<void> {
+    // Modify context.metadata
+  }
+}
+```
+
+2. **Register in `metadataHandlers/index.ts`:**
+
+```typescript
+export function createDefaultMetadataHandlers(): MetadataHandler[] {
+  return [
+    new MyHandler(),  // ← Add here!
+    new WikipediaMetadataHandler(),
+    // ...
+  ];
+}
+```
+
+3. **Add tests:** See existing handlers for examples
+
+4. **Update README:** Add to "Domain Enhancements" section
 
 ## Project Structure
 
-### Adding New Features
-
-#### 1. Determine Location
-- **Decorations/UI:** `src/decorators/`
-- **Business logic:** `src/services/`
-- **Utilities:** `src/utils/`
-- **Type definitions:** `src/types/`
-
-#### 2. Create Files
-```typescript
-// src/services/MyNewService.ts
-/**
- * MyNewService - Brief description
- *
- * Detailed explanation of what this service does.
- *
- * @module services/MyNewService
- */
-
-import { createLogger } from "../utils/logger";
-
-const logger = createLogger("MyNewService");
-
-export class MyNewService {
-	constructor(private options: MyServiceOptions) {
-		logger.info("MyNewService initialized");
-	}
-
-	/**
-	 * Public method description
-	 * @param param - Parameter description
-	 * @returns Return value description
-	 */
-	public async doSomething(param: string): Promise<Result> {
-		// Implementation
-	}
-
-	/**
-	 * Private method description
-	 */
-	private helperMethod(): void {
-		// Implementation
-	}
-}
 ```
+src/
+├── main.ts              # Plugin entry point
+├── settings.ts          # Settings UI
+├── constants.ts         # Application constants
+├── decorators/          # Editor widgets
+├── editor/              # CodeMirror integration
+├── services/            # Business logic
+└── utils/               # Shared utilities
 
-#### 3. Add Tests
-```typescript
-// tests/services/MyNewService.test.ts
-import { MyNewService } from "../../src/services/MyNewService";
-
-describe("MyNewService", () => {
-	describe("doSomething", () => {
-		it("should handle valid input", async () => {
-			// Test implementation
-		});
-
-		it("should handle invalid input", async () => {
-			// Test implementation
-		});
-	});
-});
+tests/                   # Mirror src/ structure
 ```
-
-#### 4. Update Exports
-```typescript
-// src/services/index.ts
-export { MyNewService } from "./MyNewService";
-```
-
-### Adding Constants
-
-⚠️ **ALWAYS** add constants to `src/constants.ts`, never inline as magic numbers:
-
-```typescript
-// src/constants.ts
-export const MY_NEW_CONSTANT = 42;
-export const MY_CONFIG_SETTING = "default-value";
-```
-
-**Bad:**
-```typescript
-if (cache.size > 1000) { } // ❌ Magic number
-```
-
-**Good:**
-```typescript
-import { CACHE_MAX_SIZE } from "./constants";
-if (cache.size > CACHE_MAX_SIZE) { } // ✅ Named constant
-```
-
-### Adding Utilities
-
-Utilities should be pure functions when possible:
-
-```typescript
-// src/utils/myUtil.ts
-/**
- * Utility description
- * @param input - Input description
- * @returns Output description
- */
-export function myUtilFunction(input: string): string {
-	return input.trim();
-}
-```
-
-## Performance Considerations
-
-### Guidelines
-
-1. **Avoid unnecessary work** - Cache results, check if work needed first
-2. **Limit concurrency** - Don't overwhelm with parallel requests
-3. **Debounce expensive operations** - Especially user input handling
-4. **Use LRU cache** - For bounded memory usage
-5. **Measure before optimizing** - Use Timer and performance tracking
-
-### Example: Caching
-
-```typescript
-class MyService {
-	private cache = new LRUCache<string, Result>(1000);
-
-	async getData(key: string): Promise<Result> {
-		// Check cache first
-		const cached = this.cache.get(key);
-		if (cached) {
-			return cached;
-		}
-
-		// Fetch and cache
-		const result = await this.fetchData(key);
-		this.cache.set(key, result);
-		return result;
-	}
-}
-```
-
-### Example: Concurrency Limiting
-
-```typescript
-class MyService {
-	private activeRequests = 0;
-	private readonly MAX_CONCURRENT = 10;
-
-	async fetchData(url: string): Promise<Data> {
-		// Wait if too many concurrent requests
-		while (this.activeRequests >= this.MAX_CONCURRENT) {
-			await new Promise(resolve => setTimeout(resolve, 50));
-		}
-
-		this.activeRequests++;
-		try {
-			return await this.doFetch(url);
-		} finally {
-			this.activeRequests--;
-		}
-	}
-}
-```
-
-### Example: Performance Tracking
-
-```typescript
-import { Timer } from "./utils/performance";
-
-async function expensiveOperation(): Promise<void> {
-	const timer = new Timer("expensiveOperation");
-
-	// Do work
-	await doWork();
-
-	timer.end(); // Logs and records metrics
-}
-```
-
-## Documentation
-
-### JSDoc Requirements
-
-All public methods must have JSDoc comments:
-
-```typescript
-/**
- * Fetch metadata for a URL
- *
- * This method checks the cache first, then fetches from the network if needed.
- * Results are cached for future requests.
- *
- * @param url - The URL to fetch metadata for
- * @returns Promise resolving to link metadata
- * @throws {Error} If the URL is invalid or fetch fails
- *
- * @example
- * ```typescript
- * const metadata = await service.getMetadata("https://example.com");
- * console.log(metadata.title);
- * ```
- */
-async getMetadata(url: string): Promise<LinkMetadata> {
-	// Implementation
-}
-```
-
-### Inline Comments
-
-Use inline comments for complex logic:
-
-```typescript
-// Check for "soft 404s" - pages that return 200 but show error content
-if (this.validator.isSoft404(response.text, parsedMetadata, url)) {
-	throw new Error("Soft 404");
-}
-```
-
-### README Updates
-
-Update README.md when adding:
-- New features
-- New configuration options
-- Breaking changes
-- Installation instructions
 
 ## Questions?
 
-If you have questions:
-
-1. **Check existing documentation** - README, ARCHITECTURE.md, this guide
-2. **Search issues** - Someone may have asked before
-3. **Open a discussion** - Use GitHub Discussions for questions
-4. **Open an issue** - For bugs or feature requests
+- **Check existing code** - Follow established patterns
+- **Search issues** - Someone may have asked before
+- **Open a discussion** - Ask in GitHub Discussions
+- **Open an issue** - For bugs or feature requests
 
 ## Code of Conduct
 
 - Be respectful and inclusive
-- Assume good intentions
 - Provide constructive feedback
-- Focus on the code, not the person
+- Focus on code, not people
 
 Thank you for contributing!

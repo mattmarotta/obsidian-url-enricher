@@ -1,127 +1,144 @@
 # URL Enricher
 
 [![GitHub release](https://img.shields.io/github/v/release/mattmarotta/obsidian-url-enricher)](https://github.com/mattmarotta/obsidian-url-enricher/releases/latest)
+
 [![License](https://img.shields.io/github/license/mattmarotta/obsidian-url-enricher?cacheSeconds=3600)](LICENSE)
 
-**Add rich, non-destructive link previews to Obsidian URLs**
+**Rich, non-destructive link previews for Obsidian**
 
-See instant URL previews with title, description, and favicon — all without modifying your markdown source.
+Transform plain URLs into beautiful previews with title, description, and favicon — without modifying your markdown.
 
 ![Demo](assets/demo.gif)
 
-## ✨ Features at a Glance
+## Quick Start
 
-- **100% Non-Destructive** - URLs stay as plain text in your markdown
-- **Two Preview Styles** - Inline (compact) or Card (detailed with Material Design)
-- **Cursor-Aware Editing** - Click URL to edit, click away to see preview
-- **Automatic Metadata** - Fetches title, description, favicon automatically
-- **Per-Page Configuration** - Override settings with frontmatter
-- **Domain-Specific Enhancements** - Special handling for Wikipedia, Reddit, Twitter, LinkedIn, Google
-- **Real-Time Updates** - Changes apply instantly
-
-![Preview Styles](assets/inline-preview.png) ![Card Style](assets/card-preview.png)
-
-## 🚀 Quick Start
-
-1. **Install** from Obsidian Community Plugins (search "URL Enricher")
+1. **Install** from **Settings → Community plugins → Browse** (search "URL Enricher")
 2. **Paste a URL** in your note: `https://github.com`
-3. **View in Live Preview mode** - see the rich preview appear
-4. **Click the preview** to open the link
+3. **Switch to Live Preview mode** to see the preview
 
-That's it! The plugin works automatically on all URLs in Live Preview mode.
+That's it! Click previews to edit URLs, click away to restore.
 
-**Customize per-page** with frontmatter:
+Head to Settings > URL Enricher to customize global behaviour, or use frontmatter to customize per page.
+
+**Customize per-page:**
+
+Override global settings per-page. **Must start on line 1!**
+
 ```yaml
 ---
-preview-style: card    # or inline
+preview-style: card                   # inline | card
+max-card-length: 400                  # 1-5000 (recommended: 100+)
+max-inline-length: 200                # 1-5000 (recommended: 50+)
+show-favicon: true                    # true | false
+include-description: true             # true | false
+preview-color-mode: grey              # none | grey | custom
+custom-preview-color: "#4a4a4a"       # Hex color (with quotes!)
 ---
 ```
 
-## 📖 Documentation
+## Features
 
-### For Users
+### 🎨 Two Preview Styles
 
-- **[User Guide](docs/USER-GUIDE.md)** - Complete usage guide, features, and settings
-- **[Quick Reference](docs/QUICK-REFERENCE.md)** - Cheat sheet for settings and commands
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Advanced Features](docs/ADVANCED.md)** - Console API, debugging, performance tracking
-- **[Frontmatter Configuration](docs/features/FRONTMATTER-SUPPORT.md)** - Per-page settings reference
+**Inline** (compact): ![Inline Preview](assets/inline-preview.png)
 
-### For Developers
+- Flows naturally with text
+- URL completely hidden
+- Perfect for reading
 
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
-- **[Architecture](docs/developer/ARCHITECTURE.md)** - System design and patterns
-- **[Testing](docs/developer/TESTING.md)** - Testing infrastructure
-- **[Developer Guide](docs/developer/DEVELOPER-GUIDE.md)** - Development workflows
+**Card** (detailed): ![Card Preview](assets/card-preview.png)
 
-**Browse all documentation**: [docs/README.md](docs/README.md)
+- Material Design aesthetic
+- Shows description and site name
+- Great for bookmarks and research
 
-## ⚙️ Key Settings
+### ✨ What You Get
 
-Configure in **Settings → Community plugins → URL Enricher**:
+- **100% Non-Destructive** - Markdown source never modified
+- **Cursor-Aware** - Click to edit, click away to preview
+- **Automatic Metadata** - Fetches title, description, favicon
+- **Per-Page Config** - Override settings with frontmatter
+- **Domain Enhancements** - Special handling for Wikipedia, Reddit, Twitter, LinkedIn, Google
+- **Real-Time Updates** - Settings apply instantly
 
-- **Preview Style**: Inline (compact) or Card (detailed)
-- **Include Description**: Show/hide page descriptions
-- **Max Card Length**: Maximum characters for card previews (default: 300)
-- **Max Inline Length**: Maximum characters for inline previews (default: 150)
-- **Show Favicons**: Display site icons
-- **Request Timeout**: Network timeout (default: 7000ms)
+## Supported URL Formats
 
-**Per-page overrides** via frontmatter - override global settings for specific notes.
+```markdown
+https://github.com                            # Bare URL
+[custom text](https://github.com)             # Markdown link
+[](https://github.com)                        # Empty link text
+[[https://github.com]]                        # Wikilink (URLs only!)
+```
 
-See [User Guide](docs/USER-GUIDE.md) for complete settings reference and [Frontmatter Configuration](docs/features/FRONTMATTER-SUPPORT.md) for all available properties.
+**Not supported:** Image embeds `![](url)`, code blocks, non-HTTP protocols
 
+## Common Issues
 
-## 💾 Installation
+### Previews not showing?
 
-### From Obsidian (Recommended)
+- ✅ Enable **Live Preview mode** (not Source mode)
+- ✅ Check URL format: `https://example.com`
+- ✅ Settings → URL Enricher → Clear cache button
 
-1. Open **Settings → Community plugins → Browse**
-2. Search for "URL Enricher"
-3. Click **Install** → **Enable**
+### Frontmatter not working?
 
-### Manual Installation (for Testing/Development)
+- ⚠️ Must start on line 1 with `---`
+- ⚠️ Check spelling: `preview-style` (not `previewstyle`)
 
-1. Clone this repository into `<Vault>/.obsidian/plugins/obsidian-url-enricher/`
-2. Run `npm install && npm run build`
-3. Enable **URL Enricher** in **Settings → Community plugins**
+### Stale or wrong previews?
 
-## 🛠️ Development
+- Go to **Settings → URL Enricher → Clear cache**
+
+### Performance issues?
+
+- Disable descriptions in Settings
+- Reduce description length in Settings
+
+### Broken URL warnings (⚠️)?
+
+Some sites block bots (403 Forbidden). Disable warnings: **Settings → URL Enricher → HTTP Error Warnings → OFF**
+
+For more help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+## Domain Enhancements
+
+Special handling for popular sites:
+
+- **Wikipedia** - Fetches article intros, shows "WIKIPEDIA" as site name
+- **Reddit** - Format: `r/Subreddit — Title`, extracts post content
+- **Twitter/X** - Fetches tweets via oEmbed, shows `@username`
+- **Google Search** - Extracts query: "Google Search — your query"
+- **LinkedIn** - Cleans hashtags and comment counts from titles
+
+## Development
 
 ```bash
 npm install                 # Install dependencies
-npm run dev                 # Watch mode with hot reload
+npm run dev                 # Watch mode
 npm run build               # Production build
-npm test                    # Run all 558 tests
-npm run set-version X.Y.Z   # Bump version across all files
+npm test                    # Run tests (558 tests)
 ```
 
-**Testing**: 558 tests across 12 test files with comprehensive coverage of utilities, services, and business logic.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.
 
-See [Developer Guide](docs/developer/DEVELOPER-GUIDE.md) and [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development documentation.
+## Contributing
 
-## 🤝 Contributing
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for:
-- Development setup and workflows
-- Coding standards (100% type-safe TypeScript)
-- Testing requirements
-- Git workflow and commit conventions
-- Pull request process
+- Development setup
+- Code standards (100% type-safe TypeScript)
+- Release process
+- Common gotchas
 
-Want to add support for a new website? See [Adding Custom Metadata Handlers](CONTRIBUTING.md#adding-custom-metadata-handlers) in the Contributing Guide.
+## License
 
-## 📝 License
-
-MIT - See [LICENSE](LICENSE) for details.
+MIT - See [LICENSE](LICENSE)
 
 ---
 
-## 🔗 Links
-
-- **[Documentation](docs/README.md)** - Complete documentation index
-- **[Changelog](CHANGELOG.md)** - Version history and release notes
-- **[Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues)** - Report bugs or request features
-- **[Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions)** - Ask questions or share ideas
-
 **Made with ❤️ for the Obsidian community**
+
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
+- [Changelog](CHANGELOG.md) - Version history
+- [Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues) - Report bugs
+- [Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions) - Ask questions
