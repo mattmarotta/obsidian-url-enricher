@@ -398,3 +398,75 @@ a.url-preview-card-url:hover {
 	color: var(--text-accent);
 	font-weight: 500;
 }
+
+/* Cache Statistics Container - Settings UI */
+.url-enricher-cache-stats {
+	margin-bottom: 1em;
+	padding: 0.5em;
+	background: var(--background-secondary);
+	border-radius: 4px;
+}
+
+/* Error Indicator - Inline styles moved to CSS */
+.url-preview-error-indicator {
+	font-size: 0.85em;
+	opacity: 0.6;
+	margin-left: 0.25em;
+	cursor: default;
+}
+
+/* Preview Widget - Clickable cursor */
+.url-preview {
+	cursor: pointer;
+}
+
+/* Card Header Row - Flex layout for favicon + title */
+.url-preview__header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 0.5em;
+}
+
+/* Card Title in Header - Flex child */
+.url-preview__header .url-preview__title {
+	flex: 1;
+	margin: 0;
+}
+
+/* Reddit Post Title - Card specific styling */
+.url-preview--card .url-preview__post-title {
+	font-size: 1.05em;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--text-normal);
+	margin-bottom: 0.4em;
+}
+
+/* Card Footer - Site name styling */
+.url-preview__footer {
+	font-size: 0.68em;
+	font-weight: 500;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	margin-top: 0.9em;
+	padding-top: 0.8em;
+	border-top: 1px solid var(--background-modifier-border);
+	opacity: 0.45;
+}
+
+/* Color Mode - Body classes for background colors */
+body.url-enricher-color-none .url-preview--inline,
+body.url-enricher-color-none .url-preview--card {
+	background: transparent;
+}
+
+body.url-enricher-color-grey .url-preview--inline,
+body.url-enricher-color-grey .url-preview--card {
+	background: var(--background-modifier-border);
+}
+
+body.url-enricher-color-custom .url-preview--inline,
+body.url-enricher-color-custom .url-preview--card {
+	background: var(--url-enricher-custom-color, #4a4a4a);
+}

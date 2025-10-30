@@ -207,15 +207,7 @@ function createDecorationsForUrl(
 
 		// Style the URL to be subtle (small, grey, no underline)
 		const urlMark = Decoration.mark({
-			class: "url-preview-card-url",
-			attributes: {
-				style: `
-					font-size: 0.85em;
-					color: var(--text-faint);
-					text-decoration: none;
-					opacity: 0.7;
-				`.replace(/\s+/g, ' ').trim()
-			}
+			class: "url-preview-card-url"
 		});
 		decorations.push({ from: urlStart, to: urlEnd, decoration: urlMark });
 	} else {
@@ -268,15 +260,6 @@ export function buildUrlDecorations(
 	const showFavicon = pageConfig.showFavicon ?? globalSettings.showFavicon;
 	const includeDescription = pageConfig.includeDescription ?? globalSettings.includeDescription;
 	const keepEmoji = globalSettings.keepEmoji; // Not exposed to frontmatter
-
-	// Debug: Log merged settings
-	console.log('[URL Enricher] Merged settings:', {
-		previewStyle,
-		maxCardLength,
-		maxInlineLength,
-		showFavicon,
-		includeDescription
-	});
 
 	// Get syntax tree for markdown context detection
 	const tree = syntaxTree(view.state);

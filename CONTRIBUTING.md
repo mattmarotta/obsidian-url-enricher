@@ -63,6 +63,79 @@ import { CACHE_MAX_SIZE } from "./constants";
 if (cache.size > CACHE_MAX_SIZE) { }
 ```
 
+### Obsidian Plugin Requirements
+
+**⚠️ CRITICAL:** These patterns are **required for Obsidian plugin approval**. The automated review bot will flag violations.
+
+#### No Inline Styles - Use CSS Classes
+
+```typescript
+// ❌ Wrong - Inline style assignments
+element.style.color = "red";
+element.style.fontSize = "16px";
+element.style.cssText = "color: red; font-size: 16px;";
+
+// ✅ Correct - CSS classes in styles.css
+element.className = "my-custom-class";
+element.addClass("another-class");
+```
+
+**Exception:** CSS custom properties for user-provided runtime values only:
+```typescript
+// ✅ OK - User's custom color from color picker
+if (mode === 'custom') {
+  document.documentElement.style.setProperty('--custom-color', userColor);
+}
+```
+
+#### No innerHTML - Use DOM API
+
+```typescript
+// ❌ Wrong - Security risk
+element.innerHTML = `<strong>Title:</strong> ${text}`;
+textarea.innerHTML = htmlEntities;
+
+// ✅ Correct - DOM API
+const strong = document.createElement('strong');
+strong.textContent = 'Title:';
+element.appendChild(strong);
+element.appendChild(document.createTextNode(text));
+```
+
+#### Minimize Console Logging
+
+```typescript
+// ❌ Wrong - Excessive debug logs
+console.log('[plugin] Processing URL:', url);
+console.log('[plugin] Metadata fetched:', metadata);
+
+// ✅ Correct - Use Logger utility (disabled by default)
+import { Logger } from './utils/logger';
+const logger = new Logger('ModuleName');
+logger.debug('Processing URL:', url);
+
+// ✅ OK - Essential errors and warnings
+console.warn('[url-enricher] Failed to fetch:', error);
+console.error('[url-enricher] Critical failure:', error);
+
+// ✅ OK - Intentional developer tools
+console.log('API available at window.urlEnricher');
+```
+
+#### Prefer Body Classes Over CSS Variables
+
+```typescript
+// ❌ Wrong - CSS variable for every mode
+document.documentElement.style.setProperty('--bg-color', color);
+
+// ✅ Correct - Body classes + minimal CSS variables
+document.body.addClass(`plugin-color-${mode}`);
+// Only use CSS var for user-provided values
+if (mode === 'custom') {
+  document.documentElement.style.setProperty('--custom-color', userColor);
+}
+```
+
 ### Style
 - Tabs for indentation
 - Double quotes for strings

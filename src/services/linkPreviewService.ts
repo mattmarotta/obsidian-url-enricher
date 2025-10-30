@@ -219,7 +219,6 @@ export class LinkPreviewService {
 					throw new Error(httpError);
 				}
 				// Setting is off - don't treat as error, use fallback metadata
-				console.log(`[url-enricher] ${httpError} for ${url}, but HTTP error warnings are disabled`);
 			}
 
 			const contentType = this.fetcher.getHeader(response, "content-type") ?? "";
@@ -277,7 +276,6 @@ export class LinkPreviewService {
 			}
 
 			// HTTP error but warnings disabled - return normal fallback
-			console.log(`[url-enricher] HTTP error for ${url}, but warnings are disabled`);
 			return await this.finalizeMetadata(url, this.buildFallbackMetadata(url));
 		}
 	}

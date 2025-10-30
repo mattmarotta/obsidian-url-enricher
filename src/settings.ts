@@ -42,23 +42,17 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 	private updatePreviewColorCSS(): void {
 		const settings = this.plugin.settings;
-		let color: string;
 
-		switch (settings.previewColorMode) {
-			case "none":
-				color = "transparent";
-				break;
-			case "custom":
-				color = settings.customPreviewColor;
-				break;
-			case "grey":
-			default:
-				color = "var(--background-modifier-border)";
-				break;
+		// Remove all color mode classes
+		document.body.removeClass('url-enricher-color-none', 'url-enricher-color-grey', 'url-enricher-color-custom');
+
+		// Add appropriate class based on mode
+		document.body.addClass(`url-enricher-color-${settings.previewColorMode}`);
+
+		// Only set CSS variable if using custom color
+		if (settings.previewColorMode === 'custom') {
+			document.documentElement.style.setProperty('--url-enricher-custom-color', settings.customPreviewColor);
 		}
-
-		// Update CSS variable
-		document.documentElement.style.setProperty("--inline-preview-bg", color);
 	}
 
 	display(): void {
@@ -258,18 +252,27 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		// Cache stats
 		const stats = this.plugin.faviconCache?.getStats();
 		if (stats) {
-			const statsEl = containerEl.createDiv({ cls: "setting-item-description" });
-			statsEl.style.marginBottom = "1em";
-			statsEl.style.padding = "0.5em";
-			statsEl.style.background = "var(--background-secondary)";
-			statsEl.style.borderRadius = "4px";
-			
-			statsEl.innerHTML = `
-				<strong>Cache Statistics:</strong><br>
-				• Cached domains: ${stats.entries}<br>
-				• Oldest entry: ${stats.oldestTimestamp ? new Date(stats.oldestTimestamp).toLocaleDateString() : 'N/A'}<br>
-				• Cache expires after 30 days
-			`;
+			const statsEl = containerEl.createDiv({ cls: "url-enricher-cache-stats" });
+
+			// Build stats content using DOM API
+			const title = document.createElement('strong');
+			title.textContent = 'Cache Statistics:';
+			statsEl.appendChild(title);
+			statsEl.appendChild(document.createElement('br'));
+
+			const line1 = document.createTextNode(`• Cached domains: ${stats.entries}`);
+			statsEl.appendChild(line1);
+			statsEl.appendChild(document.createElement('br'));
+
+			const oldestDate = stats.oldestTimestamp
+				? new Date(stats.oldestTimestamp).toLocaleDateString()
+				: 'N/A';
+			const line2 = document.createTextNode(`• Oldest entry: ${oldestDate}`);
+			statsEl.appendChild(line2);
+			statsEl.appendChild(document.createElement('br'));
+
+			const line3 = document.createTextNode('• Cache expires after 30 days');
+			statsEl.appendChild(line3);
 		}
 
 		new Setting(containerEl)

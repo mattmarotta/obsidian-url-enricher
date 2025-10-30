@@ -173,6 +173,86 @@ import { METADATA_CACHE_MAX_SIZE } from "./constants";
 if (cache.size > METADATA_CACHE_MAX_SIZE) { }
 ```
 
+**8. Obsidian Plugin Review Requirements**
+
+These patterns are **required for Obsidian plugin approval**. Violations will be flagged by the automated review bot.
+
+**No Inline Styles - Use CSS Classes:**
+```typescript
+// ❌ NEVER assign styles via JavaScript
+element.style.color = "red";
+element.style.fontSize = "16px";
+element.style.cssText = "color: red; font-size: 16px;";
+
+// ✅ ALWAYS use CSS classes defined in styles.css
+element.className = "my-custom-class";
+element.addClass("another-class");
+```
+
+**Exception:** CSS custom properties for **user-provided runtime values only** (e.g., custom color picker):
+```typescript
+// ✅ Acceptable - user-configurable color at runtime
+if (mode === 'custom') {
+  document.documentElement.style.setProperty('--my-custom-color', userColor);
+}
+
+// ❌ Not acceptable - static value that could be in CSS
+document.documentElement.style.setProperty('--my-bg', '#4a4a4a');
+```
+
+**No innerHTML - Use DOM API:**
+```typescript
+// ❌ NEVER use innerHTML or outerHTML (security risk)
+element.innerHTML = `<strong>Title:</strong> ${text}`;
+textarea.innerHTML = htmlEntities; // Even for decoding
+
+// ✅ ALWAYS use DOM API
+const strong = document.createElement('strong');
+strong.textContent = 'Title:';
+element.appendChild(strong);
+element.appendChild(document.createTextNode(text));
+
+// ✅ For HTML entity decoding, use manual parsing
+const decoded = value.replace(/&(#x?[0-9a-f]+|\w+);/gi, (match, entity) =>
+  decodeEntity(entity) ?? match
+);
+```
+
+**Minimize Console Logging:**
+```typescript
+// ❌ Excessive debug logging
+console.log('[plugin] Processing URL:', url);
+console.log('[plugin] Metadata fetched:', metadata);
+console.log('[plugin] Settings updated');
+
+// ✅ Use Logger utility for debugging (disabled by default)
+import { Logger } from './utils/logger';
+const logger = new Logger('ModuleName');
+logger.debug('Processing URL:', url);  // Only shows if debug level enabled
+
+// ✅ Keep only essential error logging
+console.warn('[url-enricher] Failed to fetch metadata:', error);
+console.error('[url-enricher] Critical failure:', error);
+
+// ✅ Intentional developer tools output is fine
+console.log('Developer API available at window.urlEnricher');
+```
+
+**Color Mode Pattern - Use Body Classes:**
+```typescript
+// ❌ Setting CSS variables for every color mode
+document.documentElement.style.setProperty('--bg-color', color);
+
+// ✅ Body classes + CSS, minimal CSS variables
+document.body.addClass(`plugin-color-${mode}`);
+// Only set CSS var for user-provided custom colors
+if (mode === 'custom') {
+  document.documentElement.style.setProperty('--custom-color', userColor);
+}
+```
+
+See [CHANGELOG.md Unreleased](../../CHANGELOG.md#unreleased) for recent compliance improvements.
+
 ## Documentation Structure (Updated for v1.0.0)
 
 **New Modular Documentation** (as of v1.0.0):

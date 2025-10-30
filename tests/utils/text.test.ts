@@ -36,19 +36,18 @@ describe('Text Utilities', () => {
 			});
 
 			it('should decode special characters in real browser (limited in happy-dom)', () => {
-				// happy-dom has limited entity decoding - these pass through unchanged
-				// In real browser, textarea.innerHTML would decode these
-				expect(decodeHtmlEntities('&copy;')).toBe('&copy;');
-				expect(decodeHtmlEntities('&reg;')).toBe('&reg;');
-				expect(decodeHtmlEntities('&euro;')).toBe('&euro;');
-				expect(decodeHtmlEntities('&pound;')).toBe('&pound;');
+				// Manual decoder correctly handles these entities
+				expect(decodeHtmlEntities('&copy;')).toBe('©');
+				expect(decodeHtmlEntities('&reg;')).toBe('®');
+				expect(decodeHtmlEntities('&euro;')).toBe('€');
+				expect(decodeHtmlEntities('&pound;')).toBe('£');
 			});
 
-			it('should handle dashes and ellipsis (limited in happy-dom)', () => {
-				// happy-dom has limited entity decoding - these pass through unchanged
-				expect(decodeHtmlEntities('&ndash;')).toBe('&ndash;');
-				expect(decodeHtmlEntities('&mdash;')).toBe('&mdash;');
-				expect(decodeHtmlEntities('&hellip;')).toBe('&hellip;');
+			it('should handle dashes and ellipsis', () => {
+				// Manual decoder correctly handles these entities
+				expect(decodeHtmlEntities('&ndash;')).toBe('–');
+				expect(decodeHtmlEntities('&mdash;')).toBe('—');
+				expect(decodeHtmlEntities('&hellip;')).toBe('…');
 			});
 		});
 
@@ -209,7 +208,8 @@ describe('Text Utilities', () => {
 		it('should handle entities and tags together', () => {
 			const html = '<div>&quot;<span>quoted</span>&quot; &amp; more</div>';
 			const result = sanitizeTextContent(html);
-			expect(result).toBe('"quoted" & more');
+			// Tags are replaced with spaces to prevent words from running together
+			expect(result).toBe('" quoted " & more');
 		});
 
 		it('should handle empty HTML', () => {

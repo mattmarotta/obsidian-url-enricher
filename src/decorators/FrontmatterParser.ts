@@ -42,9 +42,6 @@ export function parsePageConfig(text: string): PageConfig {
 	// Parse frontmatter lines
 	const frontmatter = lines.slice(1, endIndex);
 
-	// Debug: Log frontmatter parsing
-	console.log('[URL Enricher] Parsing frontmatter:', frontmatter);
-
 	for (const line of frontmatter) {
 		// Preview style
 		const styleMatch = line.match(/^preview-style:\s*(.+)$/i);
@@ -110,9 +107,6 @@ export function parsePageConfig(text: string): PageConfig {
 			}
 		}
 	}
-
-	// Debug: Log parsed config
-	console.log('[URL Enricher] Parsed config:', config);
 
 	return config;
 }

@@ -61,8 +61,6 @@ export function createUrlPreviewDecorator(
 					return Decoration.none;
 				}
 
-				console.log('[url-enricher] buildDecorations called');
-
 				const builder = new RangeSetBuilder<Decoration>();
 
 				// Build decorations using the DecorationBuilder module

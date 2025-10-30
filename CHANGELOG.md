@@ -5,13 +5,18 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
--
+- Obsidian plugin approval requirements to agents.md and contributing.md
 
 ### Changed
--
+- **Code quality improvements** for Obsidian plugin review compliance:
+  - Moved all inline styles to CSS classes for better maintainability and performance
+  - Implemented body class approach for color mode switching (reduces JavaScript style manipulation)
+  - Reduced debug logging throughout codebase (removed 17 console.log statements)
+  - Improved HTML entity decoder to use manual parsing instead of browser innerHTML
 
 ### Fixed
--
+- **Security**: Replaced innerHTML usage with DOM API (createElement/textContent) in cache statistics and HTML entity decoding
+- **CSS cleanup**: Added proper cleanup of color mode classes and CSS variables on plugin unload
 
 ## [1.0.1] - 2025-10-30
 

@@ -22,12 +22,6 @@ export class ErrorIndicatorWidget extends WidgetType {
 			span.title = "HTTP error (403/404). Disable warnings in settings.";
 		}
 
-		span.style.cssText = `
-			font-size: 0.85em;
-			opacity: 0.6;
-			margin-left: 0.25em;
-			cursor: default;
-		`.replace(/\s+/g, ' ').trim();
 		return span;
 	}
 
@@ -79,9 +73,6 @@ export class UrlPreviewWidget extends WidgetType {
 		// Clean media URLs from description
 		const cleanedDescription = this.description ? cleanMediaUrls(this.description) : this.description;
 
-		// Make the preview clickable
-		container.style.cursor = "pointer";
-
 		// Prevent mousedown from moving cursor into the URL
 		container.onmousedown = (e) => {
 			e.preventDefault();
@@ -106,11 +97,6 @@ export class UrlPreviewWidget extends WidgetType {
 			if (this.previewStyle === "card") {
 				const headerRow = document.createElement("div");
 				headerRow.className = "url-preview__header";
-				headerRow.style.cssText = `
-					display: flex;
-					align-items: center;
-					margin-bottom: 0.5em;
-				`.replace(/\s+/g, ' ').trim();
 				headerRow.appendChild(favicon);
 
 				// Add title next to favicon for cards
@@ -119,10 +105,6 @@ export class UrlPreviewWidget extends WidgetType {
 					titleSpan.className = "url-preview__title";
 					const enrichedTitle = enrichTextWithStyledElements(this.title);
 					titleSpan.appendChild(enrichedTitle);
-					titleSpan.style.cssText = `
-						flex: 1;
-						margin: 0;
-					`.replace(/\s+/g, ' ').trim();
 					headerRow.appendChild(titleSpan);
 				}
 
@@ -185,13 +167,6 @@ export class UrlPreviewWidget extends WidgetType {
 				postTitleDiv.className = "url-preview__post-title";
 				const enrichedTitle = enrichTextWithStyledElements(postTitle.trim());
 				postTitleDiv.appendChild(enrichedTitle);
-				postTitleDiv.style.cssText = `
-					font-size: 1.05em;
-					font-weight: 600;
-					line-height: 1.35;
-					color: var(--text-normal);
-					margin-bottom: 0.4em;
-				`.replace(/\s+/g, ' ').trim();
 				textContainer.appendChild(postTitleDiv);
 			}
 
@@ -299,18 +274,6 @@ export class UrlPreviewWidget extends WidgetType {
 			const footer = document.createElement("div");
 			footer.className = "url-preview__footer";
 			footer.textContent = siteName.toUpperCase();
-			footer.style.cssText = `
-				font-size: 0.68em;
-				font-weight: 500;
-				color: var(--text-muted);
-				text-transform: uppercase;
-				letter-spacing: 0.1em;
-				margin-top: 0.9em;
-				padding-top: 0.8em;
-				border-top: 1px solid var(--background-modifier-border);
-				opacity: 0.45;
-			`.replace(/\s+/g, ' ').trim();
-
 			container.appendChild(footer);
 		}
 	}

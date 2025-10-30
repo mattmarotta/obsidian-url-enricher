@@ -13,7 +13,6 @@ import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSetting
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
 import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
-import type { PreviewColorMode } from "./settings";
 import { Logger, LogLevel } from "./utils/logger";
 import {
 	enablePerformanceTracking,
@@ -22,15 +21,6 @@ import {
 	resetPerformanceMetrics,
 	isPerformanceTrackingEnabled
 } from "./utils/performance";
-
-/**
- * Lookup table for preview color modes
- */
-const COLOR_MODE_MAP: Record<PreviewColorMode, string> = {
-	none: "transparent",
-	custom: "", // Will be replaced with customPreviewColor
-	grey: "var(--background-modifier-border)"
-};
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
@@ -67,6 +57,12 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			await this.faviconCache.flush();
 		}
 
+		// Clean up color mode classes
+		document.body.removeClass('url-enricher-color-none', 'url-enricher-color-grey', 'url-enricher-color-custom');
+
+		// Clean up CSS variable
+		document.documentElement.style.removeProperty('--url-enricher-custom-color');
+
 		// Clean up developer commands
 		this.unregisterDeveloperCommands();
 	}
@@ -92,16 +88,21 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	}
 
 	/**
-	 * Update the CSS variable for preview background color
+	 * Update the preview background color using body classes
 	 */
 	updatePreviewColorCSS(): void {
 		const mode = this.settings.previewColorMode;
-		const color = mode === "custom"
-			? this.settings.customPreviewColor
-			: COLOR_MODE_MAP[mode];
 
-		// Update CSS variable
-		document.documentElement.style.setProperty("--inline-preview-bg", color);
+		// Remove all color mode classes
+		document.body.removeClass('url-enricher-color-none', 'url-enricher-color-grey', 'url-enricher-color-custom');
+
+		// Add appropriate class based on mode
+		document.body.addClass(`url-enricher-color-${mode}`);
+
+		// Only set CSS variable if using custom color
+		if (mode === 'custom') {
+			document.documentElement.style.setProperty('--url-enricher-custom-color', this.settings.customPreviewColor);
+		}
 	}
 
 	/**

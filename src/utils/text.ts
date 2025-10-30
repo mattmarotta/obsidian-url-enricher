@@ -7,7 +7,7 @@ const NAMED_ENTITIES: Record<string, string> = {
 	gt: ">",
 	quot: '"',
 	apos: "'",
-	nbsp: " ",
+	nbsp: "\u00a0", // Non-breaking space
 	cent: "¢",
 	pound: "£",
 	yen: "¥",
@@ -46,12 +46,7 @@ export function decodeHtmlEntities(value: string): string {
 		return value;
 	}
 
-	if (typeof document !== "undefined" && document?.createElement) {
-		const textarea = document.createElement("textarea");
-		textarea.innerHTML = value;
-		return textarea.value;
-	}
-
+	// Use manual decoding to avoid innerHTML security concerns
 	return value.replace(ENTITY_REGEX, (match, entity) => decodeEntity(entity) ?? match);
 }
 
