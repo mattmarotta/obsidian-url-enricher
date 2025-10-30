@@ -108,6 +108,22 @@ Special handling for popular sites:
 - **Google Search** - Extracts query: "Google Search — your query"
 - **LinkedIn** - Cleans hashtags and comment counts from titles
 
+## Privacy & Network Usage
+
+This plugin makes network requests to provide rich previews:
+
+- **Page Metadata**: Fetches HTML from URLs you include in your notes to extract titles, descriptions, and favicons
+- **Wikipedia API**: For Wikipedia links, queries the Wikipedia API to fetch article summaries
+- **Twitter oEmbed API**: For Twitter/X links, uses Twitter's public oEmbed endpoint to fetch tweet content
+- **Google Favicon Service**: Requests high-resolution favicons from Google's public service for better display quality
+
+**Privacy:**
+- ✅ No telemetry or analytics
+- ✅ No user data collection
+- ✅ All network requests are for fetching public web content you've linked to
+- ✅ All data cached locally in your vault's plugin folder
+- ✅ You control what URLs are processed
+
 ## Development
 
 ```bash

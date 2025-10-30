@@ -12,6 +12,29 @@ This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as
 - **Release artifacts**: `main.js`, `manifest.json`, `styles.css`
 - **Developer API**: `window.urlEnricher` (also `window.inlineLinkPreview` for compatibility)
 
+## Obsidian Plugin Guidelines
+
+**Important**: All development must comply with Obsidian's official policies and guidelines:
+
+- **[Submit your plugin](https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin)** - Submission requirements and process
+- **[Developer policies](https://docs.obsidian.md/Developer+policies)** - Privacy, network usage, and telemetry policies
+- **[Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)** - Best practices and requirements
+
+**Key Requirements for This Plugin**:
+- ✅ No client-side telemetry or analytics (enforced)
+- ✅ Network usage clearly disclosed in README (see "Privacy & Network Usage" section)
+- ✅ Uses only Obsidian's `requestUrl` API for HTTP requests (mobile-compatible)
+- ✅ No Node.js or Electron APIs (mobile support required)
+- ✅ `isDesktopOnly: false` in manifest.json
+
+**Network Requests Made by This Plugin**:
+- User-provided URLs (metadata extraction)
+- Wikipedia API (article summaries)
+- Twitter oEmbed API (tweet content)
+- Google Favicon Service (high-res favicons)
+
+All network activity is documented in README.md under "Privacy & Network Usage" section.
+
 ## Quick Start
 
 ```bash

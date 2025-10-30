@@ -6,6 +6,8 @@ All notable changes to URL Enricher will be documented in this file.
 
 ### Added
 - more robust error and missing file handling in the version bump script
+- privacy and network usage to readme
+- important Obsidian resources to agents.md
 
 ### Changed
 -
