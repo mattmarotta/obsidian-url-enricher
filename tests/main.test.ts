@@ -414,8 +414,10 @@ describe('Plugin Main', () => {
 				showFavicon: false,
 				keepEmoji: false,
 				previewStyle: 'card' as const,
-				previewColorMode: 'custom' as const,
-				customPreviewColor: '#ff0000',
+				inlineColorMode: 'custom' as const,
+				cardColorMode: 'custom' as const,
+				customInlineColor: '#ff0000',
+				customCardColor: '#00ff00',
 				showHttpErrorWarnings: false,
 				requireFrontmatter: true,
 			};

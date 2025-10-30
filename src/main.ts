@@ -58,7 +58,14 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		}
 
 		// Clean up color mode classes
-		document.body.removeClass('url-enricher-color-none', 'url-enricher-color-grey', 'url-enricher-color-custom');
+		document.body.removeClass(
+			'url-enricher-inline-none',
+			'url-enricher-inline-grey',
+			'url-enricher-inline-custom',
+			'url-enricher-card-none',
+			'url-enricher-card-grey',
+			'url-enricher-card-custom'
+		);
 
 		// Clean up CSS variable
 		document.documentElement.style.removeProperty('--url-enricher-custom-color');
@@ -91,17 +98,28 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	 * Update the preview background color using body classes
 	 */
 	updatePreviewColorCSS(): void {
-		const mode = this.settings.previewColorMode;
+		const settings = this.settings;
 
 		// Remove all color mode classes
-		document.body.removeClass('url-enricher-color-none', 'url-enricher-color-grey', 'url-enricher-color-custom');
+		document.body.removeClass(
+			'url-enricher-inline-none',
+			'url-enricher-inline-grey',
+			'url-enricher-inline-custom',
+			'url-enricher-card-none',
+			'url-enricher-card-grey',
+			'url-enricher-card-custom'
+		);
 
-		// Add appropriate class based on mode
-		document.body.addClass(`url-enricher-color-${mode}`);
+		// Add appropriate classes for each mode
+		document.body.addClass(`url-enricher-inline-${settings.inlineColorMode}`);
+		document.body.addClass(`url-enricher-card-${settings.cardColorMode}`);
 
-		// Only set CSS variable if using custom color
-		if (mode === 'custom') {
-			document.documentElement.style.setProperty('--url-enricher-custom-color', this.settings.customPreviewColor);
+		// Set CSS variables for custom colors
+		if (settings.inlineColorMode === 'custom') {
+			document.documentElement.style.setProperty('--url-enricher-custom-inline-color', settings.customInlineColor);
+		}
+		if (settings.cardColorMode === 'custom') {
+			document.documentElement.style.setProperty('--url-enricher-custom-card-color', settings.customCardColor);
 		}
 	}
 
@@ -175,6 +193,49 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// Migration: Remove deprecated displayMode (v0.9.0)
 		if (settings.displayMode !== undefined) {
 			delete settings.displayMode;
+		}
+
+		// Migration: previewColorMode -> inlineColorMode + cardColorMode (v1.0.2)
+		if (settings.previewColorMode !== undefined) {
+			// Migrate to new defaults: grey inline, transparent cards
+			if (settings.previewColorMode === 'grey') {
+				// Old default was grey for both - split into grey inline + transparent cards
+				settings.inlineColorMode = 'grey';
+				settings.cardColorMode = 'none';
+			} else {
+				// If they chose none/custom, apply to both for backwards compat
+				settings.inlineColorMode = settings.previewColorMode;
+				settings.cardColorMode = settings.previewColorMode;
+			}
+			delete settings.previewColorMode;
+		}
+
+		// Migration: customPreviewColor -> customInlineColor + customCardColor (v1.0.2)
+		if (settings.customPreviewColor !== undefined) {
+			// Migrate single custom color to both inline and card
+			if (!settings.customInlineColor) {
+				settings.customInlineColor = settings.customPreviewColor;
+			}
+			if (!settings.customCardColor) {
+				settings.customCardColor = settings.customPreviewColor;
+			}
+			delete settings.customPreviewColor;
+		}
+
+		// Ensure color modes are set
+		if (!settings.inlineColorMode) {
+			settings.inlineColorMode = DEFAULT_SETTINGS.inlineColorMode;
+		}
+		if (!settings.cardColorMode) {
+			settings.cardColorMode = DEFAULT_SETTINGS.cardColorMode;
+		}
+
+		// Ensure custom colors are set
+		if (!settings.customInlineColor) {
+			settings.customInlineColor = DEFAULT_SETTINGS.customInlineColor;
+		}
+		if (!settings.customCardColor) {
+			settings.customCardColor = DEFAULT_SETTINGS.customCardColor;
 		}
 
 		const numericTimeout = Number(this.settings.requestTimeoutMs);

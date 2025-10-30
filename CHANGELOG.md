@@ -13,10 +13,25 @@ All notable changes to URL Enricher will be documented in this file.
   - Implemented body class approach for color mode switching (reduces JavaScript style manipulation)
   - Reduced debug logging throughout codebase (removed 17 console.log statements)
   - Improved HTML entity decoder to use manual parsing instead of browser innerHTML
+- **Separate color controls** for inline and card previews:
+  - Split single "Preview background color" setting into two independent settings: "Inline preview background" and "Card preview background"
+  - Split single "Custom preview color" picker into two separate pickers: "Custom inline preview color" and "Custom card preview color"
+  - Default: grey background for inline previews, transparent background for card previews (preserves original appearance)
+  - Allows independent color customization for each preview type (e.g., grey inline + transparent cards, or different custom colors for each)
+  - Migration: Existing "grey" setting automatically becomes grey inline + transparent cards; existing custom color applies to both inline and card
 
 ### Fixed
 - **Security**: Replaced innerHTML usage with DOM API (createElement/textContent) in cache statistics and HTML entity decoding
 - **CSS cleanup**: Added proper cleanup of color mode classes and CSS variables on plugin unload
+- **Color mode defaults**: Card previews now default to transparent background instead of grey (restores original pre-1.0.2 appearance)
+
+### Removed
+- **Frontmatter color mode support** (architectural limitation):
+  - Removed `preview-color-mode` frontmatter property (no longer works per-page)
+  - Removed `custom-preview-color` frontmatter property (no longer works per-page)
+  - Reason: Body class approach is global; per-page color modes are not possible with the current implementation
+  - Color modes must now be set globally in plugin settings
+  - Other frontmatter options still work per-page: `preview-style`, `max-card-length`, `max-inline-length`, `show-favicon`, `include-description`
 
 ## [1.0.1] - 2025-10-30
 

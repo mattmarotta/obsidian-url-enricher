@@ -11,8 +11,10 @@ describe('Settings', () => {
 			expect(DEFAULT_SETTINGS).toHaveProperty('showFavicon');
 			expect(DEFAULT_SETTINGS).toHaveProperty('keepEmoji');
 			expect(DEFAULT_SETTINGS).toHaveProperty('previewStyle');
-			expect(DEFAULT_SETTINGS).toHaveProperty('previewColorMode');
-			expect(DEFAULT_SETTINGS).toHaveProperty('customPreviewColor');
+			expect(DEFAULT_SETTINGS).toHaveProperty('inlineColorMode');
+			expect(DEFAULT_SETTINGS).toHaveProperty('cardColorMode');
+			expect(DEFAULT_SETTINGS).toHaveProperty('customInlineColor');
+			expect(DEFAULT_SETTINGS).toHaveProperty('customCardColor');
 			expect(DEFAULT_SETTINGS).toHaveProperty('showHttpErrorWarnings');
 		});
 
@@ -117,28 +119,52 @@ describe('Settings', () => {
 			});
 
 
-			it('should have previewColorMode as string', () => {
-				expect(typeof DEFAULT_SETTINGS.previewColorMode).toBe('string');
+			it('should have inlineColorMode as string', () => {
+				expect(typeof DEFAULT_SETTINGS.inlineColorMode).toBe('string');
 			});
 
-			it('should default previewColorMode to "grey"', () => {
-				expect(DEFAULT_SETTINGS.previewColorMode).toBe('grey');
+			it('should default inlineColorMode to "grey"', () => {
+				expect(DEFAULT_SETTINGS.inlineColorMode).toBe('grey');
 			});
 
-			it('should have valid previewColorMode value', () => {
-				expect(['none', 'grey', 'custom']).toContain(DEFAULT_SETTINGS.previewColorMode);
+			it('should have valid inlineColorMode value', () => {
+				expect(['none', 'grey', 'custom']).toContain(DEFAULT_SETTINGS.inlineColorMode);
 			});
 
-			it('should have customPreviewColor as string', () => {
-				expect(typeof DEFAULT_SETTINGS.customPreviewColor).toBe('string');
+			it('should have cardColorMode as string', () => {
+				expect(typeof DEFAULT_SETTINGS.cardColorMode).toBe('string');
 			});
 
-			it('should default customPreviewColor to a hex color', () => {
-				expect(DEFAULT_SETTINGS.customPreviewColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+			it('should default cardColorMode to "none"', () => {
+				expect(DEFAULT_SETTINGS.cardColorMode).toBe('none');
 			});
 
-			it('should default customPreviewColor to "#4a4a4a"', () => {
-				expect(DEFAULT_SETTINGS.customPreviewColor).toBe('#4a4a4a');
+			it('should have valid cardColorMode value', () => {
+				expect(['none', 'grey', 'custom']).toContain(DEFAULT_SETTINGS.cardColorMode);
+			});
+
+			it('should have customInlineColor as string', () => {
+				expect(typeof DEFAULT_SETTINGS.customInlineColor).toBe('string');
+			});
+
+			it('should default customInlineColor to a hex color', () => {
+				expect(DEFAULT_SETTINGS.customInlineColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+			});
+
+			it('should default customInlineColor to "#4a4a4a"', () => {
+				expect(DEFAULT_SETTINGS.customInlineColor).toBe('#4a4a4a');
+			});
+
+			it('should have customCardColor as string', () => {
+				expect(typeof DEFAULT_SETTINGS.customCardColor).toBe('string');
+			});
+
+			it('should default customCardColor to a hex color', () => {
+				expect(DEFAULT_SETTINGS.customCardColor).toMatch(/^#[0-9a-fA-F]{6}$/);
+			});
+
+			it('should default customCardColor to "#4a4a4a"', () => {
+				expect(DEFAULT_SETTINGS.customCardColor).toBe('#4a4a4a');
 			});
 		});
 
@@ -157,9 +183,9 @@ describe('Settings', () => {
 				});
 			});
 
-			it('should have exactly 11 fields', () => {
+			it('should have exactly 13 fields', () => {
 				const keys = Object.keys(DEFAULT_SETTINGS);
-				expect(keys).toHaveLength(11);
+				expect(keys).toHaveLength(13);
 			});
 
 			it('should be a valid InlineLinkPreviewSettings object', () => {
@@ -271,9 +297,12 @@ describe('Settings', () => {
 				showFavicon: false,
 				keepEmoji: false,
 				previewStyle: 'card',
-				previewColorMode: 'custom',
-				customPreviewColor: '#ff0000',
+				inlineColorMode: 'custom',
+				cardColorMode: 'custom',
+				customInlineColor: '#ff0000',
+				customCardColor: '#ff0000',
 				showHttpErrorWarnings: false,
+				requireFrontmatter: false,
 			};
 			expect(settings).toBeDefined();
 			expect(settings.previewStyle).toBe('card');
@@ -346,10 +375,13 @@ describe('Settings', () => {
 		it('should handle different color hex formats', () => {
 			const settings: InlineLinkPreviewSettings = {
 				...DEFAULT_SETTINGS,
-				previewColorMode: 'custom',
-				customPreviewColor: '#123456',
+				inlineColorMode: 'custom',
+				cardColorMode: 'custom',
+				customInlineColor: '#123456',
+				customCardColor: '#abcdef',
 			};
-			expect(settings.customPreviewColor).toBe('#123456');
+			expect(settings.customInlineColor).toBe('#123456');
+			expect(settings.customCardColor).toBe('#abcdef');
 		});
 	});
 });

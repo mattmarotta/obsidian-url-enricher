@@ -3,7 +3,7 @@ preview-style: card
 max-card-length: 300
 show-favicon: true
 include-description: true
-preview-color-mode: grey
+# preview-color-mode removed - use global settings
 ---
 
 # Frontmatter Configuration Variations
@@ -20,7 +20,7 @@ preview-style: card
 max-card-length: 300
 show-favicon: true
 include-description: true
-preview-color-mode: grey
+# preview-color-mode removed - use global settings
 ---
 ```
 
@@ -45,10 +45,7 @@ preview-color-mode: grey
 
 ### Visual Styling
 
-**`preview-color-mode`** - Background color:
-- `none` - No background
-- `grey` - Grey background (this page)
-- `custom` - Use theme colors
+**Note:** Color modes (`preview-color-mode`, `custom-preview-color`) have been removed from frontmatter as of v1.0.2. Background colors must now be set globally in the plugin settings. This allows separate control for inline and card preview backgrounds.
 
 ## Example URLs to See Configuration in Action
 
@@ -114,7 +111,7 @@ preview-style: card
 max-card-length: 5000
 show-favicon: true
 include-description: true
-preview-color-mode: custom
+# preview-color-mode removed - use global settings
 ---
 ```
 

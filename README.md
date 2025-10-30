@@ -29,8 +29,7 @@ max-card-length: 400                  # 1-5000 (recommended: 100+)
 max-inline-length: 200                # 1-5000 (recommended: 50+)
 show-favicon: true                    # true | false
 include-description: true             # true | false
-preview-color-mode: grey              # none | grey | custom
-custom-preview-color: "#4a4a4a"       # Hex color (with quotes!)
+# Note: Color modes are set globally in plugin settings, not per-page
 ---
 ```
 

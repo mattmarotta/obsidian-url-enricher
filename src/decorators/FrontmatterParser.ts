@@ -1,4 +1,4 @@
-import type { PreviewStyle, PreviewColorMode } from "../settings";
+import type { PreviewStyle } from "../settings";
 
 /**
  * Page-level configuration that can override global settings via frontmatter
@@ -9,8 +9,6 @@ export interface PageConfig {
 	maxInlineLength?: number;
 	showFavicon?: boolean;
 	includeDescription?: boolean;
-	previewColorMode?: PreviewColorMode;
-	customPreviewColor?: string;
 }
 
 /**
@@ -85,25 +83,6 @@ export function parsePageConfig(text: string): PageConfig {
 			const value = descMatch[1].trim().toLowerCase();
 			if (value === 'true' || value === 'false') {
 				config.includeDescription = value === 'true';
-			}
-		}
-
-		// Preview color mode
-		const colorModeMatch = line.match(/^preview-color-mode:\s*(.+)$/i);
-		if (colorModeMatch) {
-			const value = colorModeMatch[1].trim().toLowerCase();
-			if (value === 'none' || value === 'grey' || value === 'custom') {
-				config.previewColorMode = value;
-			}
-		}
-
-		// Custom preview color
-		const customColorMatch = line.match(/^custom-preview-color:\s*(.+)$/i);
-		if (customColorMatch) {
-			const value = customColorMatch[1].trim();
-			// Basic hex color validation
-			if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
-				config.customPreviewColor = value;
 			}
 		}
 	}

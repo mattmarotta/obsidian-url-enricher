@@ -129,10 +129,16 @@ console.log('API available at window.urlEnricher');
 document.documentElement.style.setProperty('--bg-color', color);
 
 // ✅ Correct - Body classes + minimal CSS variables
-document.body.addClass(`plugin-color-${mode}`);
+// Separate classes for inline and card modes
+document.body.addClass(`url-enricher-inline-${inlineMode}`);
+document.body.addClass(`url-enricher-card-${cardMode}`);
+
 // Only use CSS var for user-provided values
-if (mode === 'custom') {
-  document.documentElement.style.setProperty('--custom-color', userColor);
+if (inlineMode === 'custom') {
+  document.documentElement.style.setProperty('--url-enricher-custom-inline-color', customInlineColor);
+}
+if (cardMode === 'custom') {
+  document.documentElement.style.setProperty('--url-enricher-custom-card-color', customCardColor);
 }
 ```
 

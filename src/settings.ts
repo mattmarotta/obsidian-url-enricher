@@ -12,8 +12,10 @@ export interface InlineLinkPreviewSettings {
 	showFavicon: boolean;
 	keepEmoji: boolean;
 	previewStyle: PreviewStyle;
-	previewColorMode: PreviewColorMode;
-	customPreviewColor: string;
+	inlineColorMode: PreviewColorMode;
+	cardColorMode: PreviewColorMode;
+	customInlineColor: string;
+	customCardColor: string;
 	showHttpErrorWarnings: boolean;
 	requireFrontmatter: boolean;
 }
@@ -26,8 +28,10 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	showFavicon: true,
 	keepEmoji: true,
 	previewStyle: "inline",
-	previewColorMode: "grey",
-	customPreviewColor: "#4a4a4a",
+	inlineColorMode: "grey",
+	cardColorMode: "none",
+	customInlineColor: "#4a4a4a",
+	customCardColor: "#4a4a4a",
 	showHttpErrorWarnings: true,
 	requireFrontmatter: false,
 };
@@ -44,14 +48,25 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		const settings = this.plugin.settings;
 
 		// Remove all color mode classes
-		document.body.removeClass('url-enricher-color-none', 'url-enricher-color-grey', 'url-enricher-color-custom');
+		document.body.removeClass(
+			'url-enricher-inline-none',
+			'url-enricher-inline-grey',
+			'url-enricher-inline-custom',
+			'url-enricher-card-none',
+			'url-enricher-card-grey',
+			'url-enricher-card-custom'
+		);
 
-		// Add appropriate class based on mode
-		document.body.addClass(`url-enricher-color-${settings.previewColorMode}`);
+		// Add appropriate classes for each mode
+		document.body.addClass(`url-enricher-inline-${settings.inlineColorMode}`);
+		document.body.addClass(`url-enricher-card-${settings.cardColorMode}`);
 
-		// Only set CSS variable if using custom color
-		if (settings.previewColorMode === 'custom') {
-			document.documentElement.style.setProperty('--url-enricher-custom-color', settings.customPreviewColor);
+		// Set CSS variables for custom colors
+		if (settings.inlineColorMode === 'custom') {
+			document.documentElement.style.setProperty('--url-enricher-custom-inline-color', settings.customInlineColor);
+		}
+		if (settings.cardColorMode === 'custom') {
+			document.documentElement.style.setProperty('--url-enricher-custom-card-color', settings.customCardColor);
 		}
 	}
 
@@ -100,32 +115,65 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Preview background color")
-			.setDesc("Choose the background color for inline and card previews.")
+			.setName("Inline preview background")
+			.setDesc("Background color for compact inline-style previews.")
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption("none", "None (transparent)")
 					.addOption("grey", "Grey (default)")
 					.addOption("custom", "Custom color")
-					.setValue(settings.previewColorMode)
+					.setValue(settings.inlineColorMode)
 					.onChange(async (value) => {
-						this.plugin.settings.previewColorMode = value as PreviewColorMode;
+						this.plugin.settings.inlineColorMode = value as PreviewColorMode;
 						await this.plugin.saveSettings();
 						this.updatePreviewColorCSS();
 						this.display(); // Refresh to show/hide color picker
 					}),
 			);
 
-		// Show color picker only if custom mode is selected
-		if (settings.previewColorMode === "custom") {
+		new Setting(containerEl)
+			.setName("Card preview background")
+			.setDesc("Background color for prominent card-style previews.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("none", "None (transparent, default)")
+					.addOption("grey", "Grey")
+					.addOption("custom", "Custom color")
+					.setValue(settings.cardColorMode)
+					.onChange(async (value) => {
+						this.plugin.settings.cardColorMode = value as PreviewColorMode;
+						await this.plugin.saveSettings();
+						this.updatePreviewColorCSS();
+						this.display(); // Refresh to show/hide color picker
+					}),
+			);
+
+		// Show color picker for inline if set to custom
+		if (settings.inlineColorMode === "custom") {
 			new Setting(containerEl)
-				.setName("Custom preview color")
-				.setDesc("Choose a custom background color for inline and card previews.")
+				.setName("Custom inline preview color")
+				.setDesc("Choose a custom background color for inline-style previews.")
 				.addColorPicker((color) =>
 					color
-						.setValue(settings.customPreviewColor)
+						.setValue(settings.customInlineColor)
 						.onChange(async (value) => {
-							this.plugin.settings.customPreviewColor = value;
+							this.plugin.settings.customInlineColor = value;
+							await this.plugin.saveSettings();
+							this.updatePreviewColorCSS();
+						}),
+				);
+		}
+
+		// Show color picker for card if set to custom
+		if (settings.cardColorMode === "custom") {
+			new Setting(containerEl)
+				.setName("Custom card preview color")
+				.setDesc("Choose a custom background color for card-style previews.")
+				.addColorPicker((color) =>
+					color
+						.setValue(settings.customCardColor)
+						.onChange(async (value) => {
+							this.plugin.settings.customCardColor = value;
 							await this.plugin.saveSettings();
 							this.updatePreviewColorCSS();
 						}),

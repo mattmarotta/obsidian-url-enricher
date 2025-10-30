@@ -24,8 +24,6 @@ function parsePageConfig(text: string): {
 	maxInlineLength?: number;
 	showFavicon?: boolean;
 	includeDescription?: boolean;
-	previewColorMode?: 'none' | 'grey' | 'custom';
-	customPreviewColor?: string;
 } {
 	const config: any = {};
 
@@ -96,21 +94,6 @@ function parsePageConfig(text: string): {
 				config.includeDescription = value === 'true';
 			}
 		}
-
-		// Preview color mode
-		const colorModeMatch = line.match(/^preview-color-mode:\s*(.+)$/i);
-		if (colorModeMatch) {
-			const value = colorModeMatch[1].trim().toLowerCase();
-			if (value === 'none' || value === 'grey' || value === 'custom') {
-				config.previewColorMode = value;
-			}
-		}
-
-		// Custom preview color
-		const customColorMatch = line.match(/^custom-preview-color:\s*(.+)$/i);
-		if (customColorMatch) {
-			config.customPreviewColor = customColorMatch[1].trim();
-		}
 	}
 
 	return config;
@@ -143,8 +126,6 @@ max-card-length: 400
 max-inline-length: 150
 show-favicon: true
 include-description: true
-preview-color-mode: custom
-custom-preview-color: #ff0000
 ---
 # Content here`;
 
@@ -155,8 +136,6 @@ custom-preview-color: #ff0000
 				expect(config.maxInlineLength).toBe(150);
 				expect(config.showFavicon).toBe(true);
 				expect(config.includeDescription).toBe(true);
-				expect(config.previewColorMode).toBe('custom');
-				expect(config.customPreviewColor).toBe('#ff0000');
 			});
 
 			it('should parse preview-style: inline', () => {
@@ -264,38 +243,6 @@ include-description: false
 				expect(config.includeDescription).toBe(false);
 			});
 
-			it('should parse preview-color-mode: none', () => {
-				const text = `---
-preview-color-mode: none
----`;
-				const config = parsePageConfig(text);
-				expect(config.previewColorMode).toBe('none');
-			});
-
-			it('should parse preview-color-mode: grey', () => {
-				const text = `---
-preview-color-mode: grey
----`;
-				const config = parsePageConfig(text);
-				expect(config.previewColorMode).toBe('grey');
-			});
-
-			it('should parse preview-color-mode: custom', () => {
-				const text = `---
-preview-color-mode: custom
----`;
-				const config = parsePageConfig(text);
-				expect(config.previewColorMode).toBe('custom');
-			});
-
-			it('should parse custom-preview-color', () => {
-				const text = `---
-custom-preview-color: #336699
----`;
-				const config = parsePageConfig(text);
-				expect(config.customPreviewColor).toBe('#336699');
-			});
-
 			it('should be case-insensitive for keys', () => {
 				const text = `---
 PREVIEW-STYLE: card
@@ -391,14 +338,6 @@ include-description: 1
 				const config = parsePageConfig(text);
 				expect(config.showFavicon).toBeUndefined();
 				expect(config.includeDescription).toBeUndefined();
-			});
-
-			it('should ignore invalid color-mode values', () => {
-				const text = `---
-preview-color-mode: rainbow
----`;
-				const config = parsePageConfig(text);
-				expect(config.previewColorMode).toBeUndefined();
 			});
 
 			it('should handle frontmatter not at document start', () => {

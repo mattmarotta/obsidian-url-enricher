@@ -79,7 +79,7 @@ preview-style: card
 max-card-length: 300
 show-favicon: true
 include-description: true
-preview-color-mode: grey
+# Color modes are set globally in plugin settings
 ```
 
 **Includes:**
