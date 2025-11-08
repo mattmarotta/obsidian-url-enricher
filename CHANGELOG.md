@@ -13,6 +13,22 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [1.1.1] - 2025-11-08
+
+### Added
+-
+
+### Changed
+- **Code quality improvements** for Obsidian plugin review compliance:
+  - Removed all console logging statements (20 total) to comply with Obsidian plugin review requirements
+  - Converted Logger utility methods (error, warn, info, debug) to no-ops
+  - Removed console statements from error handlers in metadata fetchers (Twitter, Reddit, Wikipedia)
+  - Removed console statements from cache operations (favicon cache, HTML parser)
+  - Changed developer command help() to return output instead of logging it
+
+### Fixed
+-
+
 ## [1.1.0] - 2025-10-30
 
 ### Added

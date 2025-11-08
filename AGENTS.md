@@ -6,7 +6,7 @@
 
 This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as plain text in your notes. The plugin enhances them with live inline previews or cards showing metadata (title, description, favicon) in editor view only.
 
-- **Current version**: 1.1.0
+- **Current version**: 1.1.1
 - **Plugin ID**: `url-enricher` (renamed from `obsidian-inline-link-preview` in 0.9.0)
 - **Entry point**: [src/main.ts](../../src/main.ts) → compiled to `main.js`
 - **Release artifacts**: `main.js`, `manifest.json`, `styles.css`
