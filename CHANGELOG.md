@@ -8,10 +8,16 @@ All notable changes to URL Enricher will be documented in this file.
 -
 
 ### Changed
--
+- Eliminated all JavaScript style manipulation (`.style.setProperty()` calls) to comply with plugin review bot requirements
+- **Simplified color customization**:
+  - Reduced color modes from 3 options (transparent/grey/custom) to 2 options (transparent/subtle background)
+  - Removed custom color picker feature to eliminate JavaScript style manipulation and fix dark mode compatibility issues
+  - Subtle background mode uses theme-adaptive `var(--background-modifier-border)` that works in both light and dark themes
+  - Migration: Existing custom and grey color settings automatically convert to subtle background mode
+  - Custom colors now available via CSS snippets (documented in README.md) for advanced users
 
 ### Fixed
--
+- **Dark mode compatibility**: Removed hard-coded custom colors that broke readability in dark themes
 
 ## [1.1.1] - 2025-11-08
 
@@ -25,16 +31,10 @@ All notable changes to URL Enricher will be documented in this file.
   - Removed console statements from error handlers in metadata fetchers (Twitter, Reddit, Wikipedia)
   - Removed console statements from cache operations (favicon cache, HTML parser)
   - Changed developer command help() to return output instead of logging it
-  - Eliminated all JavaScript style manipulation (`.style.setProperty()` calls) to comply with plugin review bot requirements
-- **Simplified color customization**:
-  - Reduced color modes from 3 options (transparent/grey/custom) to 2 options (transparent/subtle background)
-  - Removed custom color picker feature to eliminate JavaScript style manipulation and fix dark mode compatibility issues
-  - Subtle background mode uses theme-adaptive `var(--background-modifier-border)` that works in both light and dark themes
-  - Migration: Existing custom and grey color settings automatically convert to subtle background mode
-  - Custom colors now available via CSS snippets (documented in README.md) for advanced users
+  
 
 ### Fixed
-- **Dark mode compatibility**: Removed hard-coded custom colors that broke readability in dark themes
+-
 
 ## [1.1.0] - 2025-10-30
 
