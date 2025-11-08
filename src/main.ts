@@ -60,15 +60,10 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// Clean up color mode classes
 		document.body.removeClass(
 			'url-enricher-inline-none',
-			'url-enricher-inline-grey',
-			'url-enricher-inline-custom',
+			'url-enricher-inline-subtle',
 			'url-enricher-card-none',
-			'url-enricher-card-grey',
-			'url-enricher-card-custom'
+			'url-enricher-card-subtle'
 		);
-
-		// Clean up CSS variable
-		document.documentElement.style.removeProperty('--url-enricher-custom-color');
 
 		// Clean up developer commands
 		this.unregisterDeveloperCommands();
@@ -103,24 +98,14 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// Remove all color mode classes
 		document.body.removeClass(
 			'url-enricher-inline-none',
-			'url-enricher-inline-grey',
-			'url-enricher-inline-custom',
+			'url-enricher-inline-subtle',
 			'url-enricher-card-none',
-			'url-enricher-card-grey',
-			'url-enricher-card-custom'
+			'url-enricher-card-subtle'
 		);
 
 		// Add appropriate classes for each mode
 		document.body.addClass(`url-enricher-inline-${settings.inlineColorMode}`);
 		document.body.addClass(`url-enricher-card-${settings.cardColorMode}`);
-
-		// Set CSS variables for custom colors
-		if (settings.inlineColorMode === 'custom') {
-			document.documentElement.style.setProperty('--url-enricher-custom-inline-color', settings.customInlineColor);
-		}
-		if (settings.cardColorMode === 'custom') {
-			document.documentElement.style.setProperty('--url-enricher-custom-card-color', settings.customCardColor);
-		}
 	}
 
 	/**
@@ -230,12 +215,21 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			settings.cardColorMode = DEFAULT_SETTINGS.cardColorMode;
 		}
 
-		// Ensure custom colors are set
-		if (!settings.customInlineColor) {
-			settings.customInlineColor = DEFAULT_SETTINGS.customInlineColor;
+		// Migration: 'custom' and 'grey' -> 'subtle' (v1.1.1)
+		// Custom color picker removed for Obsidian plugin review compliance
+		if (settings.inlineColorMode === 'custom' || settings.inlineColorMode === 'grey') {
+			settings.inlineColorMode = 'subtle';
 		}
-		if (!settings.customCardColor) {
-			settings.customCardColor = DEFAULT_SETTINGS.customCardColor;
+		if (settings.cardColorMode === 'custom' || settings.cardColorMode === 'grey') {
+			settings.cardColorMode = 'subtle';
+		}
+
+		// Remove deprecated custom color fields
+		if (settings.customInlineColor !== undefined) {
+			delete settings.customInlineColor;
+		}
+		if (settings.customCardColor !== undefined) {
+			delete settings.customCardColor;
 		}
 
 		const numericTimeout = Number(this.settings.requestTimeoutMs);

@@ -462,12 +462,8 @@ body.url-enricher-inline-none .url-preview--inline {
 	background: transparent;
 }
 
-body.url-enricher-inline-grey .url-preview--inline {
+body.url-enricher-inline-subtle .url-preview--inline {
 	background: var(--background-modifier-border);
-}
-
-body.url-enricher-inline-custom .url-preview--inline {
-	background: var(--url-enricher-custom-inline-color, #4a4a4a);
 }
 
 /* Card preview colors */
@@ -475,10 +471,6 @@ body.url-enricher-card-none .url-preview--card {
 	background: transparent;
 }
 
-body.url-enricher-card-grey .url-preview--card {
+body.url-enricher-card-subtle .url-preview--card {
 	background: var(--background-modifier-border);
-}
-
-body.url-enricher-card-custom .url-preview--card {
-	background: var(--url-enricher-custom-card-color, #4a4a4a);
 }

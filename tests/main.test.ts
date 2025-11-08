@@ -330,48 +330,29 @@ describe('Plugin Main', () => {
 		/**
 		 * This function replicates the CSS color calculation logic from main.ts
 		 */
-		function calculatePreviewColor(previewColorMode: string, customPreviewColor: string): string {
+		function calculatePreviewColor(previewColorMode: string): string {
 			switch (previewColorMode) {
 				case 'none':
 					return 'transparent';
-				case 'custom':
-					return customPreviewColor;
-				case 'grey':
+				case 'subtle':
 				default:
 					return 'var(--background-modifier-border)';
 			}
 		}
 
 		it('should return transparent for "none" mode', () => {
-			const color = calculatePreviewColor('none', '#000000');
+			const color = calculatePreviewColor('none');
 			expect(color).toBe('transparent');
 		});
 
-		it('should return custom color for "custom" mode', () => {
-			const color = calculatePreviewColor('custom', '#ff0000');
-			expect(color).toBe('#ff0000');
-		});
-
-		it('should return CSS variable for "grey" mode', () => {
-			const color = calculatePreviewColor('grey', '#000000');
+		it('should return CSS variable for "subtle" mode', () => {
+			const color = calculatePreviewColor('subtle');
 			expect(color).toBe('var(--background-modifier-border)');
 		});
 
-		it('should default to grey mode for unknown values', () => {
-			const color = calculatePreviewColor('unknown', '#000000');
+		it('should default to subtle mode for unknown values', () => {
+			const color = calculatePreviewColor('unknown');
 			expect(color).toBe('var(--background-modifier-border)');
-		});
-
-		it('should use custom color value exactly as provided', () => {
-			const customColor = '#123456';
-			const color = calculatePreviewColor('custom', customColor);
-			expect(color).toBe(customColor);
-		});
-
-		it('should handle different custom color formats', () => {
-			expect(calculatePreviewColor('custom', '#abc')).toBe('#abc');
-			expect(calculatePreviewColor('custom', '#aabbcc')).toBe('#aabbcc');
-			expect(calculatePreviewColor('custom', 'rgb(255, 0, 0)')).toBe('rgb(255, 0, 0)');
 		});
 	});
 
@@ -414,10 +395,8 @@ describe('Plugin Main', () => {
 				showFavicon: false,
 				keepEmoji: false,
 				previewStyle: 'card' as const,
-				inlineColorMode: 'custom' as const,
-				cardColorMode: 'custom' as const,
-				customInlineColor: '#ff0000',
-				customCardColor: '#00ff00',
+				inlineColorMode: 'subtle' as const,
+				cardColorMode: 'subtle' as const,
 				showHttpErrorWarnings: false,
 				requireFrontmatter: true,
 			};
@@ -433,6 +412,98 @@ describe('Plugin Main', () => {
 			const merged = mergeSettings(loaded);
 			expect(merged.previewStyle).toBe('card');
 			expect((merged as any).extraField).toBe('should be ignored'); // Object.assign doesn't filter
+		});
+	});
+
+	describe('Settings Migration (v1.1.1)', () => {
+		/**
+		 * Replicates migration logic from normalizeSettings()
+		 */
+		function migrateColorModes(settings: any): any {
+			const migrated = { ...settings };
+
+			// Migration: 'custom' and 'grey' -> 'subtle'
+			if (migrated.inlineColorMode === 'custom' || migrated.inlineColorMode === 'grey') {
+				migrated.inlineColorMode = 'subtle';
+			}
+			if (migrated.cardColorMode === 'custom' || migrated.cardColorMode === 'grey') {
+				migrated.cardColorMode = 'subtle';
+			}
+
+			// Remove deprecated custom color fields
+			if (migrated.customInlineColor !== undefined) {
+				delete migrated.customInlineColor;
+			}
+			if (migrated.customCardColor !== undefined) {
+				delete migrated.customCardColor;
+			}
+
+			return migrated;
+		}
+
+		it('should migrate inlineColorMode from "grey" to "subtle"', () => {
+			const settings = { ...DEFAULT_SETTINGS, inlineColorMode: 'grey' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.inlineColorMode).toBe('subtle');
+		});
+
+		it('should migrate inlineColorMode from "custom" to "subtle"', () => {
+			const settings = { ...DEFAULT_SETTINGS, inlineColorMode: 'custom' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.inlineColorMode).toBe('subtle');
+		});
+
+		it('should migrate cardColorMode from "grey" to "subtle"', () => {
+			const settings = { ...DEFAULT_SETTINGS, cardColorMode: 'grey' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.cardColorMode).toBe('subtle');
+		});
+
+		it('should migrate cardColorMode from "custom" to "subtle"', () => {
+			const settings = { ...DEFAULT_SETTINGS, cardColorMode: 'custom' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.cardColorMode).toBe('subtle');
+		});
+
+		it('should keep "none" color mode unchanged', () => {
+			const settings = { ...DEFAULT_SETTINGS, inlineColorMode: 'none', cardColorMode: 'none' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.inlineColorMode).toBe('none');
+			expect(migrated.cardColorMode).toBe('none');
+		});
+
+		it('should keep "subtle" color mode unchanged', () => {
+			const settings = { ...DEFAULT_SETTINGS, inlineColorMode: 'subtle', cardColorMode: 'subtle' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.inlineColorMode).toBe('subtle');
+			expect(migrated.cardColorMode).toBe('subtle');
+		});
+
+		it('should remove customInlineColor field', () => {
+			const settings = { ...DEFAULT_SETTINGS, customInlineColor: '#ff0000' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.customInlineColor).toBeUndefined();
+		});
+
+		it('should remove customCardColor field', () => {
+			const settings = { ...DEFAULT_SETTINGS, customCardColor: '#ff0000' };
+			const migrated = migrateColorModes(settings);
+			expect(migrated.customCardColor).toBeUndefined();
+		});
+
+		it('should migrate both color modes and remove both custom color fields', () => {
+			const settings = {
+				...DEFAULT_SETTINGS,
+				inlineColorMode: 'custom',
+				cardColorMode: 'grey',
+				customInlineColor: '#ff0000',
+				customCardColor: '#00ff00'
+			};
+			const migrated = migrateColorModes(settings);
+			expect(migrated.inlineColorMode).toBe('subtle');
+			expect(migrated.cardColorMode).toBe('subtle');
+			expect(migrated.customInlineColor).toBeUndefined();
+			expect(migrated.customCardColor).toBeUndefined();
 		});
 	});
 });

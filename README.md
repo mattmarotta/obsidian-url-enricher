@@ -58,6 +58,29 @@ include-description: true             # true | false
 - **Domain Enhancements** - Special handling for Wikipedia, Reddit, Twitter, LinkedIn, Google
 - **Real-Time Updates** - Settings apply instantly
 
+## Customization
+
+### Custom Preview Colors
+
+Want specific colors? Use Obsidian CSS snippets:
+
+1. **Settings → Appearance → CSS snippets folder** (click folder icon)
+2. Create `url-enricher-colors.css`:
+
+```css
+/* Inline preview background */
+.url-preview--inline {
+  background: #4a90e2 !important;
+}
+
+/* Card preview background */
+.url-preview--card {
+  background: #50c878 !important;
+}
+```
+
+3. **Settings → Appearance → CSS snippets** → Enable snippet
+
 ## Supported URL Formats
 
 ```markdown

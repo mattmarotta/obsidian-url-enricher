@@ -13,8 +13,6 @@ describe('Settings', () => {
 			expect(DEFAULT_SETTINGS).toHaveProperty('previewStyle');
 			expect(DEFAULT_SETTINGS).toHaveProperty('inlineColorMode');
 			expect(DEFAULT_SETTINGS).toHaveProperty('cardColorMode');
-			expect(DEFAULT_SETTINGS).toHaveProperty('customInlineColor');
-			expect(DEFAULT_SETTINGS).toHaveProperty('customCardColor');
 			expect(DEFAULT_SETTINGS).toHaveProperty('showHttpErrorWarnings');
 		});
 
@@ -123,12 +121,12 @@ describe('Settings', () => {
 				expect(typeof DEFAULT_SETTINGS.inlineColorMode).toBe('string');
 			});
 
-			it('should default inlineColorMode to "grey"', () => {
-				expect(DEFAULT_SETTINGS.inlineColorMode).toBe('grey');
+			it('should default inlineColorMode to "subtle"', () => {
+				expect(DEFAULT_SETTINGS.inlineColorMode).toBe('subtle');
 			});
 
 			it('should have valid inlineColorMode value', () => {
-				expect(['none', 'grey', 'custom']).toContain(DEFAULT_SETTINGS.inlineColorMode);
+				expect(['none', 'subtle']).toContain(DEFAULT_SETTINGS.inlineColorMode);
 			});
 
 			it('should have cardColorMode as string', () => {
@@ -140,31 +138,7 @@ describe('Settings', () => {
 			});
 
 			it('should have valid cardColorMode value', () => {
-				expect(['none', 'grey', 'custom']).toContain(DEFAULT_SETTINGS.cardColorMode);
-			});
-
-			it('should have customInlineColor as string', () => {
-				expect(typeof DEFAULT_SETTINGS.customInlineColor).toBe('string');
-			});
-
-			it('should default customInlineColor to a hex color', () => {
-				expect(DEFAULT_SETTINGS.customInlineColor).toMatch(/^#[0-9a-fA-F]{6}$/);
-			});
-
-			it('should default customInlineColor to "#4a4a4a"', () => {
-				expect(DEFAULT_SETTINGS.customInlineColor).toBe('#4a4a4a');
-			});
-
-			it('should have customCardColor as string', () => {
-				expect(typeof DEFAULT_SETTINGS.customCardColor).toBe('string');
-			});
-
-			it('should default customCardColor to a hex color', () => {
-				expect(DEFAULT_SETTINGS.customCardColor).toMatch(/^#[0-9a-fA-F]{6}$/);
-			});
-
-			it('should default customCardColor to "#4a4a4a"', () => {
-				expect(DEFAULT_SETTINGS.customCardColor).toBe('#4a4a4a');
+				expect(['none', 'subtle']).toContain(DEFAULT_SETTINGS.cardColorMode);
 			});
 		});
 
@@ -183,9 +157,9 @@ describe('Settings', () => {
 				});
 			});
 
-			it('should have exactly 13 fields', () => {
+			it('should have exactly 11 fields', () => {
 				const keys = Object.keys(DEFAULT_SETTINGS);
-				expect(keys).toHaveLength(13);
+				expect(keys).toHaveLength(11);
 			});
 
 			it('should be a valid InlineLinkPreviewSettings object', () => {
@@ -217,23 +191,18 @@ describe('Settings', () => {
 
 		describe('PreviewColorMode Validation', () => {
 			it('should accept "none" as valid', () => {
-				const validModes: Array<'none' | 'grey' | 'custom'> = ['none', 'grey', 'custom'];
+				const validModes: Array<'none' | 'subtle'> = ['none', 'subtle'];
 				expect(validModes).toContain('none');
 			});
 
-			it('should accept "grey" as valid', () => {
-				const validModes: Array<'none' | 'grey' | 'custom'> = ['none', 'grey', 'custom'];
-				expect(validModes).toContain('grey');
+			it('should accept "subtle" as valid', () => {
+				const validModes: Array<'none' | 'subtle'> = ['none', 'subtle'];
+				expect(validModes).toContain('subtle');
 			});
 
-			it('should accept "custom" as valid', () => {
-				const validModes: Array<'none' | 'grey' | 'custom'> = ['none', 'grey', 'custom'];
-				expect(validModes).toContain('custom');
-			});
-
-			it('should only have three valid color modes', () => {
-				const validModes: Array<'none' | 'grey' | 'custom'> = ['none', 'grey', 'custom'];
-				expect(validModes).toHaveLength(3);
+			it('should only have two valid color modes', () => {
+				const validModes: Array<'none' | 'subtle'> = ['none', 'subtle'];
+				expect(validModes).toHaveLength(2);
 			});
 		});
 
@@ -297,10 +266,8 @@ describe('Settings', () => {
 				showFavicon: false,
 				keepEmoji: false,
 				previewStyle: 'card',
-				inlineColorMode: 'custom',
-				cardColorMode: 'custom',
-				customInlineColor: '#ff0000',
-				customCardColor: '#ff0000',
+				inlineColorMode: 'subtle',
+				cardColorMode: 'subtle',
 				showHttpErrorWarnings: false,
 				requireFrontmatter: false,
 			};
@@ -370,18 +337,6 @@ describe('Settings', () => {
 			expect(allFalse.showFavicon).toBe(false);
 			expect(allFalse.keepEmoji).toBe(false);
 			expect(allFalse.showHttpErrorWarnings).toBe(false);
-		});
-
-		it('should handle different color hex formats', () => {
-			const settings: InlineLinkPreviewSettings = {
-				...DEFAULT_SETTINGS,
-				inlineColorMode: 'custom',
-				cardColorMode: 'custom',
-				customInlineColor: '#123456',
-				customCardColor: '#abcdef',
-			};
-			expect(settings.customInlineColor).toBe('#123456');
-			expect(settings.customCardColor).toBe('#abcdef');
 		});
 	});
 });
