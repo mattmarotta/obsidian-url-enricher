@@ -41,13 +41,15 @@ All network activity is documented in README.md under "Privacy & Network Usage" 
 npm install                    # Install dependencies
 npm run dev                    # Watch mode (rebuilds on changes)
 npm run build                  # Production build (type-check + bundle)
-npm test                       # Run all 558 tests
+npm run lint                   # Run ESLint (enforces Obsidian plugin requirements)
+npm test                       # Run all 618 tests
 npm run set-version X.Y.Z      # Bump version (updates 6 files)
 ```
 
 **Node.js**: 18+ required
 **Package manager**: npm (required)
 **Bundler**: esbuild (required)
+**Linter**: ESLint v9 with `eslint-plugin-obsidianmd` (enforces plugin guidelines)
 
 ## Project Structure
 
@@ -78,7 +80,8 @@ src/
     logger.ts                # Structured logging (4 log levels)
     performance.ts           # Performance tracking and profiling
 tests/
-  # 558 tests across 12 test files, 100% pass rate
+  # 618 tests across 14 test files, 100% pass rate
+eslint.config.js             # ESLint v9 flat config (enforces Obsidian plugin rules)
 ```
 
 ## Key Technical Concepts
@@ -148,13 +151,13 @@ function parseData(value: unknown): Data | null {
 }
 ```
 
-**5. Both build AND test must pass**
+**5. Build, lint, AND test must all pass**
 ```bash
-# ❌ Only running one is not enough
+# ❌ Only running one or two is not enough
 npm run build
 
-# ✅ Run both (pre-commit hook does this automatically)
-npm run build && npm test
+# ✅ Run all three (pre-commit hook does this automatically)
+npm run build && npm run lint && npm test
 ```
 
 **6. Never commit build artifacts**
@@ -176,6 +179,8 @@ if (cache.size > METADATA_CACHE_MAX_SIZE) { }
 **8. Obsidian Plugin Review Requirements**
 
 These patterns are **required for Obsidian plugin approval**. Violations will be flagged by the automated review bot.
+
+**ESLint Enforcement:** Run `npm run lint` to check compliance. We use `eslint-plugin-obsidianmd` which automatically detects `.style` assignments and other violations during development.
 
 **No Inline Styles - Use CSS Classes:**
 ```typescript

@@ -10,8 +10,6 @@
  * @module utils/logger
  */
 
-import { LOG_PREFIX } from "../constants";
-
 export enum LogLevel {
 	ERROR = 0,
 	WARN = 1,

@@ -153,7 +153,8 @@ This plugin makes network requests to provide rich previews:
 npm install                 # Install dependencies
 npm run dev                 # Watch mode
 npm run build               # Production build
-npm test                    # Run tests (558 tests)
+npm run lint                # Run ESLint (enforces Obsidian plugin guidelines)
+npm test                    # Run tests (618 tests)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.

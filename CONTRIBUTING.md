@@ -26,11 +26,12 @@ This runs TypeScript validation and tests before each commit.
 ## Before You Commit
 
 - [ ] `npm run build` passes (no TypeScript errors)
-- [ ] `npm test` passes (all 558 tests)
+- [ ] `npm run lint` passes (ESLint checks Obsidian plugin requirements)
+- [ ] `npm test` passes (all 618 tests)
 - [ ] Used conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
 - [ ] Updated relevant documentation
 
-**Both checks are required!** Pre-commit hooks verify this automatically.
+**All checks are required!** Pre-commit hooks verify this automatically.
 
 ## Code Standards
 
@@ -66,6 +67,8 @@ if (cache.size > CACHE_MAX_SIZE) { }
 ### Obsidian Plugin Requirements
 
 **⚠️ CRITICAL:** These patterns are **required for Obsidian plugin approval**. The automated review bot will flag violations.
+
+**ESLint Integration:** We use `eslint-plugin-obsidianmd` to automatically enforce these rules during development. Run `npm run lint` to check for violations before committing.
 
 #### No Inline Styles - Use CSS Classes
 
@@ -167,6 +170,8 @@ See tests/ for examples. Follow existing patterns.
 npm install                    # Install dependencies
 npm run dev                    # Watch mode (rebuilds on changes)
 npm run build                  # Production build
+npm run lint                   # Run ESLint (checks Obsidian plugin compliance)
+npm run lint:fix               # Auto-fix ESLint issues
 npm test                       # Run all tests
 npm run test:watch             # Test watch mode
 npm run test:coverage          # Coverage report
@@ -253,16 +258,16 @@ window.inlineLinkPreview.refreshDecorations()
 
 The plugin caches metadata and favicons for 30 days. You won't see changes without clearing!
 
-**Both checks required before commit**
+**All checks required before commit**
 ```bash
-# ❌ Only running one
+# ❌ Only running one or two
 npm run build
 
-# ✅ Run both
-npm run build && npm test
+# ✅ Run all three
+npm run build && npm run lint && npm test
 
 # ✅ Or let pre-commit hook do it
-git commit -m "feat: my change"  # Runs both automatically
+git commit -m "feat: my change"  # Runs all checks automatically
 ```
 
 ### Documentation

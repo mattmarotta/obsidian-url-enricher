@@ -22,7 +22,7 @@ import {
 import { sanitizeTextContent } from "../utils/text";
 import { FaviconCache } from "./faviconCache";
 import type { InlineLinkPreviewSettings } from "../settings";
-import { MetadataFetcher, type FetcherOptions } from "./MetadataFetcher";
+import { MetadataFetcher } from "./MetadataFetcher";
 import { HtmlParser } from "./HtmlParser";
 import { FaviconResolver } from "./FaviconResolver";
 import { MetadataValidator } from "./MetadataValidator";

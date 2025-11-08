@@ -1,4 +1,4 @@
-import type { MetadataHandlerContext, MetadataHandler } from "./metadataHandler";
+import type { MetadataHandler } from "./metadataHandler";
 import { GoogleSearchMetadataHandler } from "./googleSearchMetadataHandler";
 import { LinkedInMetadataHandler } from "./linkedinMetadataHandler";
 import { RedditMetadataHandler } from "./redditMetadataHandler";

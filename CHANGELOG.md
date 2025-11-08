@@ -10,9 +10,22 @@ All notable changes to URL Enricher will be documented in this file.
   - Frontmatter settings override global plugin settings
   - Changes apply instantly as you type—no need to navigate away from the page
   - Example: `inline-color-mode: none` in frontmatter sets transparent background for that page's inline previews
+- **Obsidian ESLint plugin integration**: Now using `eslint-plugin-obsidianmd` to automatically enforce plugin review requirements
+  - Prevents `.style` assignments that violate Obsidian plugin guidelines
+  - Catches violations during development before plugin review
 - Added 30 new tests for frontmatter parsing and widget color mode class application (618 total tests)
 
 ### Changed
+- **Upgraded to ESLint v9 with flat config format**:
+  - Migrated from `.eslintrc` (ESLint v8) to `eslint.config.js` (ESLint v9)
+  - Added `"type": "module"` to package.json for ES modules support
+  - Configured browser globals (document, window, setTimeout, clearTimeout) for Obsidian plugin environment
+  - All linting now uses the modern flat config format
+- **Updated development dependencies**:
+  - TypeScript 4.7.4 → 5.9.3
+  - @typescript-eslint 5.29.0 → 8.46.3
+  - ESLint 8.57.1 → 9.39.1
+  - Added typescript-eslint v8.46.3 package
 - Eliminated all JavaScript style manipulation (`.style.setProperty()` calls) to comply with plugin review bot requirements
 - **Simplified color customization**:
   - Reduced color modes from 3 options (transparent/grey/custom) to 2 options (transparent/subtle background)
@@ -31,9 +44,11 @@ All notable changes to URL Enricher will be documented in this file.
   - Documented why custom colors were removed (plugin compliance + dark mode compatibility)
   - Added real-time frontmatter updates implementation notes for contributors
   - Updated README.md with frontmatter examples including color mode fields
+  - Documented ESLint plugin integration in CONTRIBUTING.md
 
 ### Fixed
 - **Dark mode compatibility**: Removed hard-coded custom colors that broke readability in dark themes
+- **Code quality**: Cleaned up unused imports flagged by ESLint (FetcherOptions, MetadataHandlerContext, LOG_PREFIX)
 
 ## [1.1.1] - 2025-11-08
 
