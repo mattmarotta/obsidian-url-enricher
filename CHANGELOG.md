@@ -5,6 +5,17 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [1.2.0] - 2025-11-08
+
+### Added
 - **Per-page color mode customization**: Frontmatter support for `inline-color-mode` and `card-color-mode` fields
   - Set color modes per-page with values: `none` (transparent) or `subtle` (theme-adaptive background)
   - Frontmatter settings override global plugin settings
