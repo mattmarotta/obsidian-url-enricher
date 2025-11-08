@@ -56,36 +56,28 @@ export class Logger {
 	 * Log an error message
 	 */
 	error(message: string, ...args: unknown[]): void {
-		if (LoggerConfig.getInstance().shouldLog(LogLevel.ERROR)) {
-			console.error(`${LOG_PREFIX} [${this.context}] ${message}`, ...args);
-		}
+		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**
 	 * Log a warning message
 	 */
 	warn(message: string, ...args: unknown[]): void {
-		if (LoggerConfig.getInstance().shouldLog(LogLevel.WARN)) {
-			console.warn(`${LOG_PREFIX} [${this.context}] ${message}`, ...args);
-		}
+		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**
 	 * Log an info message
 	 */
 	info(message: string, ...args: unknown[]): void {
-		if (LoggerConfig.getInstance().shouldLog(LogLevel.INFO)) {
-			console.log(`${LOG_PREFIX} [${this.context}] ${message}`, ...args);
-		}
+		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**
 	 * Log a debug message
 	 */
 	debug(message: string, ...args: unknown[]): void {
-		if (LoggerConfig.getInstance().shouldLog(LogLevel.DEBUG)) {
-			console.debug(`${LOG_PREFIX} [${this.context}] ${message}`, ...args);
-		}
+		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**

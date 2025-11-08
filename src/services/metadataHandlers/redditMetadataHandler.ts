@@ -126,7 +126,6 @@ export class RedditMetadataHandler implements MetadataHandler {
 				description: description || undefined,
 			};
 		} catch (error) {
-			console.warn("[url-enricher] Failed to parse Reddit metadata response", error);
 			return null;
 		}
 	}
@@ -141,7 +140,6 @@ export class RedditMetadataHandler implements MetadataHandler {
 				method: params.method,
 			});
 		} catch (error) {
-			console.warn("[url-enricher] Failed to fetch Reddit metadata", error);
 			return null;
 		}
 	}

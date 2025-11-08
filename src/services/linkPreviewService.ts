@@ -262,11 +262,6 @@ export class LinkPreviewService {
 
 			// Always show network errors, only show HTTP errors if setting is enabled
 			if (isNetworkError || this.settings.showHttpErrorWarnings) {
-				console.warn(
-					"[url-enricher] Failed to fetch metadata for URL",
-					url,
-					errorMessage,
-				);
 				// Return metadata with error flag
 				const fallbackMetadata = this.buildFallbackMetadata(url);
 				return {
@@ -352,11 +347,7 @@ export class LinkPreviewService {
 					await handler.enrich(context);
 				}
 			} catch (error) {
-				console.warn(
-					"[url-enricher] Metadata handler failed",
-					handler.constructor?.name ?? "UnknownHandler",
-					error instanceof Error ? error.message : error,
-				);
+				// Silent error handling
 			}
 		}
 	}

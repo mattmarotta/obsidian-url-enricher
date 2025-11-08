@@ -259,8 +259,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			getCacheStats: () => {
 				const metadata = this.linkPreviewService.getCacheStats();
 				const favicon = this.faviconCache.getStats();
-				console.log("Metadata Cache:", metadata);
-				console.log("Favicon Cache:", favicon);
 				return { metadata, favicon };
 			},
 
@@ -268,8 +266,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			clearAllCaches: () => {
 				this.linkPreviewService.clearCache();
 				this.faviconCache.clear();
-				console.log("All caches cleared");
-			},
+				},
 
 			// Logging control
 			setLogLevel: (level: "error" | "warn" | "info" | "debug") => {
@@ -280,46 +277,39 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 					debug: LogLevel.DEBUG
 				};
 				Logger.setGlobalLevel(levelMap[level] ?? LogLevel.WARN);
-				console.log(`Log level set to: ${level}`);
-			},
+				},
 
 			// Performance tracking
 			enablePerformanceTracking: () => {
 				enablePerformanceTracking();
-				console.log("Performance tracking enabled");
-			},
+				},
 
 			disablePerformanceTracking: () => {
 				disablePerformanceTracking();
-				console.log("Performance tracking disabled");
-			},
+				},
 
 			getPerformanceMetrics: () => {
 				const metrics = getAllPerformanceMetrics();
-				console.table(metrics);
-				return metrics;
+					return metrics;
 			},
 
 			resetPerformanceMetrics: () => {
 				resetPerformanceMetrics();
-				console.log("Performance metrics reset");
-			},
+				},
 
 			isPerformanceTrackingEnabled: () => {
 				const enabled = isPerformanceTrackingEnabled();
-				console.log(`Performance tracking: ${enabled ? "enabled" : "disabled"}`);
-				return enabled;
+					return enabled;
 			},
 
 			// Refresh decorations
 			refreshDecorations: () => {
 				this.refreshDecorations();
-				console.log("Decorations refreshed");
-			},
+				},
 
 			// Help
 			help: () => {
-				console.log(`
+				return(`
 URL Enricher - Developer Commands
 ==================================
 
@@ -353,8 +343,6 @@ Example:
 		(window as any).urlEnricher = api;
 		(window as any).inlineLinkPreview = api;
 
-		console.log("URL Enricher: Developer commands available at window.urlEnricher (also window.inlineLinkPreview for backwards compatibility)");
-		console.log("Type window.urlEnricher.help() for more info");
 	}
 
 	/**

@@ -81,7 +81,7 @@ export class WikipediaMetadataHandler implements MetadataHandler {
 				metadata.description = description;
 			}
 		} catch (error) {
-			console.warn('[url-enricher] Failed to fetch Wikipedia metadata', error);
+			// Silent error handling
 		}
 	}
 }

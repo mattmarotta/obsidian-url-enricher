@@ -24,7 +24,7 @@ export class HtmlParser {
 			try {
 				parsed = this.parseWithDomParser(html, url);
 			} catch (error) {
-				console.warn("[url-enricher] DOMParser failed", error);
+				// Silent error handling
 			}
 		}
 

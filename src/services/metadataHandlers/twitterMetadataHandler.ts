@@ -69,7 +69,6 @@ export class TwitterMetadataHandler implements MetadataHandler {
 			const text = this.extractTweetTextFromHtml(data.html);
 			return text ? { text } : null;
 		} catch (error) {
-			console.warn("[url-enricher] Failed to fetch Twitter oEmbed data", error);
 			return null;
 		}
 	}
@@ -84,7 +83,6 @@ export class TwitterMetadataHandler implements MetadataHandler {
 				method: "GET",
 			});
 		} catch (error) {
-			console.warn("[url-enricher] Twitter oEmbed request failed", error);
 			return null;
 		}
 	}
