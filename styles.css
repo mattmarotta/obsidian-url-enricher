@@ -455,22 +455,22 @@ a.url-preview-card-url:hover {
 	opacity: 0.45;
 }
 
-/* Color Mode - Separate body classes for inline and card backgrounds */
+/* Color Mode - Widget-scoped classes for inline and card backgrounds */
 
 /* Inline preview colors */
-body.url-enricher-inline-none .url-preview--inline {
+.url-preview--inline.url-preview--none {
 	background: transparent;
 }
 
-body.url-enricher-inline-subtle .url-preview--inline {
+.url-preview--inline.url-preview--subtle {
 	background: var(--background-modifier-border);
 }
 
 /* Card preview colors */
-body.url-enricher-card-none .url-preview--card {
+.url-preview--card.url-preview--none {
 	background: transparent;
 }
 
-body.url-enricher-card-subtle .url-preview--card {
+.url-preview--card.url-preview--subtle {
 	background: var(--background-modifier-border);
 }

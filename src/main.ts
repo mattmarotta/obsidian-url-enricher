@@ -34,9 +34,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		await this.loadSettings();
 		await this.instantiateServices();
 
-		// Apply preview color CSS
-		this.updatePreviewColorCSS();
-
 		// Register the URL preview decorator for Live Preview (favicon decorator removed - non-destructive mode only)
 		this.registerEditorExtension([
 			createUrlPreviewDecorator(this.linkPreviewService, () => this.settings)
@@ -56,14 +53,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		if (this.faviconCache) {
 			await this.faviconCache.flush();
 		}
-
-		// Clean up color mode classes
-		document.body.removeClass(
-			'url-enricher-inline-none',
-			'url-enricher-inline-subtle',
-			'url-enricher-card-none',
-			'url-enricher-card-subtle'
-		);
 
 		// Clean up developer commands
 		this.unregisterDeveloperCommands();
@@ -87,25 +76,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			requestTimeoutMs: this.settings.requestTimeoutMs,
 		});
 		this.linkPreviewService.updateSettings(this.settings);
-	}
-
-	/**
-	 * Update the preview background color using body classes
-	 */
-	updatePreviewColorCSS(): void {
-		const settings = this.settings;
-
-		// Remove all color mode classes
-		document.body.removeClass(
-			'url-enricher-inline-none',
-			'url-enricher-inline-subtle',
-			'url-enricher-card-none',
-			'url-enricher-card-subtle'
-		);
-
-		// Add appropriate classes for each mode
-		document.body.addClass(`url-enricher-inline-${settings.inlineColorMode}`);
-		document.body.addClass(`url-enricher-card-${settings.cardColorMode}`);
 	}
 
 	/**

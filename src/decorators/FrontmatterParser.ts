@@ -1,4 +1,4 @@
-import type { PreviewStyle } from "../settings";
+import type { PreviewStyle, PreviewColorMode } from "../settings";
 
 /**
  * Page-level configuration that can override global settings via frontmatter
@@ -9,6 +9,8 @@ export interface PageConfig {
 	maxInlineLength?: number;
 	showFavicon?: boolean;
 	includeDescription?: boolean;
+	inlineColorMode?: PreviewColorMode;
+	cardColorMode?: PreviewColorMode;
 }
 
 /**
@@ -83,6 +85,24 @@ export function parsePageConfig(text: string): PageConfig {
 			const value = descMatch[1].trim().toLowerCase();
 			if (value === 'true' || value === 'false') {
 				config.includeDescription = value === 'true';
+			}
+		}
+
+		// Inline color mode
+		const inlineColorMatch = line.match(/^inline-color-mode:\s*(.+)$/i);
+		if (inlineColorMatch) {
+			const value = inlineColorMatch[1].trim().toLowerCase();
+			if (value === 'none' || value === 'subtle') {
+				config.inlineColorMode = value;
+			}
+		}
+
+		// Card color mode
+		const cardColorMatch = line.match(/^card-color-mode:\s*(.+)$/i);
+		if (cardColorMatch) {
+			const value = cardColorMatch[1].trim().toLowerCase();
+			if (value === 'none' || value === 'subtle') {
+				config.cardColorMode = value;
 			}
 		}
 	}

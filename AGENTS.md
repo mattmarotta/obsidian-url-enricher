@@ -187,18 +187,21 @@ element.style.cssText = "color: red; font-size: 16px;";
 // ✅ ALWAYS use CSS classes defined in styles.css
 element.className = "my-custom-class";
 element.addClass("another-class");
+
+// ❌ NEVER use .style.setProperty() - NO EXCEPTIONS
+// This includes CSS custom properties for user-provided values
+document.documentElement.style.setProperty('--custom-color', userColor);
+
+// ✅ Use CSS classes with predefined CSS variables
+element.addClass('url-preview--subtle'); // Uses var(--background-modifier-border)
 ```
 
-**Exception:** CSS custom properties for **user-provided runtime values only** (e.g., custom color picker):
-```typescript
-// ✅ Acceptable - user-configurable color at runtime
-if (mode === 'custom') {
-  document.documentElement.style.setProperty('--my-custom-color', userColor);
-}
+**Why No Custom Colors?**
+Custom color pickers were removed for two reasons:
+1. **Plugin Review Compliance**: `.style.setProperty()` is prohibited by Obsidian's review bot (no exceptions)
+2. **Dark Mode Compatibility**: Hard-coded custom colors break readability when users switch between light/dark themes
 
-// ❌ Not acceptable - static value that could be in CSS
-document.documentElement.style.setProperty('--my-bg', '#4a4a4a');
-```
+Users who need custom colors can use CSS snippets (documented in README.md).
 
 **No innerHTML - Use DOM API:**
 ```typescript
@@ -238,24 +241,24 @@ console.error('[url-enricher] Critical failure:', error);
 console.log('Developer API available at window.urlEnricher');
 ```
 
-**Color Mode Pattern - Use Body Classes:**
-```typescript
-// ❌ Setting CSS variables for every color mode
-document.documentElement.style.setProperty('--bg-color', color);
+**Real-Time Frontmatter Updates:**
+Per-page settings via frontmatter apply instantly as users type—no need to navigate away from the page.
 
-// ✅ Body classes + CSS, minimal CSS variables
-// Separate classes for inline and card modes
-document.body.addClass(`url-enricher-inline-${inlineMode}`);
-document.body.addClass(`url-enricher-card-${cardMode}`);
+**How it works:**
+- CodeMirror 6's `ViewPlugin.update()` triggers on document changes (including frontmatter edits)
+- `parsePageConfig()` parses frontmatter on every decoration rebuild
+- Widget-scoped CSS classes enable per-page customization (e.g., `url-preview--subtle` on individual widgets)
+- Frontmatter settings override global settings using nullish coalescing: `pageConfig.inlineColorMode ?? globalSettings.inlineColorMode`
 
-// Only set CSS var for user-provided custom colors
-if (inlineMode === 'custom') {
-  document.documentElement.style.setProperty('--url-enricher-custom-inline-color', customInlineColor);
-}
-if (cardMode === 'custom') {
-  document.documentElement.style.setProperty('--url-enricher-custom-card-color', customCardColor);
-}
+**Example:**
+```yaml
+---
+inline-color-mode: none    # Transparent background for this page
+card-color-mode: subtle    # Subtle background for cards
+---
 ```
+
+Changes apply immediately when you edit frontmatter—decorations rebuild automatically.
 
 See [CHANGELOG.md Unreleased](../../CHANGELOG.md#unreleased) for recent compliance improvements.
 

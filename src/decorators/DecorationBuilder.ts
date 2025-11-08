@@ -167,6 +167,8 @@ function createDecorationsForUrl(
 		previewStyle: PreviewStyle;
 		maxCardLength: number;
 		maxInlineLength: number;
+		inlineColorMode: import("../settings").PreviewColorMode;
+		cardColorMode: import("../settings").PreviewColorMode;
 	}
 ): Array<{ from: number; to: number; decoration: Decoration }> {
 	const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
@@ -199,7 +201,9 @@ function createDecorationsForUrl(
 				settings.previewStyle,
 				limit,
 				metadata.siteName,
-				metadata.error
+				metadata.error,
+				settings.inlineColorMode,
+				settings.cardColorMode
 			),
 			side: -1 // Place widget BEFORE the URL
 		});
@@ -222,7 +226,9 @@ function createDecorationsForUrl(
 				settings.previewStyle,
 				limit,
 				metadata.siteName,
-				metadata.error
+				metadata.error,
+				settings.inlineColorMode,
+				settings.cardColorMode
 			),
 		});
 		decorations.push({ from: urlStart, to: urlEnd, decoration: replacementWidget });
@@ -259,6 +265,8 @@ export function buildUrlDecorations(
 	const maxInlineLength = pageConfig.maxInlineLength ?? globalSettings.maxInlineLength;
 	const showFavicon = pageConfig.showFavicon ?? globalSettings.showFavicon;
 	const includeDescription = pageConfig.includeDescription ?? globalSettings.includeDescription;
+	const inlineColorMode = pageConfig.inlineColorMode ?? globalSettings.inlineColorMode;
+	const cardColorMode = pageConfig.cardColorMode ?? globalSettings.cardColorMode;
 	const keepEmoji = globalSettings.keepEmoji; // Not exposed to frontmatter
 
 	// Get syntax tree for markdown context detection
@@ -329,7 +337,9 @@ export function buildUrlDecorations(
 			{
 				previewStyle,
 				maxCardLength,
-				maxInlineLength
+				maxInlineLength,
+				inlineColorMode,
+				cardColorMode
 			}
 		);
 

@@ -40,31 +40,12 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	private updatePreviewColorCSS(): void {
-		const settings = this.plugin.settings;
-
-		// Remove all color mode classes
-		document.body.removeClass(
-			'url-enricher-inline-none',
-			'url-enricher-inline-subtle',
-			'url-enricher-card-none',
-			'url-enricher-card-subtle'
-		);
-
-		// Add appropriate classes for each mode
-		document.body.addClass(`url-enricher-inline-${settings.inlineColorMode}`);
-		document.body.addClass(`url-enricher-card-${settings.cardColorMode}`);
-	}
-
 	display(): void {
 		const { containerEl } = this;
 		const settings = this.plugin.settings;
 
 		containerEl.empty();
 		containerEl.createEl("h2", { text: "URL Enricher" });
-
-		// Apply preview color on display
-		this.updatePreviewColorCSS();
 
 		containerEl.createEl("h3", { text: "Plugin Activation" });
 
@@ -111,7 +92,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.inlineColorMode = value as PreviewColorMode;
 						await this.plugin.saveSettings();
-						this.updatePreviewColorCSS();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
 					}),
 			);
 
@@ -126,7 +108,8 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.cardColorMode = value as PreviewColorMode;
 						await this.plugin.saveSettings();
-						this.updatePreviewColorCSS();
+						// Trigger decoration refresh
+						this.plugin.refreshDecorations();
 					}),
 			);
 

@@ -78,15 +78,21 @@ element.style.cssText = "color: red; font-size: 16px;";
 // ✅ Correct - CSS classes in styles.css
 element.className = "my-custom-class";
 element.addClass("another-class");
+
+// ❌ Wrong - .style.setProperty() has NO EXCEPTIONS
+// This includes CSS custom properties for user-provided values
+document.documentElement.style.setProperty('--custom-color', userColor);
+
+// ✅ Correct - Use CSS classes with predefined CSS variables
+element.addClass('url-preview--subtle'); // Uses var(--background-modifier-border)
 ```
 
-**Exception:** CSS custom properties for user-provided runtime values only:
-```typescript
-// ✅ OK - User's custom color from color picker
-if (mode === 'custom') {
-  document.documentElement.style.setProperty('--custom-color', userColor);
-}
-```
+**Why No Custom Colors?**
+Custom color pickers were removed for:
+1. **Plugin Review Compliance**: `.style.setProperty()` is prohibited (no exceptions)
+2. **Dark Mode Compatibility**: Hard-coded colors break readability in light/dark themes
+
+Users needing custom colors can use CSS snippets (see README.md).
 
 #### No innerHTML - Use DOM API
 
@@ -122,25 +128,25 @@ console.error('[url-enricher] Critical failure:', error);
 console.log('API available at window.urlEnricher');
 ```
 
-#### Prefer Body Classes Over CSS Variables
+#### Real-Time Frontmatter Updates
 
-```typescript
-// ❌ Wrong - CSS variable for every mode
-document.documentElement.style.setProperty('--bg-color', color);
+Per-page frontmatter settings apply instantly as users type—no navigation required.
 
-// ✅ Correct - Body classes + minimal CSS variables
-// Separate classes for inline and card modes
-document.body.addClass(`url-enricher-inline-${inlineMode}`);
-document.body.addClass(`url-enricher-card-${cardMode}`);
+**Implementation:**
+- CodeMirror 6's `ViewPlugin.update()` triggers on document changes
+- `parsePageConfig()` parses frontmatter on every rebuild
+- Widget-scoped CSS classes enable per-widget customization
+- Frontmatter overrides global settings: `pageConfig.field ?? globalSettings.field`
 
-// Only use CSS var for user-provided values
-if (inlineMode === 'custom') {
-  document.documentElement.style.setProperty('--url-enricher-custom-inline-color', customInlineColor);
-}
-if (cardMode === 'custom') {
-  document.documentElement.style.setProperty('--url-enricher-custom-card-color', customCardColor);
-}
+**Example:**
+```yaml
+---
+inline-color-mode: none    # Page-specific setting
+card-color-mode: subtle
+---
 ```
+
+Changes apply immediately—decorations rebuild automatically on frontmatter edits.
 
 ### Style
 - Tabs for indentation

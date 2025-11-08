@@ -29,7 +29,8 @@ max-card-length: 400                  # 1-5000 (recommended: 100+)
 max-inline-length: 200                # 1-5000 (recommended: 50+)
 show-favicon: true                    # true | false
 include-description: true             # true | false
-# Note: Color modes are set globally in plugin settings, not per-page
+inline-color-mode: subtle             # none | subtle
+card-color-mode: subtle               # none | subtle
 ---
 ```
 

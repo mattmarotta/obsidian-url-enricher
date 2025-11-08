@@ -1,5 +1,5 @@
 import { WidgetType } from "@codemirror/view";
-import type { PreviewStyle } from "../settings";
+import type { PreviewStyle, PreviewColorMode } from "../settings";
 import { enrichTextWithStyledElements, cleanMediaUrls } from "./MetadataEnricher";
 
 /**
@@ -48,7 +48,9 @@ export class UrlPreviewWidget extends WidgetType {
 		private previewStyle: PreviewStyle,
 		private maxLength: number,
 		private siteName: string | null = null,
-		private error: string | null = null
+		private error: string | null = null,
+		private inlineColorMode: PreviewColorMode = 'subtle',
+		private cardColorMode: PreviewColorMode = 'subtle'
 	) {
 		super();
 	}
@@ -56,12 +58,12 @@ export class UrlPreviewWidget extends WidgetType {
 	toDOM(): HTMLElement {
 		const container = document.createElement("span");
 
-		// Apply style classes
+		// Apply style classes and color mode classes
 		if (this.previewStyle === "card") {
-			container.className = "url-preview url-preview--card";
+			container.className = `url-preview url-preview--card url-preview--${this.cardColorMode}`;
 		} else {
 			// Inline style - always flows inline with text
-			container.className = "url-preview url-preview--inline";
+			container.className = `url-preview url-preview--inline url-preview--${this.inlineColorMode}`;
 		}
 
 		if (this.isLoading) {
@@ -287,7 +289,9 @@ export class UrlPreviewWidget extends WidgetType {
 			other.isLoading === this.isLoading &&
 			other.previewStyle === this.previewStyle &&
 			other.siteName === this.siteName &&
-			other.error === this.error
+			other.error === this.error &&
+			other.inlineColorMode === this.inlineColorMode &&
+			other.cardColorMode === this.cardColorMode
 		);
 	}
 

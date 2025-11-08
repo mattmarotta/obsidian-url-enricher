@@ -5,7 +5,12 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
--
+- **Per-page color mode customization**: Frontmatter support for `inline-color-mode` and `card-color-mode` fields
+  - Set color modes per-page with values: `none` (transparent) or `subtle` (theme-adaptive background)
+  - Frontmatter settings override global plugin settings
+  - Changes apply instantly as you type—no need to navigate away from the page
+  - Example: `inline-color-mode: none` in frontmatter sets transparent background for that page's inline previews
+- Added 30 new tests for frontmatter parsing and widget color mode class application (618 total tests)
 
 ### Changed
 - Eliminated all JavaScript style manipulation (`.style.setProperty()` calls) to comply with plugin review bot requirements
@@ -15,6 +20,17 @@ All notable changes to URL Enricher will be documented in this file.
   - Subtle background mode uses theme-adaptive `var(--background-modifier-border)` that works in both light and dark themes
   - Migration: Existing custom and grey color settings automatically convert to subtle background mode
   - Custom colors now available via CSS snippets (documented in README.md) for advanced users
+- **Refactored color mode implementation**:
+  - Changed from global body classes to widget-scoped CSS classes
+  - Color mode classes now applied directly to individual preview widgets
+  - Enables per-page color mode customization via frontmatter
+  - Removed `updatePreviewColorCSS()` method from main plugin and settings tab
+- **Documentation updates**:
+  - Removed `.style.setProperty()` exception sections from AGENTS.md and CONTRIBUTING.md
+  - Added clear guidance: `.style.setProperty()` has NO EXCEPTIONS (including for custom properties)
+  - Documented why custom colors were removed (plugin compliance + dark mode compatibility)
+  - Added real-time frontmatter updates implementation notes for contributors
+  - Updated README.md with frontmatter examples including color mode fields
 
 ### Fixed
 - **Dark mode compatibility**: Removed hard-coded custom colors that broke readability in dark themes
