@@ -1,6 +1,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import obsidianmd from "eslint-plugin-obsidianmd";
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 
 export default tseslint.config(
 	// Base ESLint recommended rules
@@ -16,6 +17,7 @@ export default tseslint.config(
 	{
 		plugins: {
 			obsidianmd,
+			"@eslint-community/eslint-comments": eslintComments,
 		},
 		languageOptions: {
 			parserOptions: {
@@ -43,6 +45,10 @@ export default tseslint.config(
 			"@typescript-eslint/no-floating-promises": "error",
 			"@typescript-eslint/no-unnecessary-type-assertion": "error",
 			"@typescript-eslint/require-await": "error",
+			"@typescript-eslint/no-deprecated": "error",
+
+			// ESLint comments rules
+			"@eslint-community/eslint-comments/require-description": "error",
 
 			// Base ESLint rules
 			"no-prototype-builtins": "off",

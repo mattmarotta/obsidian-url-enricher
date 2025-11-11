@@ -13,6 +13,20 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [1.3.1] - 2025-11-11
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+- Fixed ESLint configuration: added missing @eslint-community/eslint-comments plugin
+- Added @typescript-eslint/no-deprecated rule to catch deprecated API usage
+- Added descriptions to all ESLint disable directives for code documentation
+- Created separate ESLint config block for config files to allow deprecated APIs
+
 ## [1.3.0] - 2025-11-11
 
 ### Added

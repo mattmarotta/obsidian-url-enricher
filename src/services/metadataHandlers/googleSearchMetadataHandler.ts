@@ -14,7 +14,7 @@ export class GoogleSearchMetadataHandler implements MetadataHandler {
 		return segments.includes("google");
 	}
 
-	// eslint-disable-next-line @typescript-eslint/require-await
+	// eslint-disable-next-line @typescript-eslint/require-await -- Method must be async to match MetadataHandler interface
 	async enrich({ url, metadata }: MetadataHandlerContext): Promise<void> {
 		const query = this.extractQuery(url);
 		if (!query) {
