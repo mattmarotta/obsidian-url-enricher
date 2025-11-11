@@ -1,7 +1,7 @@
 {
 	"id": "url-enricher",
 	"name": "URL Enricher",
-	"version": "1.3.1",
+	"version": "1.3.2",
 	"minAppVersion": "0.15.0",
 	"description": "Non-destructive link preview and enrichment. Automatically displays rich metadata previews for URLs - shows page titles, descriptions, and favicons inline without modifying your markdown source.",
 	"author": "Matt Marotta",
