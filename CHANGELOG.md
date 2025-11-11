@@ -11,6 +11,17 @@ All notable changes to URL Enricher will be documented in this file.
 -
 
 ### Fixed
+-
+
+## [1.3.0] - 2025-11-11
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
 - Fixed type safety: removed `any` types, unnecessary type assertions, and added proper Window interface augmentation
 - Fixed settings UI to use Obsidian's Setting API for headings with proper sentence case
 - Fixed sentence case violations in all UI text (headings, dropdown options, cache statistics)
