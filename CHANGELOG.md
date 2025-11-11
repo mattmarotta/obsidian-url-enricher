@@ -11,7 +11,8 @@ All notable changes to URL Enricher will be documented in this file.
 -
 
 ### Fixed
--
+- Replaced deprecated tseslint.config() with ESLint's defineConfig()
+- Removed config files from ESLint ignore list to enable linting of configuration files
 
 ## [1.3.1] - 2025-11-11
 

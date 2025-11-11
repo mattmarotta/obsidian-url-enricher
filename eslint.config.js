@@ -2,8 +2,9 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import obsidianmd from "eslint-plugin-obsidianmd";
 import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
+import { defineConfig } from "eslint/config";
 
-export default tseslint.config(
+export default defineConfig(
 	// Base ESLint recommended rules
 	eslint.configs.recommended,
 
