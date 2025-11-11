@@ -45,9 +45,11 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 		const settings = this.plugin.settings;
 
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "URL Enricher" });
+		;
 
-		containerEl.createEl("h3", { text: "Plugin Activation" });
+		new Setting(containerEl)
+			.setName("Plugin activation")
+			.setHeading();
 
 		new Setting(containerEl)
 			.setName("Require frontmatter to activate")
@@ -63,15 +65,17 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		containerEl.createEl("h3", { text: "Preview Appearance" });
+		new Setting(containerEl)
+			.setName("Preview appearance")
+			.setHeading();
 
 		new Setting(containerEl)
 			.setName("Preview style")
 			.setDesc("Choose between compact inline style or prominent card style.")
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("inline", "Inline — Compact inline style")
-					.addOption("card", "Card — Prominent card style with more details")
+					.addOption("inline", "Inline — compact inline style")
+					.addOption("card", "Card — prominent card style with more details")
 					.setValue(settings.previewStyle)
 					.onChange(async (value) => {
 						this.plugin.settings.previewStyle = value as PreviewStyle;
@@ -113,7 +117,9 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		containerEl.createEl("h3", { text: "Preview Content" });
+		new Setting(containerEl)
+			.setName("Preview content")
+			.setHeading();
 
 		new Setting(containerEl)
 			.setName("Include description")
@@ -131,7 +137,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Maximum card length")
-			.setDesc("Maximum total characters for card-style previews (title + description combined). Cards show more detailed information. Recommended: 100+, Max: 5000")
+			.setDesc("Maximum total characters for card-style previews (title + description combined). Cards show more detailed information. Recommended: 100+, max: 5000")
 			.addText((text) => {
 				text.setValue(String(settings.maxCardLength));
 				text.inputEl.type = "number";
@@ -151,7 +157,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Maximum inline length")
-			.setDesc("Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Recommended: 50+, Max: 5000")
+			.setDesc("Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Recommended: 50+, max: 5000")
 			.addText((text) => {
 				text.setValue(String(settings.maxInlineLength));
 				text.inputEl.type = "number";
@@ -197,7 +203,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("HTTP error warnings")
-			.setDesc("Show a warning indicator (⚠️) for URLs that return HTTP errors (403 Forbidden, 404 Not Found, soft 404s like 'Video Unavailable'). When disabled, only network failures will show warnings.")
+			.setDesc("Show a warning indicator (⚠️) for urls that return HTTP errors (e.g., 403, 404). When disabled, only network failures will show warnings")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(settings.showHttpErrorWarnings)
@@ -228,7 +234,9 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 				});
 			});
 
-		containerEl.createEl("h3", { text: "Cache Management" });
+		new Setting(containerEl)
+			.setName("Cache management")
+			.setHeading();
 
 		// Cache stats
 		const stats = this.plugin.faviconCache?.getStats();
@@ -237,18 +245,18 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 			// Build stats content using DOM API
 			const title = document.createElement('strong');
-			title.textContent = 'Cache Statistics:';
+			title.textContent = 'Cache statistics:';
 			statsEl.appendChild(title);
 			statsEl.appendChild(document.createElement('br'));
 
-			const line1 = document.createTextNode(`• Cached domains: ${stats.entries}`);
+			const line1 = document.createTextNode(`• cached domains: ${stats.entries}`);
 			statsEl.appendChild(line1);
 			statsEl.appendChild(document.createElement('br'));
 
 			const oldestDate = stats.oldestTimestamp
 				? new Date(stats.oldestTimestamp).toLocaleDateString()
 				: 'N/A';
-			const line2 = document.createTextNode(`• Oldest entry: ${oldestDate}`);
+			const line2 = document.createTextNode(`• oldest entry: ${oldestDate}`);
 			statsEl.appendChild(line2);
 			statsEl.appendChild(document.createElement('br'));
 
@@ -269,7 +277,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 							this.plugin.faviconCache.clear();
 							await this.plugin.faviconCache.flush();
 						}
-						new Notice("URL Enricher cache cleared.");
+						new Notice("Cache cleared.");
 						// Trigger decoration refresh so previews update immediately
 						this.plugin.refreshDecorations();
 						// Refresh the display to update stats

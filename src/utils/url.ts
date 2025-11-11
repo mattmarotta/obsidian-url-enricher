@@ -1,7 +1,7 @@
 const SINGLE_URL_REGEX = /^https?:\/\/[^\s]+$/i;
 const WRAPPED_URL_REGEX = /^<\s*(https?:\/\/[^\s>]+)\s*>$/i;
 
-export const URL_IN_TEXT_REGEX = /https?:\/\/[^\s<>\]\)}"']+/gi;
+export const URL_IN_TEXT_REGEX = /https?:\/\/[^\s<>\])"']+/gi;
 
 export function extractSingleUrl(text: string): string | null {
 	if (!text) {

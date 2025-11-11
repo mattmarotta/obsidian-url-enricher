@@ -32,27 +32,28 @@ export default tseslint.config(
 		},
 		rules: {
 			// TypeScript rules
-			"@typescript-eslint/no-unused-vars": ["error", { "args": "none", "caughtErrors": "none" }],
+			"@typescript-eslint/no-unused-vars": ["error"],
 			"@typescript-eslint/ban-ts-comment": "off",
 			"@typescript-eslint/no-empty-function": "off",
-			"@typescript-eslint/no-explicit-any": "off",
+			"@typescript-eslint/no-explicit-any": "error",
 			"@typescript-eslint/no-unsafe-assignment": "off",
 			"@typescript-eslint/no-unsafe-member-access": "off",
 			"@typescript-eslint/no-unsafe-argument": "off",
-			"@typescript-eslint/no-misused-promises": "off",
-			"@typescript-eslint/no-floating-promises": "off",
-			"@typescript-eslint/no-unnecessary-type-assertion": "off",
+			"@typescript-eslint/no-misused-promises": "error",
+			"@typescript-eslint/no-floating-promises": "error",
+			"@typescript-eslint/no-unnecessary-type-assertion": "error",
+			"@typescript-eslint/require-await": "error",
 
 			// Base ESLint rules
 			"no-prototype-builtins": "off",
 			"no-undef": "off", // TypeScript handles this
-			"no-useless-escape": "off",
+			"no-useless-escape": "error",
 
 			// Obsidian-specific rules
 			"obsidianmd/no-sample-code": "off",
 			"obsidianmd/no-static-styles-assignment": "error", // This is the important one!
-			"obsidianmd/settings-tab/no-manual-html-headings": "off",
-			"obsidianmd/ui/sentence-case": "off",
+			"obsidianmd/settings-tab/no-manual-html-headings": "error",
+			"obsidianmd/ui/sentence-case": "error",
 
 			// Import rules - dev dependencies are fine
 			"import/no-extraneous-dependencies": "off",

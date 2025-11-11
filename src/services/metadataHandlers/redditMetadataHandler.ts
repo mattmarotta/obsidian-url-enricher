@@ -125,7 +125,7 @@ export class RedditMetadataHandler implements MetadataHandler {
 				title: title || undefined,
 				description: description || undefined,
 			};
-		} catch (error) {
+		} catch {
 			return null;
 		}
 	}
@@ -139,7 +139,7 @@ export class RedditMetadataHandler implements MetadataHandler {
 				url: params.url.href,
 				method: params.method,
 			});
-		} catch (error) {
+		} catch {
 			return null;
 		}
 	}

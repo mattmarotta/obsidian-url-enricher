@@ -93,7 +93,7 @@ export class FaviconCache {
 					this.cleanExpired();
 				}
 			}
-		} catch (error) {
+		} catch {
 			this.diskCache = {};
 		}
 	}
@@ -208,7 +208,7 @@ export class FaviconCache {
 		}
 
 		this.saveTimeout = setTimeout(() => {
-			this.flush();
+			void this.flush();
 			this.saveTimeout = null;
 		}, FAVICON_CACHE_SAVE_DEBOUNCE_MS);
 	}
@@ -227,7 +227,7 @@ export class FaviconCache {
 			data[this.CACHE_KEY] = this.diskCache;
 			await this.saveData(data);
 			this.dirty = false;
-		} catch (error) {
+		} catch {
 			// Silent error handling
 		}
 	}

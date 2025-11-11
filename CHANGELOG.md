@@ -11,7 +11,16 @@ All notable changes to URL Enricher will be documented in this file.
 -
 
 ### Fixed
--
+- Fixed type safety: removed `any` types, unnecessary type assertions, and added proper Window interface augmentation
+- Fixed settings UI to use Obsidian's Setting API for headings with proper sentence case
+- Fixed sentence case violations in all UI text (headings, dropdown options, cache statistics)
+- Fixed `onunload()` return type to match Obsidian Plugin interface
+- Fixed unhandled promise in favicon cache debounce handler
+- Removed unnecessary `async` keywords from synchronous metadata handlers
+- Fixed unnecessary regex escape character in URL pattern
+- Moved runtime dependencies to correct package.json section
+- Cleaned up unused error variables in catch blocks
+- Enabled strict ESLint rules to match Obsidian plugin guidelines
 
 ## [1.2.0] - 2025-11-08
 

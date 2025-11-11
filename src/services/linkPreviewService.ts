@@ -250,7 +250,7 @@ export class LinkPreviewService {
 
 				return await this.finalizeMetadata(url, linkMetadata);
 			}
-		} catch (error) {
+		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			// Determine error type
@@ -346,7 +346,7 @@ export class LinkPreviewService {
 				if (await handler.matches(context)) {
 					await handler.enrich(context);
 				}
-			} catch (error) {
+			} catch {
 				// Silent error handling
 			}
 		}

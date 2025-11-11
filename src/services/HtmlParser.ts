@@ -23,7 +23,7 @@ export class HtmlParser {
 		if (typeof DOMParser !== "undefined") {
 			try {
 				parsed = this.parseWithDomParser(html, url);
-			} catch (error) {
+			} catch {
 				// Silent error handling
 			}
 		}

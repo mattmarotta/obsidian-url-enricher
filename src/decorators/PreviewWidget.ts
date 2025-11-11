@@ -266,7 +266,7 @@ export class UrlPreviewWidget extends WidgetType {
 				if (parts.length >= 2) {
 					siteName = parts[0]; // Take first part (main domain)
 				}
-			} catch (e) {
+			} catch {
 				// If URL parsing fails, skip the footer
 				siteName = null;
 			}

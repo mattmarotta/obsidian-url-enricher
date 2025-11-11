@@ -80,7 +80,7 @@ export class WikipediaMetadataHandler implements MetadataHandler {
 				// Store full description - decorator will handle truncation based on maxCardLength/maxBubbleLength user settings
 				metadata.description = description;
 			}
-		} catch (error) {
+		} catch {
 			// Silent error handling
 		}
 	}

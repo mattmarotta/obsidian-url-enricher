@@ -68,7 +68,7 @@ export class TwitterMetadataHandler implements MetadataHandler {
 			// Parse tweet text from HTML field
 			const text = this.extractTweetTextFromHtml(data.html);
 			return text ? { text } : null;
-		} catch (error) {
+		} catch {
 			return null;
 		}
 	}
@@ -82,7 +82,7 @@ export class TwitterMetadataHandler implements MetadataHandler {
 				url,
 				method: "GET",
 			});
-		} catch (error) {
+		} catch {
 			return null;
 		}
 	}

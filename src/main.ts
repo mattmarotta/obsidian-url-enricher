@@ -48,10 +48,10 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	/**
 	 * Plugin cleanup - called when the plugin is unloaded
 	 */
-	async onunload(): Promise<void> {
+	onunload(): void {
 		// Flush favicon cache to disk before unloading
 		if (this.faviconCache) {
-			await this.faviconCache.flush();
+			void this.faviconCache.flush();
 		}
 
 		// Clean up developer commands
@@ -63,14 +63,12 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	 */
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		this.normalizeSettings();
 	}
 
 	/**
 	 * Save plugin settings to disk and update all services
 	 */
 	async saveSettings(): Promise<void> {
-		this.normalizeSettings();
 		await this.saveData(this.settings);
 		this.linkPreviewService.updateOptions({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
@@ -120,96 +118,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 			requestTimeoutMs: this.settings.requestTimeoutMs,
 		}, this.settings);
 		this.linkPreviewService.setPersistentFaviconCache(this.faviconCache);
-	}
-
-	/**
-	 * Normalize and validate settings to ensure they're within acceptable ranges
-	 * Converts string values to numbers and enforces min/max bounds
-	 * Also handles migration from old settings (v0.8.0 -> v0.9.0)
-	 */
-	private normalizeSettings(): void {
-		const numericCardLength = Number(this.settings.maxCardLength);
-		this.settings.maxCardLength = Number.isFinite(numericCardLength)
-			? Math.min(5000, Math.max(1, Math.round(numericCardLength)))
-			: DEFAULT_SETTINGS.maxCardLength;
-
-		// Migration: maxBubbleLength -> maxInlineLength (v0.9.0)
-		const settings = this.settings as any;
-		if (settings.maxBubbleLength !== undefined && settings.maxInlineLength === undefined) {
-			settings.maxInlineLength = settings.maxBubbleLength;
-			delete settings.maxBubbleLength;
-		}
-
-		const numericInlineLength = Number(this.settings.maxInlineLength);
-		this.settings.maxInlineLength = Number.isFinite(numericInlineLength)
-			? Math.min(5000, Math.max(1, Math.round(numericInlineLength)))
-			: DEFAULT_SETTINGS.maxInlineLength;
-
-		// Migration: Remove deprecated displayMode (v0.9.0)
-		if (settings.displayMode !== undefined) {
-			delete settings.displayMode;
-		}
-
-		// Migration: previewColorMode -> inlineColorMode + cardColorMode (v1.0.2)
-		if (settings.previewColorMode !== undefined) {
-			// Migrate to new defaults: grey inline, transparent cards
-			if (settings.previewColorMode === 'grey') {
-				// Old default was grey for both - split into grey inline + transparent cards
-				settings.inlineColorMode = 'grey';
-				settings.cardColorMode = 'none';
-			} else {
-				// If they chose none/custom, apply to both for backwards compat
-				settings.inlineColorMode = settings.previewColorMode;
-				settings.cardColorMode = settings.previewColorMode;
-			}
-			delete settings.previewColorMode;
-		}
-
-		// Migration: customPreviewColor -> customInlineColor + customCardColor (v1.0.2)
-		if (settings.customPreviewColor !== undefined) {
-			// Migrate single custom color to both inline and card
-			if (!settings.customInlineColor) {
-				settings.customInlineColor = settings.customPreviewColor;
-			}
-			if (!settings.customCardColor) {
-				settings.customCardColor = settings.customPreviewColor;
-			}
-			delete settings.customPreviewColor;
-		}
-
-		// Ensure color modes are set
-		if (!settings.inlineColorMode) {
-			settings.inlineColorMode = DEFAULT_SETTINGS.inlineColorMode;
-		}
-		if (!settings.cardColorMode) {
-			settings.cardColorMode = DEFAULT_SETTINGS.cardColorMode;
-		}
-
-		// Migration: 'custom' and 'grey' -> 'subtle' (v1.1.1)
-		// Custom color picker removed for Obsidian plugin review compliance
-		if (settings.inlineColorMode === 'custom' || settings.inlineColorMode === 'grey') {
-			settings.inlineColorMode = 'subtle';
-		}
-		if (settings.cardColorMode === 'custom' || settings.cardColorMode === 'grey') {
-			settings.cardColorMode = 'subtle';
-		}
-
-		// Remove deprecated custom color fields
-		if (settings.customInlineColor !== undefined) {
-			delete settings.customInlineColor;
-		}
-		if (settings.customCardColor !== undefined) {
-			delete settings.customCardColor;
-		}
-
-		const numericTimeout = Number(this.settings.requestTimeoutMs);
-		this.settings.requestTimeoutMs = Number.isFinite(numericTimeout)
-			? Math.max(500, Math.round(numericTimeout))
-			: DEFAULT_SETTINGS.requestTimeoutMs;
-
-		this.settings.showFavicon = Boolean(this.settings.showFavicon);
-		this.settings.keepEmoji = Boolean(this.settings.keepEmoji);
-		this.settings.requireFrontmatter = Boolean(this.settings.requireFrontmatter);
 	}
 
 	/**
@@ -304,8 +212,8 @@ Example:
 		};
 
 		// Set both new and old names for backwards compatibility
-		(window as any).urlEnricher = api;
-		(window as any).inlineLinkPreview = api;
+		window.urlEnricher = api;
+		window.inlineLinkPreview = api;
 
 	}
 
@@ -313,7 +221,7 @@ Example:
 	 * Clean up developer commands
 	 */
 	private unregisterDeveloperCommands(): void {
-		delete (window as any).urlEnricher;
-		delete (window as any).inlineLinkPreview;
+		delete window.urlEnricher;
+		delete window.inlineLinkPreview;
 	}
 }

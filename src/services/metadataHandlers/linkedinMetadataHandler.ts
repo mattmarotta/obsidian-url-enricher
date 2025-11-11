@@ -21,6 +21,7 @@ export class LinkedInMetadataHandler implements MetadataHandler {
 		return /(^|\.)linkedin\.com$/i.test(url.hostname);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async enrich(context: MetadataHandlerContext): Promise<void> {
 		const { metadata } = context;
 

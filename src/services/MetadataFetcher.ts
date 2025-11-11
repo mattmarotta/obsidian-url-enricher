@@ -48,7 +48,7 @@ export class MetadataFetcher {
 				}, this.options.requestTimeoutMs);
 			});
 
-			const response = (await Promise.race([requestPromise, timeoutPromise])) as RequestUrlResponse;
+			const response = await Promise.race([requestPromise, timeoutPromise]);
 			return response;
 		} finally {
 			if (timeoutId !== null) {
@@ -81,7 +81,7 @@ export class MetadataFetcher {
 				}, this.options.requestTimeoutMs);
 			});
 
-			const response = (await Promise.race([requestPromise, timeoutPromise])) as RequestUrlResponse;
+			const response = await Promise.race([requestPromise, timeoutPromise]);
 			return response;
 		} finally {
 			if (timeoutId !== null) {
