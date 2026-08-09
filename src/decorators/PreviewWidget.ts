@@ -89,19 +89,26 @@ export class UrlPreviewWidget extends WidgetType {
 		};
 
 		// Favicon
+		let favicon: HTMLImageElement | null = null;
 		if (this.faviconUrl) {
-			const favicon = createEl("img");
+			favicon = createEl("img");
 			favicon.src = this.faviconUrl;
 			favicon.className = "url-preview__favicon";
 			favicon.alt = "";
+		}
 
-			// For cards, wrap favicon and title in a header row
-			if (this.previewStyle === "card") {
+		if (this.previewStyle === "card") {
+			// Cards always get a header row carrying the title, with the favicon
+			// beside it when there is one. Building this only when a favicon
+			// existed used to drop the title entirely for favicon-less cards.
+			if (favicon || this.title) {
 				const headerRow = createDiv();
 				headerRow.className = "url-preview__header";
-				headerRow.appendChild(favicon);
 
-				// Add title next to favicon for cards
+				if (favicon) {
+					headerRow.appendChild(favicon);
+				}
+
 				if (this.title) {
 					const titleSpan = createSpan();
 					titleSpan.className = "url-preview__title";
@@ -111,10 +118,10 @@ export class UrlPreviewWidget extends WidgetType {
 				}
 
 				container.appendChild(headerRow);
-			} else {
-				// For inline style, keep favicon inline
-				container.appendChild(favicon);
 			}
+		} else if (favicon) {
+			// For inline style, keep favicon inline
+			container.appendChild(favicon);
 		}
 
 		// Title and description

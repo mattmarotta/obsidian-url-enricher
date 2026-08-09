@@ -145,7 +145,9 @@ export class RedditMetadataHandler implements MetadataHandler {
 	}
 
 	private createJsonUrl(url: URL): URL {
-		const jsonUrl = new URL(url.pathname.replace(/\/?$/, "/") + ".json", `${url.protocol}//${url.host}`);
+		// www.reddit.com returns 403 for the unauthenticated .json API and serves
+		// a bot-challenge page for HTML; old.reddit.com answers both normally.
+		const jsonUrl = new URL(url.pathname.replace(/\/?$/, "/") + ".json", `${url.protocol}//old.reddit.com`);
 		if (url.search) {
 			jsonUrl.search = url.search;
 		}

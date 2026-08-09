@@ -532,7 +532,9 @@ describe('LinkPreviewService', () => {
 					</html>
 				`;
 
-				mockRequestUrlBuilder.mockResponse('https://reddit.com/notfound', {
+				// reddit.com is rewritten to old.reddit.com for fetching
+				// (see rewriteUrlForFetch), so the mock targets the fetched host.
+				mockRequestUrlBuilder.mockResponse('https://old.reddit.com/notfound', {
 					status: 200,
 					text: html,
 					headers: { 'content-type': 'text/html' },
@@ -552,7 +554,7 @@ describe('LinkPreviewService', () => {
 					</html>
 				`;
 
-				mockRequestUrlBuilder.mockResponse('https://reddit.com/r/fake', {
+				mockRequestUrlBuilder.mockResponse('https://old.reddit.com/r/fake', {
 					status: 200,
 					text: html,
 					headers: { 'content-type': 'text/html' },

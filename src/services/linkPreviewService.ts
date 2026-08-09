@@ -20,6 +20,7 @@ import {
 	type MetadataHandlerContext,
 } from "./metadataHandlers";
 import { sanitizeTextContent } from "../utils/text";
+import { rewriteUrlForFetch } from "../utils/url";
 import { FaviconCache } from "./faviconCache";
 import type { InlineLinkPreviewSettings } from "../settings";
 import { MetadataFetcher } from "./MetadataFetcher";
@@ -210,7 +211,10 @@ export class LinkPreviewService {
 
 	private async fetchMetadata(url: string): Promise<LinkMetadata> {
 		try {
-			const response = await this.fetcher.fetchUrl(url);
+			// Some hosts (e.g. www.reddit.com) serve a bot-challenge page to
+			// non-browser clients; fetch an equivalent host that doesn't.
+			// `url` stays the original for caching, display, and click-through.
+			const response = await this.fetcher.fetchUrl(rewriteUrlForFetch(url));
 
 			// HTTP errors (403, 404, 500, etc.) - only flag if setting is enabled
 			if (response.status >= 400) {
