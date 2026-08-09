@@ -176,7 +176,7 @@ export class LinkPreviewService {
 
 		// Wait if too many concurrent requests
 		while (this.activeRequestCount >= MAX_CONCURRENT_REQUESTS) {
-			await new Promise(resolve => setTimeout(resolve, 50));
+			await new Promise(resolve => window.setTimeout(resolve, 50));
 		}
 
 		// Create new request promise

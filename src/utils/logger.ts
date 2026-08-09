@@ -53,28 +53,28 @@ export class Logger {
 	/**
 	 * Log an error message
 	 */
-	error(message: string, ...args: unknown[]): void {
+	error(_message: string, ..._args: unknown[]): void {
 		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**
 	 * Log a warning message
 	 */
-	warn(message: string, ...args: unknown[]): void {
+	warn(_message: string, ..._args: unknown[]): void {
 		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**
 	 * Log an info message
 	 */
-	info(message: string, ...args: unknown[]): void {
+	info(_message: string, ..._args: unknown[]): void {
 		// No-op: console logging removed per Obsidian plugin requirements
 	}
 
 	/**
 	 * Log a debug message
 	 */
-	debug(message: string, ...args: unknown[]): void {
+	debug(_message: string, ..._args: unknown[]): void {
 		// No-op: console logging removed per Obsidian plugin requirements
 	}
 

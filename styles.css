@@ -5,25 +5,6 @@ available in the app when your plugin is enabled.
 
 */
 
-/* Target favicon images using a specific class */
-img.url-preview-favicon,
-img[alt="url-preview-icon"] {
-	width: 1em !important;
-	height: 1em !important;
-	max-width: 1em !important;
-	max-height: 1em !important;
-	min-width: 1em !important;
-	min-height: 1em !important;
-	object-fit: contain !important;
-	border-radius: 4px;
-	vertical-align: text-bottom !important;
-	margin-right: 0.35em;
-	display: inline-block !important;
-	background: rgba(0, 0, 0, 0.05);
-	/* Default high-quality rendering for Electron/Chromium */
-	image-rendering: auto;
-}
-
 /* Dynamic URL Preview Styles - Base */
 .url-preview {
 	cursor: pointer;
@@ -122,32 +103,6 @@ img[alt="url-preview-icon"] {
 	opacity: 0.95;
 }
 
-/* Card URL footer - shown at bottom of card */
-.url-preview--card .url-preview__url-footer {
-	/* Base styles are inline in the widget */
-	line-height: 1.4;
-	transition: opacity 0.15s ease;
-}
-
-.url-preview--card:hover .url-preview__url-footer {
-	opacity: 0.9 !important;
-}
-
-/* URL below card - styled to match previous card footer */
-.url-preview-url-below-card {
-	font-size: 0.75em !important;
-	color: var(--text-faint) !important;
-	opacity: 0.7 !important;
-	font-family: var(--font-monospace) !important;
-	word-break: break-all !important;
-	cursor: text !important;
-	transition: opacity 0.15s ease !important;
-}
-
-.url-preview-url-below-card:hover {
-	opacity: 0.9 !important;
-}
-
 /* Reddit post title in cards */
 .url-preview--card .url-preview__post-title {
 	font-size: 1.05em;
@@ -165,19 +120,6 @@ img[alt="url-preview-icon"] {
 	gap: 0.5em;
 }
 
-/* Reddit-specific card styling */
-.url-preview--card .url-preview__description::before {
-	/* Check if description starts with r/ pattern */
-	content: "";
-}
-
-/* Style for Reddit subreddit label when description contains bullet separator */
-.url-preview--card .url-preview__text:has(.url-preview__description:contains("•")) .url-preview__description {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5em;
-}
-
 /* Alternative: Use a data attribute for cleaner Reddit detection */
 .url-preview--card[data-domain*="reddit"] .url-preview__description {
 	font-size: 0.9em;
@@ -188,82 +130,6 @@ img[alt="url-preview-icon"] {
 .url-preview--card:active {
 	transform: translateY(0);
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Small URL widget - completely replaces the URL */
-.url-preview-small-url {
-	font-size: 0.75em !important;
-	color: var(--text-faint) !important;
-	opacity: 0.6 !important;
-	cursor: pointer !important;
-	text-decoration: none !important;
-	border-bottom: none !important;
-	background: none !important;
-	padding: 0 !important;
-	margin: 0 !important;
-}
-
-.url-preview-small-url:hover {
-	opacity: 0.9 !important;
-	text-decoration: none !important;
-}
-
-/* Small URL styling for card previews - remove ALL underlines */
-/* Target the mark decoration wrapper */
-.cm-line .url-preview-small-url,
-.cm-content .url-preview-small-url,
-.url-preview-small-url {
-	font-size: 0.75em !important;
-	color: var(--text-faint) !important;
-	text-decoration: none !important;
-	opacity: 0.6;
-	border-bottom: none !important;
-}
-
-/* Target everything inside the mark decoration */
-.url-preview-small-url * {
-	font-size: inherit !important;
-	color: inherit !important;
-	text-decoration: none !important;
-	border-bottom: none !important;
-	background-image: none !important;
-}
-
-.url-preview-small-url:hover {
-	opacity: 0.9;
-	text-decoration: none !important;
-	border-bottom: none !important;
-}
-
-.url-preview-small-url:hover * {
-	text-decoration: none !important;
-	border-bottom: none !important;
-}
-
-/* Override all possible link underline sources - target actual link elements inside */
-.url-preview-small-url .cm-link,
-.url-preview-small-url .cm-url,
-.url-preview-small-url .cm-underline,
-.cm-line .url-preview-small-url .cm-link,
-.cm-line .url-preview-small-url .cm-url,
-.cm-content .url-preview-small-url .cm-link,
-.cm-content .url-preview-small-url .cm-url,
-.cm-line a.url-preview-small-url,
-.cm-content a.url-preview-small-url,
-a.url-preview-small-url,
-.cm-link.url-preview-small-url,
-.cm-url.url-preview-small-url {
-	color: var(--text-faint) !important;
-	text-decoration: none !important;
-	border-bottom: none !important;
-	background-image: none !important;
-}
-
-/* Remove underline from internal links too */
-.internal-link.url-preview-small-url,
-.url-preview-small-url .internal-link {
-	text-decoration: none !important;
-	border-bottom: none !important;
 }
 
 .url-preview__favicon {
@@ -370,9 +236,8 @@ a.url-preview-card-url:hover {
 	color: var(--text-faint) !important;
 }
 
-/* Try to override any parent link styling */
-.cm-line:has(.url-preview-card-url) .cm-url.url-preview-card-url {
-	all: unset !important;
+/* Extra-specific override for the mark when CodeMirror also applies its own .cm-url styling */
+.cm-line .cm-url.url-preview-card-url {
 	font-size: 0.85em !important;
 	color: var(--text-faint) !important;
 	opacity: 0.7 !important;
@@ -386,17 +251,6 @@ a.url-preview-card-url:hover {
 	color: var(--text-accent);
 	/* Subtle visual distinction without being distracting */
 	opacity: 1;
-}
-
-.url-preview-hashtag {
-	/* Hashtags get accent color */
-	color: var(--text-accent);
-}
-
-.url-preview-mention {
-	/* Mentions get a slightly different treatment */
-	color: var(--text-accent);
-	font-weight: 500;
 }
 
 /* Cache Statistics Container - Settings UI */
@@ -415,11 +269,6 @@ a.url-preview-card-url:hover {
 	cursor: default;
 }
 
-/* Preview Widget - Clickable cursor */
-.url-preview {
-	cursor: pointer;
-}
-
 /* Card Header Row - Flex layout for favicon + title */
 .url-preview__header {
 	display: flex;
@@ -431,15 +280,6 @@ a.url-preview-card-url:hover {
 .url-preview__header .url-preview__title {
 	flex: 1;
 	margin: 0;
-}
-
-/* Reddit Post Title - Card specific styling */
-.url-preview--card .url-preview__post-title {
-	font-size: 1.05em;
-	font-weight: 600;
-	line-height: 1.35;
-	color: var(--text-normal);
-	margin-bottom: 0.4em;
 }
 
 /* Card Footer - Site name styling */

@@ -11,7 +11,7 @@ export class ErrorIndicatorWidget extends WidgetType {
 	}
 
 	toDOM(): HTMLElement {
-		const span = document.createElement("span");
+		const span = createSpan();
 		span.className = "url-preview-error-indicator";
 		span.textContent = " ⚠️";
 
@@ -56,7 +56,7 @@ export class UrlPreviewWidget extends WidgetType {
 	}
 
 	toDOM(): HTMLElement {
-		const container = document.createElement("span");
+		const container = createSpan();
 
 		// Apply style classes and color mode classes
 		if (this.previewStyle === "card") {
@@ -90,20 +90,20 @@ export class UrlPreviewWidget extends WidgetType {
 
 		// Favicon
 		if (this.faviconUrl) {
-			const favicon = document.createElement("img");
+			const favicon = createEl("img");
 			favicon.src = this.faviconUrl;
 			favicon.className = "url-preview__favicon";
 			favicon.alt = "";
 
 			// For cards, wrap favicon and title in a header row
 			if (this.previewStyle === "card") {
-				const headerRow = document.createElement("div");
+				const headerRow = createDiv();
 				headerRow.className = "url-preview__header";
 				headerRow.appendChild(favicon);
 
 				// Add title next to favicon for cards
 				if (this.title) {
-					const titleSpan = document.createElement("span");
+					const titleSpan = createSpan();
 					titleSpan.className = "url-preview__title";
 					const enrichedTitle = enrichTextWithStyledElements(this.title);
 					titleSpan.appendChild(enrichedTitle);
@@ -118,7 +118,7 @@ export class UrlPreviewWidget extends WidgetType {
 		}
 
 		// Title and description
-		const textContainer = document.createElement("span");
+		const textContainer = createSpan();
 		textContainer.className = "url-preview__text";
 
 		// Check if this is Reddit content with special markers
@@ -165,7 +165,7 @@ export class UrlPreviewWidget extends WidgetType {
 
 			// Post title (below subreddit/favicon)
 			if (postTitle) {
-				const postTitleDiv = document.createElement("div");
+				const postTitleDiv = createDiv();
 				postTitleDiv.className = "url-preview__post-title";
 				const enrichedTitle = enrichTextWithStyledElements(postTitle.trim());
 				postTitleDiv.appendChild(enrichedTitle);
@@ -174,7 +174,7 @@ export class UrlPreviewWidget extends WidgetType {
 
 			// Post content preview
 			if (postContent) {
-				const contentDiv = document.createElement("div");
+				const contentDiv = createDiv();
 				contentDiv.className = "url-preview__description";
 				const enrichedContent = enrichTextWithStyledElements(postContent.trim());
 				contentDiv.appendChild(enrichedContent);
@@ -182,7 +182,7 @@ export class UrlPreviewWidget extends WidgetType {
 			}
 		} else if (cleanedDescription) {
 			// Standard card: description below title
-			const descDiv = document.createElement("div");
+			const descDiv = createDiv();
 			descDiv.className = "url-preview__description";
 			const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
 			descDiv.appendChild(enrichedDesc);
@@ -200,7 +200,7 @@ export class UrlPreviewWidget extends WidgetType {
 			const titlePart = parts[1] ? parts[1].split("§REDDIT_CONTENT§")[0] : "";
 
 			if (this.title) {
-				const titleSpan = document.createElement("span");
+				const titleSpan = createSpan();
 				titleSpan.className = "url-preview__title";
 				const enrichedTitle = enrichTextWithStyledElements(this.title); // r/Subreddit
 				titleSpan.appendChild(enrichedTitle);
@@ -208,12 +208,12 @@ export class UrlPreviewWidget extends WidgetType {
 			}
 
 			if (titlePart) {
-				const separator = document.createElement("span");
+				const separator = createSpan();
 				separator.className = "url-preview__separator";
 				separator.textContent = " — ";
 				textContainer.appendChild(separator);
 
-				const descSpan = document.createElement("span");
+				const descSpan = createSpan();
 				descSpan.className = "url-preview__description";
 				const enrichedTitlePart = enrichTextWithStyledElements(titlePart.trim());
 				descSpan.appendChild(enrichedTitlePart);
@@ -222,19 +222,19 @@ export class UrlPreviewWidget extends WidgetType {
 		} else {
 			// Standard inline format
 			if (this.title) {
-				const titleSpan = document.createElement("span");
+				const titleSpan = createSpan();
 				titleSpan.className = "url-preview__title";
 				const enrichedTitle = enrichTextWithStyledElements(this.title);
 				titleSpan.appendChild(enrichedTitle);
 				textContainer.appendChild(titleSpan);
 
 				if (cleanedDescription) {
-					const separator = document.createElement("span");
+					const separator = createSpan();
 					separator.className = "url-preview__separator";
 					separator.textContent = " — ";
 					textContainer.appendChild(separator);
 
-					const descSpan = document.createElement("span");
+					const descSpan = createSpan();
 					descSpan.className = "url-preview__description";
 					const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
 					descSpan.appendChild(enrichedDesc);
@@ -273,7 +273,7 @@ export class UrlPreviewWidget extends WidgetType {
 		}
 
 		if (siteName) {
-			const footer = document.createElement("div");
+			const footer = createDiv();
 			footer.className = "url-preview__footer";
 			footer.textContent = siteName.toUpperCase();
 			container.appendChild(footer);

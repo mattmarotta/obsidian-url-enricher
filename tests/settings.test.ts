@@ -1,5 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import { DEFAULT_SETTINGS, type InlineLinkPreviewSettings } from '../src/settings';
+import { describe, it, expect, vi } from 'vitest';
+import { App } from './mocks/obsidian';
+import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, type InlineLinkPreviewSettings } from '../src/settings';
+import type { SettingDefinitionGroup } from 'obsidian';
+
+/**
+ * Minimal stand-in for InlineLinkPreviewPlugin, matching only the shape
+ * InlineLinkPreviewSettingTab actually touches (see main.ts).
+ */
+function createFakePlugin(overrides: Partial<InlineLinkPreviewSettings> = {}) {
+	return {
+		settings: { ...DEFAULT_SETTINGS, ...overrides },
+		saveSettings: vi.fn().mockResolvedValue(undefined),
+		refreshDecorations: vi.fn(),
+		linkPreviewService: { clearCache: vi.fn() },
+		faviconCache: undefined as { getStats: () => { entries: number; oldestTimestamp: number | null } } | undefined,
+	};
+}
+
+function createSettingTab(plugin: ReturnType<typeof createFakePlugin>): InlineLinkPreviewSettingTab {
+	// The mocked PluginSettingTab constructor only needs an app-like object and
+	// stores `plugin` as-is, so the fake plugin shape above is sufficient.
+	return new InlineLinkPreviewSettingTab(new App() as any, plugin as any);
+}
 
 describe('Settings', () => {
 	describe('DEFAULT_SETTINGS', () => {
@@ -337,6 +359,112 @@ describe('Settings', () => {
 			expect(allFalse.showFavicon).toBe(false);
 			expect(allFalse.keepEmoji).toBe(false);
 			expect(allFalse.showHttpErrorWarnings).toBe(false);
+		});
+	});
+
+	describe('InlineLinkPreviewSettingTab', () => {
+		function findControlKeys(tab: InlineLinkPreviewSettingTab): string[] {
+			const groups = tab.getSettingDefinitions() as SettingDefinitionGroup[];
+			const keys: string[] = [];
+			for (const group of groups) {
+				for (const item of group.items ?? []) {
+					if ('control' in item && item.control) {
+						keys.push(item.control.key);
+					}
+				}
+			}
+			return keys;
+		}
+
+		describe('getSettingDefinitions', () => {
+			it('should return the four expected group headings', () => {
+				const tab = createSettingTab(createFakePlugin());
+				const groups = tab.getSettingDefinitions() as SettingDefinitionGroup[];
+				expect(groups.map((g) => g.heading)).toEqual([
+					'Plugin activation',
+					'Preview appearance',
+					'Preview content',
+					'Cache management',
+				]);
+			});
+
+			it('should expose a control for every persisted setting', () => {
+				const tab = createSettingTab(createFakePlugin());
+				const keys = findControlKeys(tab);
+				expect(keys.sort()).toEqual(
+					(Object.keys(DEFAULT_SETTINGS) as (keyof InlineLinkPreviewSettings)[]).sort(),
+				);
+			});
+
+			it('should omit the cache stats entry when there is no favicon cache', () => {
+				const plugin = createFakePlugin();
+				plugin.faviconCache = undefined;
+				const tab = createSettingTab(plugin);
+				const cacheGroup = (tab.getSettingDefinitions() as SettingDefinitionGroup[]).find(
+					(g) => g.heading === 'Cache management',
+				);
+				const names = (cacheGroup?.items ?? []).map((item) => ('name' in item ? item.name : undefined));
+				expect(names).not.toContain('Cache statistics');
+				expect(names).toContain('Clear cached previews');
+			});
+
+			it('should include the cache stats entry when a favicon cache is present', () => {
+				const plugin = createFakePlugin();
+				plugin.faviconCache = { getStats: () => ({ entries: 3, oldestTimestamp: Date.now() }) };
+				const tab = createSettingTab(plugin);
+				const cacheGroup = (tab.getSettingDefinitions() as SettingDefinitionGroup[]).find(
+					(g) => g.heading === 'Cache management',
+				);
+				const names = (cacheGroup?.items ?? []).map((item) => ('name' in item ? item.name : undefined));
+				expect(names).toContain('Cache statistics');
+			});
+		});
+
+		describe('getControlValue', () => {
+			it('should read the current value from plugin settings', () => {
+				const plugin = createFakePlugin({ previewStyle: 'card', maxCardLength: 777 });
+				const tab = createSettingTab(plugin);
+				expect(tab.getControlValue('previewStyle')).toBe('card');
+				expect(tab.getControlValue('maxCardLength')).toBe(777);
+			});
+		});
+
+		describe('setControlValue', () => {
+			it('should persist the value and refresh decorations for a typical setting', async () => {
+				const plugin = createFakePlugin();
+				const tab = createSettingTab(plugin);
+				await tab.setControlValue('previewStyle', 'card');
+				expect(plugin.settings.previewStyle).toBe('card');
+				expect(plugin.saveSettings).toHaveBeenCalledOnce();
+				expect(plugin.refreshDecorations).toHaveBeenCalledOnce();
+			});
+
+			it('should clear the link preview cache when showHttpErrorWarnings changes', async () => {
+				const plugin = createFakePlugin();
+				const tab = createSettingTab(plugin);
+				await tab.setControlValue('showHttpErrorWarnings', false);
+				expect(plugin.settings.showHttpErrorWarnings).toBe(false);
+				expect(plugin.linkPreviewService.clearCache).toHaveBeenCalledOnce();
+				expect(plugin.refreshDecorations).toHaveBeenCalledOnce();
+			});
+
+			it('should not trigger a decoration refresh for keepEmoji', async () => {
+				const plugin = createFakePlugin();
+				const tab = createSettingTab(plugin);
+				await tab.setControlValue('keepEmoji', false);
+				expect(plugin.settings.keepEmoji).toBe(false);
+				expect(plugin.saveSettings).toHaveBeenCalledOnce();
+				expect(plugin.refreshDecorations).not.toHaveBeenCalled();
+			});
+
+			it('should not trigger a decoration refresh for requestTimeoutMs', async () => {
+				const plugin = createFakePlugin();
+				const tab = createSettingTab(plugin);
+				await tab.setControlValue('requestTimeoutMs', 9000);
+				expect(plugin.settings.requestTimeoutMs).toBe(9000);
+				expect(plugin.saveSettings).toHaveBeenCalledOnce();
+				expect(plugin.refreshDecorations).not.toHaveBeenCalled();
+			});
 		});
 	});
 });

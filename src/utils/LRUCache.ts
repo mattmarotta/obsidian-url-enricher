@@ -71,15 +71,21 @@ export class LRUCache<K, V> {
 		if (this.cache.has(key)) {
 			this.cache.delete(key);
 		} else if (this.cache.size >= this.maxSize) {
-			// Evict least recently used (first item)
-			const firstKey = this.cache.keys().next().value;
-			if (firstKey !== undefined) {
-				this.cache.delete(firstKey);
-				this.evictions++;
-			}
+			this.evictOldest();
 		}
 
 		this.cache.set(key, value);
+	}
+
+	/**
+	 * Evict the least recently used (first) item from the cache, if any
+	 */
+	private evictOldest(): void {
+		for (const key of this.cache.keys()) {
+			this.cache.delete(key);
+			this.evictions++;
+			return;
+		}
 	}
 
 	/**
@@ -154,11 +160,7 @@ export class LRUCache<K, V> {
 
 		// Evict items if cache is now too large
 		while (this.cache.size > this.maxSize) {
-			const firstKey = this.cache.keys().next().value;
-			if (firstKey !== undefined) {
-				this.cache.delete(firstKey);
-				this.evictions++;
-			}
+			this.evictOldest();
 		}
 	}
 

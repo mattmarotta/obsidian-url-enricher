@@ -46,7 +46,7 @@ export class FaviconCache {
 	private readonly CACHE_KEY = FAVICON_CACHE_KEY;
 	private readonly EXPIRATION_MS = FAVICON_CACHE_EXPIRATION_MS;
 	private dirty = false;
-	private saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	private saveTimeout: number | null = null;
 
 	/**
 	 * Create a new FaviconCache
@@ -204,10 +204,10 @@ export class FaviconCache {
 	private scheduleSave(): void {
 		// Debounce saves to avoid writing to disk too frequently
 		if (this.saveTimeout !== null) {
-			clearTimeout(this.saveTimeout);
+			window.clearTimeout(this.saveTimeout);
 		}
 
-		this.saveTimeout = setTimeout(() => {
+		this.saveTimeout = window.setTimeout(() => {
 			void this.flush();
 			this.saveTimeout = null;
 		}, FAVICON_CACHE_SAVE_DEBOUNCE_MS);

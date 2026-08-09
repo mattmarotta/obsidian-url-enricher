@@ -62,7 +62,8 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	 * Load plugin settings from disk and normalize them
 	 */
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const data = (await this.loadData()) as Partial<InlineLinkPreviewSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
 	}
 
 	/**

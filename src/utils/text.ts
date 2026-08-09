@@ -47,7 +47,7 @@ export function decodeHtmlEntities(value: string): string {
 	}
 
 	// Use manual decoding to avoid innerHTML security concerns
-	return value.replace(ENTITY_REGEX, (match, entity) => decodeEntity(entity) ?? match);
+	return value.replace(ENTITY_REGEX, (match: string, entity: string) => decodeEntity(entity) ?? match);
 }
 
 export function stripHtmlTags(value: string): string {

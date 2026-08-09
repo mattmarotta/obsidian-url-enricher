@@ -15,7 +15,7 @@ export interface UrlMatch {
 /**
  * Check if a position is inside an inline code block or code fence
  */
-export function isInCodeBlock(node: SyntaxNode, position: number): boolean {
+export function isInCodeBlock(node: SyntaxNode, _position: number): boolean {
 	const contextNode = node;
 
 	// Check for inline code

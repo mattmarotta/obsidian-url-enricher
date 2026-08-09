@@ -19,7 +19,7 @@ export function createUrlPreviewDecorator(
 		class {
 			decorations: DecorationSet;
 			private pendingUpdates = new Map<string, Promise<void>>();
-			private updateTimeout: ReturnType<typeof setTimeout> | null = null;
+			private updateTimeout: number | null = null;
 
 			constructor(view: EditorView) {
 				this.decorations = this.buildDecorations(view);
@@ -27,7 +27,7 @@ export function createUrlPreviewDecorator(
 
 			destroy(): void {
 				if (this.updateTimeout !== null) {
-					clearTimeout(this.updateTimeout);
+					window.clearTimeout(this.updateTimeout);
 				}
 			}
 
