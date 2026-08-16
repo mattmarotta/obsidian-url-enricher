@@ -8,10 +8,13 @@ All notable changes to URL Enricher will be documented in this file.
 - Release workflow now verifies the tag matches `manifest.json` and `versions.json`, has no `v` prefix, and is reachable from `master` before publishing
 
 ### Changed
+- Settings loaded from disk are now validated. Out-of-range numbers are clamped, numeric strings are converted, and unrecognised values fall back to their default instead of reaching the preview renderer. Settings removed in earlier versions no longer linger in `data.json`
+- Length and timeout limits come from a single set of constants, so the settings panel, frontmatter overrides, and stored settings all enforce the same bounds
 - Release documentation follows the protected-branch PR workflow: the version bump lands via its own pull request and the tag is pushed only after that merge
 - Removed `tsconfigRootDir` from the ESLint config; `import.meta.dirname` was flagged as an unsafe `any` assignment by Obsidian's plugin scanner
 
 ### Fixed
+- The request timeout setting rejected values its own spinner allowed; both now use the same minimum
 - Corrected dead documentation links in AGENTS.md and a changelog bullet split across lines in the 1.4.0 notes
 
 ## [1.4.0] - 2026-08-16

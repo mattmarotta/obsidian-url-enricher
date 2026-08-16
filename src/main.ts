@@ -9,7 +9,7 @@
 
 import { Plugin } from "obsidian";
 import { createUrlPreviewDecorator, refreshDecorationsEffect as urlPreviewRefreshEffect } from "./editor/urlPreviewDecorator";
-import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings } from "./settings";
+import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings, normalizeSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
 import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
@@ -62,8 +62,7 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	 * Load plugin settings from disk and normalize them
 	 */
 	async loadSettings(): Promise<void> {
-		const data = (await this.loadData()) as Partial<InlineLinkPreviewSettings> | null;
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		this.settings = normalizeSettings(await this.loadData());
 	}
 
 	/**
