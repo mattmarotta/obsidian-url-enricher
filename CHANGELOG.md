@@ -5,6 +5,17 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [1.4.0] - 2026-08-16
+
+### Added
 - Declarative settings API (`getSettingDefinitions()`), so plugin settings now appear in Obsidian's built-in settings search on 1.13+
 - Build provenance attestation for release assets
 - End-to-end decorator tests that mount a real CodeMirror editor, covering decoration precedence, staggered metadata loading, and card/inline rendering
@@ -17,7 +28,9 @@ All notable changes to URL Enricher will be documented in this file.
 - Rebuilt the ESLint config so the `eslint-plugin-obsidianmd` preset applies correctly, and enabled `prefer-active-doc`
 - Updated `obsidian` typings 1.10.0 → 1.13.1 and refreshed dependencies
 - Reduced `!important` in `styles.css` from 64 to 15 and dropped rules for classes the plugin no longer renders
-- Releases publish only `main.js`, `manifest.json`, and `styles.css` — no ZIP archive
+- Releases publish only `main.js`, `manifest.json`, and `styles.css` — no
+
+ZIP archive
 
 ### Fixed
 - **Previews never appeared for `[text](url)` and `[[url]]` links.** Obsidian's Live Preview owns replace decorations over those ranges and loads before plugin extensions, so the plugin's decorations were discarded. They are now registered at highest precedence and render immediately instead of only after moving the caret or reopening the note
