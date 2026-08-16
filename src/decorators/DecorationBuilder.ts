@@ -291,20 +291,24 @@ export function buildUrlDecorations(
 		}
 		processedRanges.add(rangeKey);
 
-		// Skip if cursor is inside this URL (user is actively editing)
-		// Only skip for inline mode - card mode keeps preview visible while editing
-		if (previewStyle === "inline" && cursorPos >= start && cursorPos <= end) {
-			return;
-		}
-
 		// Check for code block context
 		const node = tree.resolveInner(start, 1);
 		if (isInCodeBlock(node, start)) {
 			return;
 		}
 
-		// Queue metadata fetch
+		// Queue metadata fetch.
+		// This must happen BEFORE the cursor check below: the caret sits inside
+		// (or just after) a URL immediately after pasting it, and skipping the
+		// fetch there meant the preview never even started loading until the
+		// caret moved away.
 		queueMetadataFetch(url);
+
+		// Skip rendering if cursor is inside this URL (user is actively editing)
+		// Only skip for inline mode - card mode keeps preview visible while editing
+		if (previewStyle === "inline" && cursorPos >= start && cursorPos <= end) {
+			return;
+		}
 
 		// Try to get cached metadata
 		const metadata = service.getCachedMetadata(url);

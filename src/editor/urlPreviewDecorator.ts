@@ -1,6 +1,6 @@
 import { editorLivePreviewField } from "obsidian";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { RangeSetBuilder, StateEffect } from "@codemirror/state";
+import { Prec, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import type { LinkPreviewService } from "../services/linkPreviewService";
 import type { InlineLinkPreviewSettings } from "../settings";
 import { buildUrlDecorations } from "../decorators/DecorationBuilder";
@@ -10,16 +10,22 @@ export const refreshDecorationsEffect = StateEffect.define<null>();
 
 /**
  * Creates a CodeMirror ViewPlugin that decorates URLs with rich previews
+ *
+ * Registered at Prec.highest: Obsidian's Live Preview installs its own replace
+ * decorations over markdown-link and wikilink ranges before plugin extensions.
+ * At default precedence theirs wins those ranges, so previews only ever
+ * appeared for bare URLs - bracketed links rendered nothing until the caret
+ * moved onto the line and Live Preview revealed the raw markup.
  */
 export function createUrlPreviewDecorator(
 	service: LinkPreviewService,
 	getSettings: () => InlineLinkPreviewSettings
 ) {
-	return ViewPlugin.fromClass(
+	return Prec.highest(ViewPlugin.fromClass(
 		class {
 			decorations: DecorationSet;
 			private pendingUpdates = new Map<string, Promise<void>>();
-			private updateTimeout: ReturnType<typeof setTimeout> | null = null;
+			private updateTimeout: number | null = null;
 
 			constructor(view: EditorView) {
 				this.decorations = this.buildDecorations(view);
@@ -27,7 +33,7 @@ export function createUrlPreviewDecorator(
 
 			destroy(): void {
 				if (this.updateTimeout !== null) {
-					clearTimeout(this.updateTimeout);
+					window.clearTimeout(this.updateTimeout);
 				}
 			}
 
@@ -93,25 +99,42 @@ export function createUrlPreviewDecorator(
 					return;
 				}
 
-				const promise = service.getMetadata(url).then(() => {
-					// Rebuild decorations immediately after metadata is fetched
-					this.decorations = this.buildDecorations(view);
-
-					// Force a full viewport update to ensure the view re-renders
-					view.dispatch({
-						effects: []
+				const promise = service.getMetadata(url)
+					.then(() => undefined)
+					.catch(() => {
+						// Ignore fetch errors - the URL just renders without a preview
+					})
+					.finally(() => {
+						this.pendingUpdates.delete(url);
+						this.requestRefresh(view);
 					});
-				}).catch(() => {
-					// Silently ignore errors - no preview will be shown
-				}).finally(() => {
-					this.pendingUpdates.delete(url);
-				});
 
 				this.pendingUpdates.set(url, promise);
+			}
+
+			/**
+			 * Ask the view to rebuild decorations through the normal update cycle.
+			 *
+			 * Deferring to a timer matters for two reasons:
+			 *  - dispatching synchronously from a promise callback can land while
+			 *    CodeMirror is mid-update, which throws and gets swallowed by the
+			 *    fetch's catch handler, losing the repaint
+			 *  - several URLs usually resolve at once, so this coalesces them into
+			 *    a single rebuild instead of one full-document rescan per URL
+			 */
+			private requestRefresh(view: EditorView): void {
+				if (this.updateTimeout !== null) {
+					return;
+				}
+
+				this.updateTimeout = window.setTimeout(() => {
+					this.updateTimeout = null;
+					view.dispatch({ effects: refreshDecorationsEffect.of(null) });
+				}, 0);
 			}
 		},
 		{
 			decorations: (v) => v.decorations,
 		}
-	);
+	));
 }

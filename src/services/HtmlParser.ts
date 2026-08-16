@@ -130,7 +130,7 @@ export class HtmlParser {
 			}
 
 			try {
-				const json = JSON.parse(text);
+				const json: unknown = JSON.parse(text);
 				const found = this.searchJsonLd(json);
 				if (found && (found.title || found.description)) {
 					return found;

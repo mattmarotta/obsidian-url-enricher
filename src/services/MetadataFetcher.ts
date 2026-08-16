@@ -40,10 +40,10 @@ export class MetadataFetcher {
 			return await requestPromise;
 		}
 
-		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+		let timeoutId: number | null = null;
 		try {
 			const timeoutPromise = new Promise<never>((_, reject) => {
-				timeoutId = setTimeout(() => {
+				timeoutId = window.setTimeout(() => {
 					reject(new Error("Request timed out"));
 				}, this.options.requestTimeoutMs);
 			});
@@ -52,7 +52,7 @@ export class MetadataFetcher {
 			return response;
 		} finally {
 			if (timeoutId !== null) {
-				clearTimeout(timeoutId);
+				window.clearTimeout(timeoutId);
 			}
 		}
 	}
@@ -73,10 +73,10 @@ export class MetadataFetcher {
 			return await requestPromise;
 		}
 
-		let timeoutId: ReturnType<typeof setTimeout> | null = null;
+		let timeoutId: number | null = null;
 		try {
 			const timeoutPromise = new Promise<never>((_, reject) => {
-				timeoutId = setTimeout(() => {
+				timeoutId = window.setTimeout(() => {
 					reject(new Error("Request timed out"));
 				}, this.options.requestTimeoutMs);
 			});
@@ -85,7 +85,7 @@ export class MetadataFetcher {
 			return response;
 		} finally {
 			if (timeoutId !== null) {
-				clearTimeout(timeoutId);
+				window.clearTimeout(timeoutId);
 			}
 		}
 	}

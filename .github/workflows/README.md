@@ -48,11 +48,11 @@ This directory contains automated CI/CD workflows for the URL Enricher plugin.
    - Builds plugin
    - Extracts version from git tag
    - Generates changelog from commit messages
-   - Creates release archive (ZIP)
+   - Attests build provenance for main.js, manifest.json, styles.css
    - Creates GitHub release with:
      - Changelog
      - Installation instructions
-     - Release assets (ZIP, main.js, manifest.json, styles.css)
+     - Release assets (main.js, manifest.json, styles.css) — only the files Obsidian's plugin loader expects, no extra archive
 
 ## Using the Workflows
 

@@ -52,7 +52,7 @@ export function cleanMediaUrls(text: string): string {
  * Returns an HTML element with styled content
  */
 export function enrichTextWithStyledElements(text: string): HTMLElement {
-	const container = document.createElement('span');
+	const container = createSpan();
 
 	// Pattern to match hashtags (#word) and mentions (@word)
 	// Matches word characters, numbers, and underscores
@@ -64,11 +64,11 @@ export function enrichTextWithStyledElements(text: string): HTMLElement {
 	while ((match = pattern.exec(text)) !== null) {
 		// Add text before the match
 		if (match.index > lastIndex) {
-			container.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+			container.appendChild(activeDocument.createTextNode(text.substring(lastIndex, match.index)));
 		}
 
 		// Create styled span for hashtag or mention
-		const span = document.createElement('span');
+		const span = createSpan();
 		const matchedText = match[0];
 
 		if (matchedText.startsWith('#')) {
@@ -85,7 +85,7 @@ export function enrichTextWithStyledElements(text: string): HTMLElement {
 
 	// Add remaining text after last match
 	if (lastIndex < text.length) {
-		container.appendChild(document.createTextNode(text.substring(lastIndex)));
+		container.appendChild(activeDocument.createTextNode(text.substring(lastIndex)));
 	}
 
 	return container;

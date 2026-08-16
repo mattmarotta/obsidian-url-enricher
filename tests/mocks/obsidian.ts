@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import { StateField } from '@codemirror/state';
 
 // Request URL Types
 export interface RequestUrlParams {
@@ -283,3 +284,11 @@ export class TFolder extends TAbstractFile {
 		this.isRoot = false;
 	}
 }
+
+// editorLivePreviewField Mock
+// Obsidian exposes Live Preview mode as a CodeMirror StateField. Tests that
+// mount a real EditorView need this to exist so the decorator can read it.
+export const editorLivePreviewField = StateField.define<boolean>({
+	create: () => true,
+	update: (value) => value,
+});
