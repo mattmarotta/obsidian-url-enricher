@@ -282,15 +282,11 @@ See [CHANGELOG.md Unreleased](../../CHANGELOG.md#unreleased) for recent complian
 - [docs/features/FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) - Per-page configuration
 
 ### For Developers:
-- [DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md) - Workflows, checklists, debugging guide
-- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contributing guidelines, code standards
-- [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md) - Release process, version bumping, **pre-release checklist**
-- [TESTING.md](TESTING.md) - Testing infrastructure, coverage
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture, design patterns
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contributing guidelines, code standards, **release checklist**
+- [.github/workflows/README.md](.github/workflows/README.md) - CI/CD workflows and the release process
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
 
-**Documentation Index**: [docs/README.md](../README.md) - Navigation hub for all documentation
-
-**Visual Assets Guide**: [assets/README.md](../../assets/README.md) - Instructions for creating demo GIFs and screenshots
+**Visual Assets Guide**: [assets/README.md](assets/README.md) - Instructions for creating demo GIFs and screenshots
 
 **CHANGELOG Format**:
 - Follows [Keep a Changelog](https://keepachangelog.com/) format where possible
@@ -299,4 +295,4 @@ See [CHANGELOG.md Unreleased](../../CHANGELOG.md#unreleased) for recent complian
 - **Critical**: CHANGELOG.md content becomes GitHub release notes automatically
 - Write in user-facing language, not technical commit messages
 
-**Pre-Release Checklist**: See [VERSION-MANAGEMENT.md](VERSION-MANAGEMENT.md#pre-release-documentation-checklist) for documentation and asset review checklist before releases.
+**Release Process**: See the [Release Checklist in CONTRIBUTING.md](CONTRIBUTING.md#release-checklist). `master` is protected, so the version bump lands via its own PR and the tag is pushed **after** that merge — never `git push origin master --tags`.

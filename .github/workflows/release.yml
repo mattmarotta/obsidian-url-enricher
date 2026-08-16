@@ -40,6 +40,42 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      # Guards against publishing a release Obsidian can never serve. Obsidian
+      # reads manifest.json from the default branch to detect updates, so the
+      # tag must match the manifest AND the tagged commit must be on master.
+      - name: Verify tag matches manifest and is on master
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+
+          if [ "${VERSION#v}" != "$VERSION" ]; then
+            echo "::error::Tag '$VERSION' has a 'v' prefix. Tags must be bare (e.g. 1.2.3)," \
+                 "otherwise the CHANGELOG lookup for '## [$VERSION]' finds nothing."
+            exit 1
+          fi
+
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          if [ "$MANIFEST_VERSION" != "$VERSION" ]; then
+            echo "::error::Tag '$VERSION' does not match manifest.json version '$MANIFEST_VERSION'."
+            exit 1
+          fi
+
+          MIN_APP=$(node -p "require('./manifest.json').minAppVersion")
+          MAPPED=$(node -p "require('./versions.json')['$VERSION'] || ''")
+          if [ "$MAPPED" != "$MIN_APP" ]; then
+            echo "::error::versions.json is missing or wrong for '$VERSION'" \
+                 "(expected '$MIN_APP', got '${MAPPED:-<missing>}'). Run 'npm run set-version $VERSION'."
+            exit 1
+          fi
+
+          git fetch --quiet origin master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::Tagged commit is not on master. Merge the version bump first," \
+                 "then tag from an up-to-date master - otherwise Obsidian will keep serving the old version."
+            exit 1
+          fi
+
+          echo "✓ $VERSION matches manifest, versions.json, and is on master"
+
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:

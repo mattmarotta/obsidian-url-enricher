@@ -182,19 +182,48 @@ npm run set-version X.Y.Z      # Bump version across all files
 
 **For maintainers only:**
 
-- [ ] All tests passing
-- [ ] Bump version: `npm run set-version X.Y.Z`
-- [ ] **Fill in CHANGELOG.md** with user-facing release notes
-  - Use clear, non-technical language
-  - Organize: Added / Changed / Fixed / Removed
-  - This becomes your GitHub release notes automatically!
-- [ ] Build successful: `npm run build`
-- [ ] Commit: `git add . && git commit -m "chore: Bump version to X.Y.Z"`
-- [ ] Tag: `git tag X.Y.Z`
-- [ ] Push: `git push origin master --tags`
-- [ ] GitHub Actions auto-creates release with CHANGELOG content
+`master` is protected — all changes land through a pull request, including the
+version bump. Tag only *after* the bump is merged.
 
-**⚠️ Fill CHANGELOG immediately after version bump while changes are fresh!**
+**1. Land your changes**
+
+- [ ] All tests passing: `npm test`
+- [ ] Lint and types clean: `npm run lint && npx tsc -noEmit -skipLibCheck`
+- [ ] Feature branch → PR → merge into `master`
+
+**2. Bump the version (its own PR)**
+
+- [ ] `git checkout master && git pull`
+- [ ] `git checkout -b chore/bump-X.Y.Z`
+- [ ] Bump version: `npm run set-version X.Y.Z`
+      (updates manifest.json, package.json, package-lock.json, versions.json,
+      AGENTS.md, and promotes CHANGELOG's `[Unreleased]` section)
+- [ ] **Review CHANGELOG.md** — the promoted section becomes your GitHub release
+      notes verbatim. Use clear, non-technical language, organised as
+      Added / Changed / Fixed / Removed.
+- [ ] Build successful: `npm run build`
+- [ ] Commit, push, open a PR, and **merge with a merge commit** (not squash —
+      squashing rewrites the SHA the tag will point at)
+
+**3. Tag from master**
+
+- [ ] `git checkout master && git pull`
+- [ ] Confirm the bump landed: `git show HEAD:manifest.json | grep version`
+- [ ] `git tag X.Y.Z` — **no `v` prefix**; the release workflow looks up
+      `## [X.Y.Z]` in CHANGELOG.md and a `v` makes it silently find nothing
+- [ ] `git push origin X.Y.Z`
+- [ ] GitHub Actions builds and publishes the release automatically
+
+**4. Verify**
+
+- [ ] `curl -s https://raw.githubusercontent.com/<owner>/<repo>/master/manifest.json`
+      reports the new version — this is what Obsidian reads to detect updates
+- [ ] The GitHub release has exactly `main.js`, `manifest.json`, `styles.css`
+
+> **⚠️ Never tag before the bump is on `master`.** Tags push independently of
+> branches, so `git push origin master --tags` still publishes the tag even when
+> the branch push is rejected. That produces a release Obsidian cannot see,
+> because it reads `manifest.json` from the default branch, not from the tag.
 
 ## Common Gotchas
 

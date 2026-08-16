@@ -219,9 +219,17 @@ if (failedFiles.length > 0) {
 
 console.log(`\nNext steps:`);
 console.log(`1. Fill in CHANGELOG.md with your changes`);
-console.log(`2. Commit: git add . && git commit -m "chore: Bump version to ${targetVersion}"`);
-console.log(`3. Tag: git tag ${targetVersion}`);
-console.log(`4. Push: git push origin master --tags`);
+console.log(`2. Branch:  git checkout -b chore/bump-${targetVersion}`);
+console.log(`3. Commit:  git add . && git commit -m "chore: Bump version to ${targetVersion}"`);
+console.log(`4. Push:    git push -u origin chore/bump-${targetVersion}`);
+console.log(`5. Open a PR into master and merge it (use a merge commit, not squash)`);
+console.log(`6. Tag AFTER the merge lands, from an up-to-date master:`);
+console.log(`     git checkout master && git pull`);
+console.log(`     git tag ${targetVersion} && git push origin ${targetVersion}`);
+console.log(`\n⚠ Do not tag before the bump is on master. Tags push independently of`);
+console.log(`  branches, so a rejected branch push still publishes the tag - which`);
+console.log(`  releases assets that Obsidian cannot see, because it reads`);
+console.log(`  manifest.json from the default branch.`);
 
 function readJson(filePath) {
 	return JSON.parse(readFileSync(filePath, "utf8"));
