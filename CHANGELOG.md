@@ -5,13 +5,35 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
--
+- Declarative settings API (`getSettingDefinitions()`), so plugin settings now appear in Obsidian's built-in settings search on 1.13+
+- Build provenance attestation for release assets
+- End-to-end decorator tests that mount a real CodeMirror editor, covering decoration precedence, staggered metadata loading, and card/inline rendering
 
 ### Changed
--
+- **Raised `minAppVersion` to 1.13.0.** The settings tab now uses the declarative API exclusively. Users on older Obsidian versions keep receiving 1.3.2 via `versions.json` rather than breaking
+- Reddit metadata is fetched from `old.reddit.com`; the original URL is still what gets cached, displayed, and opened on click
+- DOM creation and timers use Obsidian's popout-window-safe APIs (`createEl`/`createDiv`/`createSpan`, `activeDocument`, `window.setTimeout`)
+- Metadata refreshes are coalesced into a single repaint instead of one full-document rescan per URL
+- Rebuilt the ESLint config so the `eslint-plugin-obsidianmd` preset applies correctly, and enabled `prefer-active-doc`
+- Updated `obsidian` typings 1.10.0 → 1.13.1 and refreshed dependencies
+- Reduced `!important` in `styles.css` from 64 to 15 and dropped rules for classes the plugin no longer renders
+- Releases publish only `main.js`, `manifest.json`, and `styles.css` — no ZIP archive
 
 ### Fixed
--
+- **Previews never appeared for `[text](url)` and `[[url]]` links.** Obsidian's Live Preview owns replace decorations over those ranges and loads before plugin extensions, so the plugin's decorations were discarded. They are now registered at highest precedence and render immediately instead of only after moving the caret or reopening the note
+- **A link never started loading while the caret sat inside it.** The metadata fetch was skipped along with the rendering, so a just-pasted link stayed blank until the caret moved away
+- **Card previews dropped the title entirely** for sites without a favicon
+- **Reddit previews only ever showed "Reddit".** reddit.com serves a JavaScript bot-challenge page to non-browser clients, and its `.json` API returns 403; both subreddit and post links now resolve real titles and descriptions
+- Duplicate CSS selectors, an invalid `:has(:contains())` rule that never matched anything, and an `all: unset` override
+- Type-safety issues around `loadData()`, `JSON.parse`, `Map` iteration, and a regex callback
+- Stale `eslint-disable` directives that no longer suppressed anything
+
+### Removed
+- The deprecated `display()` settings fallback, superseded by `getSettingDefinitions()`
+- `builtin-modules` dependency, replaced with Node's built-in `node:module`
+
+### Security
+- Resolved 18 dependency vulnerabilities (3 critical, 12 high, 3 moderate), all in devDependencies
 
 ## [1.3.2] - 2025-11-11
 
