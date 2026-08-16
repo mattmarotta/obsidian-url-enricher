@@ -11,12 +11,19 @@ export const FAVICON_CACHE_KEY = "favicon-cache";
 export const URL_CONTEXT_SEARCH_BACKWARDS = 1000; // chars
 export const URL_CONTEXT_SEARCH_FORWARDS = 100; // chars
 
-// Length limits
-export const MAX_CARD_LENGTH_MIN = 100;
-export const MAX_CARD_LENGTH_MAX = 5000;
-export const MAX_INLINE_LENGTH_MIN = 50;
-export const MAX_INLINE_LENGTH_MAX = 5000;
+// Length limits.
+// These are the hard bounds, enforced in three places that must agree:
+// the settings UI, frontmatter overrides, and settings loaded from disk.
+export const CARD_LENGTH_MIN = 1;
+export const CARD_LENGTH_MAX = 5000;
+export const INLINE_LENGTH_MIN = 1;
+export const INLINE_LENGTH_MAX = 5000;
 export const REQUEST_TIMEOUT_MIN = 500;
+
+// Guidance shown in the settings UI. Not enforced - shorter values are legal,
+// they just tend to truncate the title before the description ever shows.
+export const CARD_LENGTH_RECOMMENDED_MIN = 100;
+export const INLINE_LENGTH_RECOMMENDED_MIN = 50;
 
 // Default lengths
 export const DEFAULT_CARD_LENGTH = 300;

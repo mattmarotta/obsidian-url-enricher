@@ -1,7 +1,15 @@
 import { App, Notice, PluginSettingTab } from "obsidian";
 import type { SettingDefinition, SettingDefinitionItem } from "obsidian";
 import type InlineLinkPreviewPlugin from "./main";
-import { REQUEST_TIMEOUT_MIN } from "./constants";
+import {
+	CARD_LENGTH_MIN,
+	CARD_LENGTH_MAX,
+	CARD_LENGTH_RECOMMENDED_MIN,
+	INLINE_LENGTH_MIN,
+	INLINE_LENGTH_MAX,
+	INLINE_LENGTH_RECOMMENDED_MIN,
+	REQUEST_TIMEOUT_MIN,
+} from "./constants";
 
 export type PreviewColorMode = "none" | "subtle";
 export type PreviewStyle = "inline" | "card";
@@ -35,6 +43,48 @@ export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 };
 
 type SettingKey = keyof InlineLinkPreviewSettings;
+
+/** Clamp a value to a range, falling back to the default if it isn't a usable number. */
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+	const parsed = typeof value === "number" ? value : Number(value);
+	if (!Number.isFinite(parsed)) {
+		return fallback;
+	}
+	return Math.min(max, Math.max(min, Math.round(parsed)));
+}
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+	return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+function asBoolean(value: unknown, fallback: boolean): boolean {
+	return typeof value === "boolean" ? value : fallback;
+}
+
+/**
+ * Coerce arbitrary stored data into valid settings.
+ *
+ * data.json is user-editable and survives downgrades, so values reaching us can
+ * be out of range, wrong-typed, or entirely unknown. Every field falls back to
+ * its default rather than propagating a bad value into the decorator.
+ */
+export function normalizeSettings(raw: unknown): InlineLinkPreviewSettings {
+	const data = (raw ?? {}) as Partial<Record<SettingKey, unknown>>;
+
+	return {
+		includeDescription: asBoolean(data.includeDescription, DEFAULT_SETTINGS.includeDescription),
+		maxCardLength: clampNumber(data.maxCardLength, CARD_LENGTH_MIN, CARD_LENGTH_MAX, DEFAULT_SETTINGS.maxCardLength),
+		maxInlineLength: clampNumber(data.maxInlineLength, INLINE_LENGTH_MIN, INLINE_LENGTH_MAX, DEFAULT_SETTINGS.maxInlineLength),
+		requestTimeoutMs: clampNumber(data.requestTimeoutMs, REQUEST_TIMEOUT_MIN, Number.MAX_SAFE_INTEGER, DEFAULT_SETTINGS.requestTimeoutMs),
+		showFavicon: asBoolean(data.showFavicon, DEFAULT_SETTINGS.showFavicon),
+		keepEmoji: asBoolean(data.keepEmoji, DEFAULT_SETTINGS.keepEmoji),
+		previewStyle: oneOf<PreviewStyle>(data.previewStyle, ["inline", "card"], DEFAULT_SETTINGS.previewStyle),
+		inlineColorMode: oneOf<PreviewColorMode>(data.inlineColorMode, ["none", "subtle"], DEFAULT_SETTINGS.inlineColorMode),
+		cardColorMode: oneOf<PreviewColorMode>(data.cardColorMode, ["none", "subtle"], DEFAULT_SETTINGS.cardColorMode),
+		showHttpErrorWarnings: asBoolean(data.showHttpErrorWarnings, DEFAULT_SETTINGS.showHttpErrorWarnings),
+		requireFrontmatter: asBoolean(data.requireFrontmatter, DEFAULT_SETTINGS.requireFrontmatter),
+	};
+}
 
 export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 	private readonly plugin: InlineLinkPreviewPlugin;
@@ -110,24 +160,30 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					},
 					{
 						name: "Maximum card length",
-						desc: "Maximum total characters for card-style previews (title + description combined). Cards show more detailed information. Recommended: 100+, max: 5000",
+						desc: `Maximum total characters for card-style previews (title + description combined). Cards show more detailed information. Recommended: ${CARD_LENGTH_RECOMMENDED_MIN}+, max: ${CARD_LENGTH_MAX}`,
 						control: {
 							type: "number",
 							key: "maxCardLength",
-							min: 1,
-							max: 5000,
-							validate: (value) => (Number.isFinite(value) && value >= 1 ? undefined : "Must be at least 1"),
+							min: CARD_LENGTH_MIN,
+							max: CARD_LENGTH_MAX,
+							validate: (value) =>
+								Number.isFinite(value) && value >= CARD_LENGTH_MIN && value <= CARD_LENGTH_MAX
+									? undefined
+									: `Must be between ${CARD_LENGTH_MIN} and ${CARD_LENGTH_MAX}`,
 						},
 					},
 					{
 						name: "Maximum inline length",
-						desc: "Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Recommended: 50+, max: 5000",
+						desc: `Maximum total characters for inline-style previews (title + description combined). Inline previews are compact and flow with text. Recommended: ${INLINE_LENGTH_RECOMMENDED_MIN}+, max: ${INLINE_LENGTH_MAX}`,
 						control: {
 							type: "number",
 							key: "maxInlineLength",
-							min: 1,
-							max: 5000,
-							validate: (value) => (Number.isFinite(value) && value >= 1 ? undefined : "Must be at least 1"),
+							min: INLINE_LENGTH_MIN,
+							max: INLINE_LENGTH_MAX,
+							validate: (value) =>
+								Number.isFinite(value) && value >= INLINE_LENGTH_MIN && value <= INLINE_LENGTH_MAX
+									? undefined
+									: `Must be between ${INLINE_LENGTH_MIN} and ${INLINE_LENGTH_MAX}`,
 						},
 					},
 					{
@@ -151,7 +207,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 						control: {
 							type: "number",
 							key: "requestTimeoutMs",
-							min: 1000,
+							min: REQUEST_TIMEOUT_MIN,
 							step: 500,
 							validate: (value) =>
 								Number.isFinite(value) && value >= REQUEST_TIMEOUT_MIN

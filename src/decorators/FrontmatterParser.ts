@@ -1,4 +1,10 @@
 import type { PreviewStyle, PreviewColorMode } from "../settings";
+import {
+	CARD_LENGTH_MIN,
+	CARD_LENGTH_MAX,
+	INLINE_LENGTH_MIN,
+	INLINE_LENGTH_MAX,
+} from "../constants";
 
 /**
  * Page-level configuration that can override global settings via frontmatter
@@ -56,7 +62,7 @@ export function parsePageConfig(text: string): PageConfig {
 		const maxCardMatch = line.match(/^max-card-length:\s*(\d+)$/i);
 		if (maxCardMatch) {
 			const value = parseInt(maxCardMatch[1], 10);
-			if (value >= 1 && value <= 5000) {
+			if (value >= CARD_LENGTH_MIN && value <= CARD_LENGTH_MAX) {
 				config.maxCardLength = value;
 			}
 		}
@@ -65,7 +71,7 @@ export function parsePageConfig(text: string): PageConfig {
 		const maxInlineMatch = line.match(/^max-inline-length:\s*(\d+)$/i);
 		if (maxInlineMatch) {
 			const value = parseInt(maxInlineMatch[1], 10);
-			if (value >= 1 && value <= 5000) {
+			if (value >= INLINE_LENGTH_MIN && value <= INLINE_LENGTH_MAX) {
 				config.maxInlineLength = value;
 			}
 		}
