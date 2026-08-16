@@ -4,23 +4,24 @@
 
 [![License](https://img.shields.io/github/license/mattmarotta/obsidian-url-enricher?cacheSeconds=3600)](LICENSE)
 
-**Rich, non-destructive link previews for Obsidian**
+Non-destructive link previews for Obsidian.
 
-Transform plain URLs into beautiful previews with title, description, and favicon — without modifying your markdown.
+URL Enricher shows the title, description, and favicon for URLs in your notes without changing the markdown underneath. The source file keeps the plain URL; only the rendered view changes.
 
 ![inline demo](assets/inline-preview.gif)
 
 ![card demo](assets/card-preview.gif)
 
-## Quick Start
+## Requirements
 
-**Plugin works only in Live Preview mode** 
+- Obsidian 1.13.0 or later
+- Live Preview mode. The plugin does not render in Source mode or Reading view.
 
-Head to Settings > URL Enricher to customize global behaviour, or use frontmatter to customize per page.
+## Quick start
 
-**Customize per-page:**
+Install the plugin, then open a note in Live Preview and paste a URL. Previews appear once the page metadata loads.
 
-Override global settings per-page. **Must start on line 1!**
+Global settings live under Settings > URL Enricher. Any note can override them with frontmatter, which must start on line 1:
 
 ```yaml
 ---
@@ -34,38 +35,34 @@ card-color-mode: subtle               # none | subtle
 ---
 ```
 
-## Features
+## Preview styles
 
-### 🎨 Two Preview Styles
+**Inline** (compact)
 
-**Inline** (compact): ![Inline Preview](assets/inline-preview.png)
+![Inline Preview](assets/inline-preview.png)
 
-- Flows naturally with text
-- URL completely hidden
-- Perfect for reading
+Flows with the surrounding text and hides the raw URL. Best for reading.
 
-**Card** (detailed): ![Card Preview](assets/card-preview.png)
+**Card** (detailed)
 
-- Material Design aesthetic
-- Shows description and site name
-- Great for bookmarks and research
+![Card Preview](assets/card-preview.png)
 
-### ✨ What You Get
+A block layout showing the description and site name. Best for bookmarks and research notes.
 
-- **100% Non-Destructive** - Markdown source never modified
-- **Cursor-Aware** - Inline previews switch to editing mode when cursor in/around url
-- **Automatic Metadata** - Fetches title, description, favicon
-- **Per-Page Config** - Override settings with frontmatter
-- **Domain Enhancements** - Special handling for Wikipedia, Reddit, Twitter, LinkedIn, Google
-- **Real-Time Updates** - Settings apply instantly
+## What it does
+
+- Never modifies your markdown source
+- Reveals the raw URL while the cursor is inside it, so you can still edit
+- Fetches title, description, and favicon automatically
+- Accepts per-note overrides through frontmatter
+- Applies site-specific handling for Wikipedia, Reddit, Twitter/X, LinkedIn, and Google Search
+- Applies settings changes immediately, with no reload
 
 ## Customization
 
-### Custom Preview Colors
+To set your own preview colors, use an Obsidian CSS snippet.
 
-Want specific colors? Use Obsidian CSS snippets:
-
-1. **Settings → Appearance → CSS snippets folder** (click folder icon)
+1. Go to Settings > Appearance > CSS snippets and click the folder icon.
 2. Create `url-enricher-colors.css`:
 
 ```css
@@ -80,72 +77,66 @@ Want specific colors? Use Obsidian CSS snippets:
 }
 ```
 
-3. **Settings → Appearance → CSS snippets** → Enable snippet
+3. Return to Settings > Appearance > CSS snippets and enable it.
 
-## Supported URL Formats
+## Supported URL formats
 
 ```markdown
 https://github.com                            # Bare URL
 [custom text](https://github.com)             # Markdown link
 [](https://github.com)                        # Empty link text
-[[https://github.com]]                        # Wikilink (URLs only!)
+[[https://github.com]]                        # Wikilink (URLs only)
 ```
 
-**Not supported:** Image embeds `![](url)`, code blocks, non-HTTP protocols
+Not supported: image embeds `![](url)`, URLs inside code blocks, and non-HTTP protocols.
 
-## Common Issues
+## Common issues
 
-### Previews not showing?
+**Previews not showing**
 
-- ✅ Enable **Live Preview mode** (not Source mode)
-- ✅ Check URL format: `https://example.com`
-- ✅ Settings → URL Enricher → Clear cache button
+- Confirm the note is in Live Preview mode, not Source mode.
+- Confirm the URL includes the scheme, for example `https://example.com`.
+- Try Settings > URL Enricher > Clear cache.
 
-### Frontmatter not working?
+**Frontmatter not applying**
 
-- ⚠️ Must start on line 1 with `---`
-- ⚠️ Check spelling: `preview-style` (not `previewstyle`)
+- The block must start on line 1 with `---`.
+- Check the key spelling, for example `preview-style` rather than `previewstyle`.
 
-### Stale or wrong previews?
+**Stale or incorrect previews**
 
-- Go to **Settings → URL Enricher → Clear cache**
+- Use Settings > URL Enricher > Clear cache.
 
-### Performance issues?
+**Slow performance**
 
-- Disable descriptions in Settings
-- Reduce description length in Settings
+- Turn off descriptions, or reduce the maximum description length, in Settings.
 
-### Broken URL warnings (⚠️)?
+**Warning icon next to a URL**
 
-Some sites block bots (403 Forbidden). Disable warnings: **Settings → URL Enricher → HTTP Error Warnings → OFF**
+Some sites block automated requests and return an HTTP error. To hide these warnings, set Settings > URL Enricher > HTTP error warnings to off.
 
-For more help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+For anything else, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
-## Domain Enhancements
+## Site-specific handling
 
-Special handling for popular sites:
+Some sites need extra work to produce a useful preview:
 
-- **Wikipedia** - Fetches article intros, shows "WIKIPEDIA" as site name
-- **Reddit** - Format: `r/Subreddit — Title`, extracts post content
-- **Twitter/X** - Fetches tweets via oEmbed, shows `@username`
-- **Google Search** - Extracts query: "Google Search — your query"
-- **LinkedIn** - Cleans hashtags and comment counts from titles
+- **Wikipedia**: fetches the article introduction and reports Wikipedia as the site name.
+- **Reddit**: fetches through `old.reddit.com`, because the main site serves a bot challenge page instead of metadata to non-browser clients.
+- **Twitter/X**: fetches tweet content through the public oEmbed endpoint.
+- **Google Search**: extracts the search query for the title.
+- **LinkedIn**: strips leading hashtags and comment counts from titles.
 
-## Privacy & Network Usage
+## Privacy and network usage
 
-This plugin makes network requests to provide rich previews:
+The plugin makes network requests to build previews:
 
-- **Page Metadata**: Fetches HTML from URLs you include in your notes to extract titles, descriptions, and favicons
-- **Wikipedia API**: For Wikipedia links, queries the Wikipedia API to fetch article summaries
-- **Twitter oEmbed API**: For Twitter/X links, uses Twitter's public oEmbed endpoint to fetch tweet content
-- **Google Favicon Service**: Requests high-resolution favicons from Google's public service for better display quality
+- **Page metadata**: fetches HTML from the URLs in your notes to read titles, descriptions, and favicons.
+- **Wikipedia API**: queries article summaries for Wikipedia links.
+- **Twitter oEmbed API**: fetches tweet content for Twitter/X links.
+- **Google favicon service**: requests higher-resolution favicons for display.
 
-**Privacy:**
-- ✅ No telemetry or analytics
-- ✅ No user data collection
-- ✅ All network requests are for fetching public web content you've linked to
-- ✅ All data cached locally in your vault's plugin folder
-- ✅ You control what URLs are processed
+It does not collect telemetry, analytics, or any user data. Requests are only made for public pages you have linked to, results are cached locally in your vault's plugin folder, and you control which URLs are processed.
 
 ## Development
 
@@ -154,29 +145,22 @@ npm install                 # Install dependencies
 npm run dev                 # Watch mode
 npm run build               # Production build
 npm run lint                # Run ESLint (enforces Obsidian plugin guidelines)
-npm test                    # Run tests (618 tests)
+npm test                    # Run the test suite
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guide.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide, including the release process.
 
 ## Contributing
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- Development setup
-- Code standards (100% type-safe TypeScript)
-- Release process
-- Common gotchas
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers development setup, code standards, the release checklist, and common pitfalls.
 
 ## License
 
-MIT - See [LICENSE](LICENSE)
+MIT. See [LICENSE](LICENSE).
 
----
+## Links
 
-**Made with ❤️ for the Obsidian community**
-
-- [Troubleshooting](TROUBLESHOOTING.md) - Common issues
-- [Changelog](CHANGELOG.md) - Version history
-- [Issues](https://github.com/mattmarotta/obsidian-url-enricher/issues) - Report bugs
-- [Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions) - Ask questions
+- [Troubleshooting](TROUBLESHOOTING.md)
+- [Changelog](CHANGELOG.md)
+- [Report an issue](https://github.com/mattmarotta/obsidian-url-enricher/issues)
+- [Discussions](https://github.com/mattmarotta/obsidian-url-enricher/discussions)

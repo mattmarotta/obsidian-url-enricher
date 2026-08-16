@@ -71,24 +71,37 @@ git push origin feature/my-feature
 
 ### Creating a Release
 
-To create a new release:
+`master` is protected, so the version bump goes through a PR like any other
+change, and the tag is created **after** that PR merges.
 
-1. **Update version** using the version bump script:
+1. **Bump the version on its own branch:**
    ```bash
+   git checkout master && git pull
+   git checkout -b chore/bump-1.2.3
    npm run set-version 1.2.3
    ```
 
-2. **Commit the version changes:**
+2. **Review CHANGELOG.md**, then commit and push the branch:
    ```bash
    git add .
    git commit -m "chore: Bump version to 1.2.3"
+   git push -u origin chore/bump-1.2.3
    ```
 
-3. **Create and push a tag:**
+3. **Open a PR into `master` and merge it** — use a merge commit, not squash,
+   so the commit the tag will point at stays in history.
+
+4. **Tag from an up-to-date master:**
    ```bash
-   git tag 1.2.3
-   git push origin master --tags
+   git checkout master && git pull
+   git tag 1.2.3            # no "v" prefix
+   git push origin 1.2.3
    ```
+
+   > **Do not use `git push origin master --tags`.** Tags push independently of
+   > branches, so if the branch push is rejected the tag still lands — producing
+   > a release that Obsidian cannot see, because it reads `manifest.json` from
+   > the default branch rather than from the tag.
 
 4. **Release workflow runs automatically:**
    - Runs tests

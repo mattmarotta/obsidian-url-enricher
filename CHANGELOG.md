@@ -5,13 +5,14 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
--
+- Release workflow now verifies the tag matches `manifest.json` and `versions.json`, has no `v` prefix, and is reachable from `master` before publishing
 
 ### Changed
--
+- Release documentation follows the protected-branch PR workflow: the version bump lands via its own pull request and the tag is pushed only after that merge
+- Removed `tsconfigRootDir` from the ESLint config; `import.meta.dirname` was flagged as an unsafe `any` assignment by Obsidian's plugin scanner
 
 ### Fixed
--
+- Corrected dead documentation links in AGENTS.md and a changelog bullet split across lines in the 1.4.0 notes
 
 ## [1.4.0] - 2026-08-16
 
@@ -28,9 +29,7 @@ All notable changes to URL Enricher will be documented in this file.
 - Rebuilt the ESLint config so the `eslint-plugin-obsidianmd` preset applies correctly, and enabled `prefer-active-doc`
 - Updated `obsidian` typings 1.10.0 → 1.13.1 and refreshed dependencies
 - Reduced `!important` in `styles.css` from 64 to 15 and dropped rules for classes the plugin no longer renders
-- Releases publish only `main.js`, `manifest.json`, and `styles.css` — no
-
-ZIP archive
+- Releases publish only `main.js`, `manifest.json`, and `styles.css` — no ZIP archive
 
 ### Fixed
 - **Previews never appeared for `[text](url)` and `[[url]]` links.** Obsidian's Live Preview owns replace decorations over those ranges and loads before plugin extensions, so the plugin's decorations were discarded. They are now registered at highest precedence and render immediately instead of only after moving the caret or reopening the note
