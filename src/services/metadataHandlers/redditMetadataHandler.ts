@@ -57,10 +57,16 @@ export class RedditMetadataHandler implements MetadataHandler {
 		}
 
 		const normalized = title.trim().toLowerCase();
+		const isHeartOfInternetTitle =
+			/^reddit\s*[-–—]\s*the heart of the internet$/.test(normalized);
+		const isLoginPageTitle =
+			/^welcome to reddit\s*[-–—]\s*log in or sign up(?:\.{3}|…)?$/.test(normalized);
+
 		return (
 			normalized === "reddit.com" ||
 			normalized === "reddit" ||
-			normalized.includes("the heart of the internet")
+			isHeartOfInternetTitle ||
+			isLoginPageTitle
 		);
 	}
 
