@@ -5,6 +5,17 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [1.4.1] - 2026-09-21
+
+### Added
 - Release workflow now verifies the tag matches `manifest.json` and `versions.json`, has no `v` prefix, and is reachable from `master` before publishing
 
 ### Changed
@@ -16,6 +27,7 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 - The request timeout setting rejected values its own spinner allowed; both now use the same minimum
 - Corrected dead documentation links in AGENTS.md and a changelog bullet split across lines in the 1.4.0 notes
+- Reddit links that redirect to the login page now correctly fall back to Reddit's API and display the actual post title and content
 
 ## [1.4.0] - 2026-08-16
 
