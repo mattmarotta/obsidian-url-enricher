@@ -458,6 +458,65 @@ describe('Metadata Handlers', () => {
 				expect(metadata.title).toBe('r/test');
 			});
 
+			it('should enrich if title is Reddit login page', async () => {
+				metadata.title = 'Welcome to Reddit — Log in or sign up...';
+				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify([{
+						data: {
+							children: [{
+								data: {
+									subreddit: 'test',
+									title: 'Actual Reddit Post',
+								},
+							}],
+						},
+					}]),
+				});
+
+				context = {
+					originalUrl: url.toString(),
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+
+				expect(mockRequest).toHaveBeenCalledWith({
+					url: expect.stringContaining('.json'),
+					method: 'GET',
+				});
+				expect(metadata.title).toBe('r/test');
+				expect(metadata.description).toBe('§REDDIT_CARD§Actual Reddit Post');
+			});
+
+			it('should not treat ordinary titles containing Reddit boilerplate phrases as generic', async () => {
+				metadata.title =
+					'Welcome to Reddit, here is my first Space Marine; it wields the heart of the internet as its weapon';
+				metadata.description = 'Existing description';
+				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
+
+				context = {
+					originalUrl: url.toString(),
+					url,
+					metadata,
+					request: mockRequest,
+					sanitizeText: (s: string | null | undefined) => s ?? null,
+					settings: DEFAULT_SETTINGS,
+				};
+
+				await handler.enrich(context);
+
+				expect(mockRequest).not.toHaveBeenCalled();
+				expect(metadata.title).toBe(
+					'Welcome to Reddit, here is my first Space Marine; it wields the heart of the internet as its weapon'
+				);
+			});
+
 			it('should not fetch if URL does not match /comments/ pattern', async () => {
 				const url = new URL('https://reddit.com/r/programming');
 
