@@ -65,6 +65,7 @@ export class RedditMetadataHandler implements MetadataHandler {
 		return (
 			normalized === "reddit.com" ||
 			normalized === "reddit" ||
+			normalized === "welcome to reddit" ||
 			isHeartOfInternetTitle ||
 			isLoginPageTitle
 		);
