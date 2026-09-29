@@ -11,7 +11,7 @@ All notable changes to URL Enricher will be documented in this file.
 -
 
 ### Fixed
--
+- Reddit share links (e.g. `reddit.com/r/learnpython/s/acLJEVUdmr`) now show the post title instead of a generic "Welcome to Reddit" preview
 
 ## [1.4.3] - 2026-09-29
 
