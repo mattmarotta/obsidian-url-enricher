@@ -13,6 +13,22 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [1.4.3] - 2026-09-29
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+- Keep the existing JSON endpoint as the primary source, preserving post content when available.
+- Try oEmbed when the JSON request fails, returns malformed data, or contains no usable post title.
+- Preserve the existing Reddit preview format (r/subreddit and §REDDIT_CARD§).
+- Handle failed or malformed oEmbed responses gracefully.
+- Add regression tests for the fallback and its failure cases.
+
+
 ## [1.4.2] - 2026-09-29
 
 ### Added
