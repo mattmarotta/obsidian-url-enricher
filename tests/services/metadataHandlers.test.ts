@@ -566,6 +566,180 @@ describe('Metadata Handlers', () => {
 				expect(mockRequest).not.toHaveBeenCalled();
 			});
 
+			it('should fall back to Reddit oEmbed when JSON returns 403', async () => {
+				metadata.title = 'Welcome to Reddit';
+				metadata.description =
+					'Log in or sign up to personalize your feed, join conversations, vote, and explore communities.';
+
+				const url =
+					'https://www.reddit.com/r/Warhammer40k/comments/h0z87m/a_beginners_guide_to_the_painting_process/';
+
+				mockRequest
+					.mockResolvedValueOnce({
+						status: 403,
+						text: '',
+					})
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify({
+							title: "A Beginner's Guide to the Painting Process",
+						}),
+					});
+
+				const context = createMockContext(url, metadata, mockRequest);
+
+				await handler.enrich(context);
+
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(new URL(mockRequest.mock.calls[0][0].url).pathname.endsWith('/.json')).toBe(true);
+
+				const oEmbedUrl = new URL(mockRequest.mock.calls[1][0].url);
+				expect(oEmbedUrl.origin).toBe('https://www.reddit.com');
+				expect(oEmbedUrl.pathname).toBe('/oembed');
+				expect(oEmbedUrl.searchParams.get('url')).toBe(url);
+
+				expect(metadata.title).toBe('r/Warhammer40k');
+				expect(metadata.description).toBe(
+					"§REDDIT_CARD§A Beginner's Guide to the Painting Process"
+				);
+			});
+
+			it('should prefer JSON metadata and preserve post content when available', async () => {
+				metadata.title = 'Welcome to Reddit';
+				mockRequest.mockResolvedValueOnce({
+					status: 200,
+					text: JSON.stringify([{
+						data: {
+							children: [{
+								data: {
+									subreddit: 'test',
+									title: 'Title from JSON',
+									selftext: 'Full post content',
+								},
+							}],
+						},
+					}]),
+				});
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/test/comments/abc123/post',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(1);
+				expect(metadata.title).toBe('r/test');
+				expect(metadata.description).toBe(
+					'§REDDIT_CARD§Title from JSON§REDDIT_CONTENT§Full post content'
+				);
+			});
+
+			it('should fall back to oEmbed when Reddit JSON is malformed', async () => {
+				metadata.title = 'Welcome to Reddit';
+				mockRequest
+					.mockResolvedValueOnce({ status: 200, text: 'not valid JSON' })
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify({ title: 'Title from oEmbed' }),
+					});
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/test/comments/abc123/post',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(metadata.title).toBe('r/test');
+				expect(metadata.description).toBe('§REDDIT_CARD§Title from oEmbed');
+			});
+
+			it('should fall back to oEmbed when JSON has no usable post title', async () => {
+				metadata.title = 'Welcome to Reddit';
+				mockRequest
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify([{
+							data: {
+								children: [{
+									data: { subreddit: 'test', title: '   ' },
+								}],
+							},
+						}]),
+					})
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify({ title: 'Recovered post title' }),
+					});
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/test/comments/abc123/post',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(metadata.title).toBe('r/test');
+				expect(metadata.description).toBe('§REDDIT_CARD§Recovered post title');
+			});
+
+			it('should fall back to oEmbed when the JSON request throws', async () => {
+				metadata.title = 'Welcome to Reddit';
+				mockRequest
+					.mockRejectedValueOnce(new Error('Network error'))
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify({ title: 'Recovered post title' }),
+					});
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/test/comments/abc123/post',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(metadata.title).toBe('r/test');
+				expect(metadata.description).toBe('§REDDIT_CARD§Recovered post title');
+			});
+
+			it('should preserve existing metadata when oEmbed has no title', async () => {
+				metadata.title = 'Welcome to Reddit';
+				metadata.description = 'Existing description';
+				mockRequest
+					.mockResolvedValueOnce({ status: 403, text: '' })
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify({ title: '   ' }),
+					});
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/test/comments/abc123/post',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(metadata.title).toBe('Welcome to Reddit');
+				expect(metadata.description).toBe('Existing description');
+			});
+
+			it('should handle malformed oEmbed JSON gracefully', async () => {
+				metadata.title = 'Welcome to Reddit';
+				mockRequest
+					.mockResolvedValueOnce({ status: 403, text: '' })
+					.mockResolvedValueOnce({ status: 200, text: 'not valid JSON' });
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/test/comments/abc123/post',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(metadata.title).toBe('Welcome to Reddit');
+			});
+
 			it('should fetch and parse Reddit post metadata', async () => {
 				const url = new URL('https://reddit.com/r/programming/comments/abc123/test_post');
 				mockRequest.mockResolvedValue({

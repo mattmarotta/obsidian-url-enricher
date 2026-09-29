@@ -34,7 +34,9 @@ export class RedditMetadataHandler implements MetadataHandler {
 			return;
 		}
 
-		const extraMetadata = await this.fetchRedditMetadata(context);
+		const extraMetadata =
+			(await this.fetchRedditMetadata(context)) ??
+			(await this.fetchRedditOEmbedMetadata(context));
 		if (!extraMetadata) {
 			return;
 		}
@@ -95,6 +97,9 @@ export class RedditMetadataHandler implements MetadataHandler {
 			}
 
 			const rawTitle = typeof post.title === "string" ? post.title.trim() : "";
+			if (!rawTitle) {
+				return null;
+			}
 			const subredditName = typeof post.subreddit === "string" ? post.subreddit.trim() : "";
 			const descriptionSource =
 				typeof post.selftext === "string"
@@ -137,6 +142,44 @@ export class RedditMetadataHandler implements MetadataHandler {
 		}
 	}
 
+	private async fetchRedditOEmbedMetadata(context: MetadataHandlerContext): Promise<RedditMetadata | null> {
+		const { url, request } = context;
+		if (!/\/comments\//.test(url.pathname)) {
+			return null;
+		}
+
+		const oEmbedUrl = new URL("https://www.reddit.com/oembed");
+		oEmbedUrl.searchParams.set("url", url.href);
+
+		const response = await this.safeRequest(request, {
+			url: oEmbedUrl,
+			method: "GET",
+		});
+		if (!response || response.status >= 400) {
+			return null;
+		}
+
+		try {
+			const payload = JSON.parse(response.text) as { title?: unknown };
+			const rawTitle = typeof payload?.title === "string" ? payload.title.trim() : "";
+			if (!rawTitle) {
+				return null;
+			}
+
+			const subredditName = url.pathname.match(/^\/r\/([^/]+)\/comments\//i)?.[1];
+			if (subredditName) {
+				return {
+					title: `r/${subredditName}`,
+					description: `§REDDIT_CARD§${rawTitle}`,
+				};
+			}
+
+			return { title: rawTitle };
+		} catch {
+			return null;
+		}
+	}
+
 	private async safeRequest(
 		request: MetadataHandlerContext["request"],
 		params: { url: URL; method: string },
@@ -152,8 +195,8 @@ export class RedditMetadataHandler implements MetadataHandler {
 	}
 
 	private createJsonUrl(url: URL): URL {
-		// www.reddit.com returns 403 for the unauthenticated .json API and serves
-		// a bot-challenge page for HTML; old.reddit.com answers both normally.
+		// Try old.reddit.com first for richer JSON post metadata.
+		// If JSON is unavailable, the caller falls back to Reddit's oEmbed endpoint.
 		const jsonUrl = new URL(url.pathname.replace(/\/?$/, "/") + ".json", `${url.protocol}//old.reddit.com`);
 		if (url.search) {
 			jsonUrl.search = url.search;
