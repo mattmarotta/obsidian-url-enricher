@@ -494,6 +494,38 @@ describe('Metadata Handlers', () => {
 				expect(metadata.description).toBe('§REDDIT_CARD§Actual Reddit Post');
 			});
 
+			it('should enrich when title is the short Reddit login title', async () => {
+				metadata.title = 'Welcome to Reddit';
+				metadata.description =
+					'Log in or sign up to personalize your feed, join conversations, vote, and explore communities.';
+
+				mockRequest.mockResolvedValue({
+					status: 200,
+					text: JSON.stringify([{
+						data: {
+							children: [{
+								data: {
+									subreddit: 'Warhammer40k',
+									title: "A Beginner's Guide to the Painting Process",
+								},
+							}],
+						},
+					}]),
+				});
+
+				const url = 'https://www.reddit.com/r/Warhammer40k/comments/h0z87m/a_beginners_guide_to_the_painting_process/';
+				const context = createMockContext(url, metadata, mockRequest);
+
+				await handler.enrich(context);
+
+				expect(mockRequest).toHaveBeenCalledTimes(1);
+				expect(mockRequest.mock.calls[0][0].url).toContain('.json');
+				expect(metadata.title).toBe('r/Warhammer40k');
+				expect(metadata.description).toBe(
+					"§REDDIT_CARD§A Beginner's Guide to the Painting Process"
+				);
+			});
+
 			it('should not treat ordinary titles containing Reddit boilerplate phrases as generic', async () => {
 				metadata.title =
 					'Welcome to Reddit, here is my first Space Marine; it wields the heart of the internet as its weapon';
