@@ -13,6 +13,20 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [1.4.2] - 2026-09-29
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+- Recognize Welcome to Reddit as an exact generic title.
+- Add a regression test using the observed title and description.
+- Preserve the existing title-detection behavior.
+
+
 ## [1.4.1] - 2026-09-21
 
 ### Added
