@@ -34,9 +34,15 @@ export class RedditMetadataHandler implements MetadataHandler {
 			return;
 		}
 
+		const postUrl = await this.resolveShareUrl(context);
+		if (!postUrl) {
+			return;
+		}
+
+		const postContext = { ...context, url: postUrl };
 		const extraMetadata =
-			(await this.fetchRedditMetadata(context)) ??
-			(await this.fetchRedditOEmbedMetadata(context));
+			(await this.fetchRedditMetadata(postContext)) ??
+			(await this.fetchRedditOEmbedMetadata(postContext));
 		if (!extraMetadata) {
 			return;
 		}
@@ -71,6 +77,33 @@ export class RedditMetadataHandler implements MetadataHandler {
 			isHeartOfInternetTitle ||
 			isLoginPageTitle
 		);
+	}
+
+	/**
+	 * Share links (/r/<sub>/s/<id>) redirect to the full /comments/ URL, but
+	 * requestUrl doesn't expose the final URL and neither JSON nor oEmbed accept
+	 * the short form. Fetch the link and pull the post path out of the page it
+	 * lands on (canonical link, or the bot-challenge form's action).
+	 */
+	private async resolveShareUrl(context: MetadataHandlerContext): Promise<URL | null> {
+		const { url, request } = context;
+		const shareMatch = url.pathname.match(/^\/r\/(\w+)\/s\/\w+\/?$/i);
+		if (!shareMatch) {
+			return url;
+		}
+
+		const subreddit = shareMatch[1];
+		const response = await this.safeRequest(request, {
+			url: new URL(url.pathname, "https://www.reddit.com"),
+			method: "GET",
+		});
+		if (!response?.text) {
+			return null;
+		}
+
+		const postPathRegex = new RegExp(`/r/${subreddit}/comments/[a-z0-9]+/(?:[^/"'?#<>\\s]+/)?`, "i");
+		const postPath = response.text.match(postPathRegex)?.[0];
+		return postPath ? new URL(postPath, "https://www.reddit.com") : null;
 	}
 
 	private async fetchRedditMetadata(context: MetadataHandlerContext): Promise<RedditMetadata | null> {

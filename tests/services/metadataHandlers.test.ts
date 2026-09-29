@@ -566,6 +566,54 @@ describe('Metadata Handlers', () => {
 				expect(mockRequest).not.toHaveBeenCalled();
 			});
 
+			it('should resolve share links (/r/<sub>/s/<id>) to the full post URL', async () => {
+				metadata.title = 'Welcome to Reddit';
+				const challengePage =
+					'<title>Reddit</title><form hidden method="GET" ' +
+					'action="/r/learnpython/comments/1w1vcia/cna_someone_please_explain/">';
+
+				mockRequest
+					.mockResolvedValueOnce({ status: 200, text: challengePage })
+					.mockResolvedValueOnce({ status: 403, text: '' })
+					.mockResolvedValueOnce({
+						status: 200,
+						text: JSON.stringify({ title: 'Can someone please explain this' }),
+					});
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/learnpython/s/acLJEVUdmr',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(3);
+				expect(mockRequest.mock.calls[0][0].url).toBe(
+					'https://www.reddit.com/r/learnpython/s/acLJEVUdmr'
+				);
+				expect(new URL(mockRequest.mock.calls[1][0].url).pathname).toBe(
+					'/r/learnpython/comments/1w1vcia/cna_someone_please_explain/.json'
+				);
+				expect(new URL(mockRequest.mock.calls[2][0].url).searchParams.get('url')).toBe(
+					'https://www.reddit.com/r/learnpython/comments/1w1vcia/cna_someone_please_explain/'
+				);
+				expect(metadata.title).toBe('r/learnpython');
+				expect(metadata.description).toBe('§REDDIT_CARD§Can someone please explain this');
+			});
+
+			it('should leave metadata alone when a share link cannot be resolved', async () => {
+				metadata.title = 'Welcome to Reddit';
+				mockRequest.mockResolvedValueOnce({ status: 200, text: '<title>Reddit</title>' });
+
+				await handler.enrich(createMockContext(
+					'https://www.reddit.com/r/learnpython/s/acLJEVUdmr',
+					metadata,
+					mockRequest
+				));
+
+				expect(mockRequest).toHaveBeenCalledTimes(1);
+				expect(metadata.title).toBe('Welcome to Reddit');
+			});
+
 			it('should fall back to Reddit oEmbed when JSON returns 403', async () => {
 				metadata.title = 'Welcome to Reddit';
 				metadata.description =
