@@ -6,7 +6,6 @@ import { decodeHtmlEntities, sanitizeTextContent } from "../utils/text";
 export interface ParsedMetadata {
 	title?: string | null;
 	description?: string | null;
-	favicon?: string | null;
 	siteName?: string | null;
 }
 
@@ -17,19 +16,19 @@ export class HtmlParser {
 	/**
 	 * Parse HTML metadata using DOMParser or regex fallback
 	 */
-	parseHtmlMetadata(url: string, html: string): ParsedMetadata {
+	parseHtmlMetadata(html: string): ParsedMetadata {
 		let parsed: ParsedMetadata | null = null;
 
 		if (typeof DOMParser !== "undefined") {
 			try {
-				parsed = this.parseWithDomParser(html, url);
+				parsed = this.parseWithDomParser(html);
 			} catch {
 				// Silent error handling
 			}
 		}
 
 		if (!parsed) {
-			parsed = this.parseWithRegex(html, url);
+			parsed = this.parseWithRegex(html);
 		}
 
 		return parsed;
@@ -38,7 +37,7 @@ export class HtmlParser {
 	/**
 	 * Parse HTML using browser's DOMParser
 	 */
-	private parseWithDomParser(html: string, baseUrl: string): ParsedMetadata {
+	private parseWithDomParser(html: string): ParsedMetadata {
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(html, "text/html");
 
@@ -70,15 +69,9 @@ export class HtmlParser {
 			descriptionCandidates.push(jsonLd.description);
 		}
 
-		const faviconCandidates = Array.from(
-			doc.querySelectorAll<HTMLLinkElement>("link[rel*='icon'], link[rel='apple-touch-icon']"),
-			(link) => link.href || link.getAttribute("href"),
-		);
-
 		return {
 			title: this.pickFirstNonEmpty(titleCandidates),
 			description: this.pickFirstNonEmpty(descriptionCandidates),
-			favicon: this.resolveFaviconCandidate(faviconCandidates, baseUrl),
 			siteName: this.pickFirstNonEmpty(siteNameCandidates),
 		};
 	}
@@ -86,7 +79,7 @@ export class HtmlParser {
 	/**
 	 * Parse HTML using regex (fallback when DOMParser is not available)
 	 */
-	private parseWithRegex(html: string, baseUrl: string): ParsedMetadata {
+	private parseWithRegex(html: string): ParsedMetadata {
 		const result: ParsedMetadata = {};
 
 		const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
@@ -106,13 +99,6 @@ export class HtmlParser {
 		const siteNameMatch = html.match(siteNameRegex);
 		if (siteNameMatch) {
 			result.siteName = decodeHtmlEntities(siteNameMatch[1]);
-		}
-
-		const faviconRegex =
-			/<link\s+[^>]*?rel=["'][^"']*icon[^"']*["'][^>]*?href=["']([^"']+)["'][^>]*>/i;
-		const faviconMatch = html.match(faviconRegex);
-		if (faviconMatch) {
-			result.favicon = this.resolveFaviconCandidate([faviconMatch[1]], baseUrl);
 		}
 
 		return result;
@@ -214,50 +200,5 @@ export class HtmlParser {
 
 		const sanitized = sanitizeTextContent(value);
 		return sanitized.length ? sanitized : null;
-	}
-
-	/**
-	 * Resolve favicon URL relative to base URL
-	 */
-	private resolveFaviconCandidate(candidates: Array<string | null | undefined>, baseUrl: string): string | null {
-		for (const candidate of candidates) {
-			if (!candidate) {
-				continue;
-			}
-			const sanitized = this.sanitizeFavicon(candidate, baseUrl);
-			if (sanitized) {
-				return sanitized;
-			}
-		}
-		// Fallback to native /favicon.ico before using Google's service
-		return this.buildNativeFaviconUrl(baseUrl);
-	}
-
-	/**
-	 * Sanitize and resolve favicon URL
-	 */
-	private sanitizeFavicon(candidate: string | null | undefined, baseUrl: string): string | null {
-		if (!candidate) {
-			return null;
-		}
-
-		try {
-			const resolved = new URL(candidate, baseUrl).href;
-			return resolved;
-		} catch {
-			return null;
-		}
-	}
-
-	/**
-	 * Build native favicon URL (/favicon.ico)
-	 */
-	private buildNativeFaviconUrl(url: string): string | null {
-		try {
-			const parsed = new URL(url);
-			return `${parsed.origin}/favicon.ico`;
-		} catch {
-			return null;
-		}
 	}
 }

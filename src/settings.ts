@@ -226,18 +226,14 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 					...this.buildCacheStatsDefinition(),
 					{
 						name: "Clear cached previews",
-						desc: "Remove all stored metadata and favicons from memory and disk. Previews will be rebuilt on the next paste or view. Use this if you're not seeing updated previews after changes.",
+						desc: "Remove all fetched previews from memory. They are fetched again the next time they're shown.",
 						render: (setting) => {
 							setting.addButton((button) =>
 								button
 									.setButtonText("Clear cache")
 									.setDestructive()
-									.onClick(async () => {
+									.onClick(() => {
 										this.plugin.linkPreviewService.clearCache();
-										if (this.plugin.faviconCache) {
-											this.plugin.faviconCache.clear();
-											await this.plugin.faviconCache.flush();
-										}
 										new Notice("Cache cleared.");
 										// Trigger decoration refresh so previews update immediately
 										this.plugin.refreshDecorations();
@@ -254,38 +250,19 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 
 	/**
 	 * Cache stats are informational only (not a control), so this returns
-	 * a `render`-type definition — omitted entirely if there's no cache yet.
+	 * a `render`-type definition.
 	 */
 	private buildCacheStatsDefinition(): SettingDefinition<SettingKey>[] {
-		const stats = this.plugin.faviconCache?.getStats();
-		if (!stats) {
-			return [];
-		}
-
 		return [
 			{
 				name: "Cache statistics",
 				render: (setting) => {
 					setting.settingEl.addClass("url-enricher-cache-stats");
 
-					const title = createEl('strong');
-					title.textContent = 'Cache statistics:';
-					setting.descEl.appendChild(title);
-					setting.descEl.appendChild(createEl('br'));
-
-					const line1 = activeDocument.createTextNode(`• cached domains: ${stats.entries}`);
-					setting.descEl.appendChild(line1);
-					setting.descEl.appendChild(createEl('br'));
-
-					const oldestDate = stats.oldestTimestamp
-						? new Date(stats.oldestTimestamp).toLocaleDateString()
-						: 'N/A';
-					const line2 = activeDocument.createTextNode(`• oldest entry: ${oldestDate}`);
-					setting.descEl.appendChild(line2);
-					setting.descEl.appendChild(createEl('br'));
-
-					const line3 = activeDocument.createTextNode('• Cache expires after 30 days');
-					setting.descEl.appendChild(line3);
+					const { size } = this.plugin.linkPreviewService.getCacheStats();
+					setting.descEl.appendChild(
+						activeDocument.createTextNode(`Cached previews: ${size} (kept in memory until Obsidian restarts)`),
+					);
 				},
 			},
 		];

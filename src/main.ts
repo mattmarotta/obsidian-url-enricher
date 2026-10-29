@@ -11,20 +11,18 @@ import { Plugin } from "obsidian";
 import { createUrlPreviewDecorator, refreshDecorationsEffect as urlPreviewRefreshEffect } from "./editor/urlPreviewDecorator";
 import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSettings, normalizeSettings } from "./settings";
 import { LinkPreviewService } from "./services/linkPreviewService";
-import { FaviconCache } from "./services/faviconCache";
 import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
 	linkPreviewService!: LinkPreviewService;
-	faviconCache!: FaviconCache;
 
 	/**
 	 * Plugin initialization - called when the plugin is loaded
 	 */
 	async onload(): Promise<void> {
 		await this.loadSettings();
-		await this.instantiateServices();
+		this.instantiateServices();
 
 		// Register the URL preview decorator for Live Preview (favicon decorator removed - non-destructive mode only)
 		this.registerEditorExtension([
@@ -41,11 +39,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	 * Plugin cleanup - called when the plugin is unloaded
 	 */
 	onunload(): void {
-		// Flush favicon cache to disk before unloading
-		if (this.faviconCache) {
-			void this.faviconCache.flush();
-		}
-
 		// Clean up developer commands
 		this.unregisterDeveloperCommands();
 	}
@@ -95,21 +88,12 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 	}
 
 	/**
-	 * Initialize all plugin services (favicon cache and link preview service)
+	 * Initialize all plugin services
 	 */
-	private async instantiateServices(): Promise<void> {
-		// Initialize favicon cache
-		this.faviconCache = new FaviconCache(
-			() => this.loadData(),
-			(data) => this.saveData(data)
-		);
-		await this.faviconCache.load();
-
-		// Initialize link preview service
+	private instantiateServices(): void {
 		this.linkPreviewService = new LinkPreviewService({
 			requestTimeoutMs: this.settings.requestTimeoutMs,
 		}, this.settings);
-		this.linkPreviewService.setPersistentFaviconCache(this.faviconCache);
 	}
 
 	/**
@@ -120,16 +104,11 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 		// Expose debugging API on window object (maintain backwards compatibility with old name)
 		const api = {
 			// Cache inspection
-			getCacheStats: () => {
-				const metadata = this.linkPreviewService.getCacheStats();
-				const favicon = this.faviconCache.getStats();
-				return { metadata, favicon };
-			},
+			getCacheStats: () => this.linkPreviewService.getCacheStats(),
 
 			// Clear all caches
 			clearAllCaches: () => {
 				this.linkPreviewService.clearCache();
-				this.faviconCache.clear();
 				},
 
 			// Refresh decorations
