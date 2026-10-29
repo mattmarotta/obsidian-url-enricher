@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { StateField } from '@codemirror/state';
+import { parse as parseYamlDocument } from 'yaml';
 
 // Request URL Types
 export interface RequestUrlParams {
@@ -292,3 +293,55 @@ export const editorLivePreviewField = StateField.define<boolean>({
 	create: () => true,
 	update: (value) => value,
 });
+
+// YAML / frontmatter helpers
+// Real implementations are provided by Obsidian at runtime; these mirror their
+// observable behavior closely enough for FrontmatterParser.
+export function parseYaml(yaml: string): unknown {
+	return parseYamlDocument(yaml);
+}
+
+export interface FrontMatterInfo {
+	exists: boolean;
+	frontmatter: string;
+	from: number;
+	to: number;
+	contentStart: number;
+}
+
+/**
+ * The block must open at offset 0 with `---` on its own line and close at the
+ * next line that is exactly `---`.
+ */
+export function getFrontMatterInfo(content: string): FrontMatterInfo {
+	const missing: FrontMatterInfo = { exists: false, frontmatter: '', from: 0, to: 0, contentStart: 0 };
+
+	const opening = /^---\r?\n/.exec(content);
+	if (!opening) {
+		return missing;
+	}
+
+	const from = opening[0].length;
+	let lineStart = from;
+	while (lineStart <= content.length) {
+		const newline = content.indexOf('\n', lineStart);
+		const lineEnd = newline === -1 ? content.length : newline;
+		const line = content.slice(lineStart, lineEnd).replace(/\r$/, '');
+		if (line === '---') {
+			return {
+				exists: true,
+				frontmatter: content.slice(from, lineStart),
+				from,
+				to: lineStart,
+				contentStart: newline === -1 ? content.length : newline + 1,
+			};
+		}
+		if (newline === -1) {
+			break;
+		}
+		lineStart = newline + 1;
+	}
+
+	return missing;
+}
+

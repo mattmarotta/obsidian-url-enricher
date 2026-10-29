@@ -117,6 +117,107 @@ card-color-mode: subtle
 			expect(config.inlineColorMode).toBe("none");
 			expect(config.cardColorMode).toBe("subtle");
 		});
+
+		describe("YAML value forms", () => {
+			it("should accept a double-quoted preview-style", () => {
+				expect(parsePageConfig('---\npreview-style: "card"\n---\n')).toEqual({ previewStyle: "card" });
+			});
+
+			it("should accept a single-quoted preview-style", () => {
+				expect(parsePageConfig("---\npreview-style: 'card'\n---\n")).toEqual({ previewStyle: "card" });
+			});
+
+			it("should accept quoted values for every key", () => {
+				const text = [
+					"---",
+					'preview-style: "Inline"',
+					"max-card-length: '400'",
+					'max-inline-length: "120"',
+					'show-favicon: "false"',
+					"include-description: 'TRUE'",
+					'inline-color-mode: "none"',
+					"card-color-mode: 'subtle'",
+					"---",
+				].join("\n");
+				expect(parsePageConfig(text)).toEqual({
+					previewStyle: "inline",
+					maxCardLength: 400,
+					maxInlineLength: 120,
+					showFavicon: false,
+					includeDescription: true,
+					inlineColorMode: "none",
+					cardColorMode: "subtle",
+				});
+			});
+
+			it("should accept native YAML booleans and numbers", () => {
+				const text = "---\nshow-favicon: false\ninclude-description: True\nmax-card-length: 250\nmax-inline-length: 90\n---";
+				expect(parsePageConfig(text)).toEqual({
+					showFavicon: false,
+					includeDescription: true,
+					maxCardLength: 250,
+					maxInlineLength: 90,
+				});
+			});
+
+			it("should accept numeric strings for lengths", () => {
+				const config = parsePageConfig('---\nmax-card-length: "500"\nmax-inline-length: " 75 "\n---');
+				expect(config.maxCardLength).toBe(500);
+				expect(config.maxInlineLength).toBe(75);
+			});
+
+			it("should ignore non-integer and non-numeric lengths", () => {
+				const config = parsePageConfig('---\nmax-card-length: 12.5\nmax-inline-length: "lots"\n---');
+				expect(config).toEqual({});
+			});
+
+			it("should ignore out-of-range lengths", () => {
+				const config = parsePageConfig("---\nmax-card-length: 0\nmax-inline-length: 999999\n---");
+				expect(config).toEqual({});
+			});
+
+			it("should ignore non-boolean values for boolean keys", () => {
+				const config = parsePageConfig("---\nshow-favicon: yes\ninclude-description: 1\n---");
+				expect(config).toEqual({});
+			});
+
+			it("should match mixed-case keys", () => {
+				const config = parsePageConfig("---\nPREVIEW-STYLE: card\nMax-Card-Length: 320\nShow-Favicon: false\n---");
+				expect(config).toEqual({ previewStyle: "card", maxCardLength: 320, showFavicon: false });
+			});
+
+			it("should allow trailing comments on values", () => {
+				expect(parsePageConfig("---\npreview-style: card # cards for this note\n---")).toEqual({ previewStyle: "card" });
+			});
+
+			it("should return {} for invalid YAML without throwing", () => {
+				const text = '---\npreview-style: "card\nmax-card-length: [1, 2\n---\n';
+				expect(() => parsePageConfig(text)).not.toThrow();
+				expect(parsePageConfig(text)).toEqual({});
+			});
+
+			it("should return {} for a half-typed key", () => {
+				expect(parsePageConfig("---\npreview-style: card\nmax-card-\n---")).toEqual({});
+			});
+
+			it("should return {} for unclosed frontmatter", () => {
+				expect(parsePageConfig("---\npreview-style: card\n\n# Heading")).toEqual({});
+			});
+
+			it("should return {} when frontmatter is not on line 1", () => {
+				expect(parsePageConfig("# Title\n\n---\npreview-style: card\n---\n")).toEqual({});
+			});
+
+			it("should return {} when frontmatter is a list or scalar rather than a mapping", () => {
+				expect(parsePageConfig("---\n- preview-style\n- card\n---")).toEqual({});
+				expect(parsePageConfig("---\ncard\n---")).toEqual({});
+			});
+
+			it("should ignore unknown keys", () => {
+				const text = "---\ntags: [reading]\naliases: Foo\npreview-style: card\nfoo: bar\n---";
+				expect(parsePageConfig(text)).toEqual({ previewStyle: "card" });
+			});
+		});
 	});
 
 	describe("hasFrontmatter", () => {
@@ -143,6 +244,18 @@ card-color-mode: subtle
 		it("should return false for document with invalid frontmatter fields only", () => {
 			const text = "---\ninvalid-field: value\n---\n# Heading";
 			expect(hasFrontmatter(text)).toBe(false);
+		});
+
+		it("should return false when frontmatter only has non-URL Enricher properties", () => {
+			expect(hasFrontmatter("---\ntags: [a, b]\n---\n")).toBe(false);
+		});
+
+		it("should return true for a quoted URL Enricher property", () => {
+			expect(hasFrontmatter('---\ntags: [a]\npreview-style: "inline"\n---\n')).toBe(true);
+		});
+
+		it("should return false for invalid YAML", () => {
+			expect(hasFrontmatter('---\npreview-style: "card\n---\n')).toBe(false);
 		});
 	});
 });

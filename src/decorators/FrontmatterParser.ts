@@ -1,3 +1,4 @@
+import { getFrontMatterInfo, parseYaml } from "obsidian";
 import type { PreviewStyle, PreviewColorMode } from "../settings";
 import {
 	CARD_LENGTH_MIN,
@@ -20,106 +21,97 @@ export interface PageConfig {
 }
 
 /**
+ * Read the frontmatter block as a plain object with lowercased keys.
+ * Returns null when there is no frontmatter, or it isn't valid YAML
+ * (which is common while the user is still typing it).
+ */
+function readFrontmatter(text: string): Record<string, unknown> | null {
+	const info = getFrontMatterInfo(text);
+	if (!info.exists) {
+		return null;
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = parseYaml(info.frontmatter);
+	} catch {
+		return null;
+	}
+
+	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+		return null;
+	}
+
+	const data: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(parsed)) {
+		data[key.toLowerCase()] = value;
+	}
+	return data;
+}
+
+function asLowercaseString(value: unknown): string | undefined {
+	return typeof value === "string" ? value.trim().toLowerCase() : undefined;
+}
+
+function asOneOf<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
+	const normalized = asLowercaseString(value);
+	return allowed.find((option) => option === normalized);
+}
+
+/** Accept a YAML boolean, or the strings "true" / "false". */
+function asBoolean(value: unknown): boolean | undefined {
+	if (typeof value === "boolean") {
+		return value;
+	}
+	const normalized = asLowercaseString(value);
+	if (normalized === "true" || normalized === "false") {
+		return normalized === "true";
+	}
+	return undefined;
+}
+
+/** Accept an integer, or a string of digits, within [min, max]. */
+function asLength(value: unknown, min: number, max: number): number | undefined {
+	let parsed: number | undefined;
+	if (typeof value === "number" && Number.isInteger(value)) {
+		parsed = value;
+	} else if (typeof value === "string" && /^\d+$/.test(value.trim())) {
+		parsed = Number(value.trim());
+	}
+	return parsed !== undefined && parsed >= min && parsed <= max ? parsed : undefined;
+}
+
+/**
  * Parse frontmatter from the document to extract page-level preview configuration
  * Frontmatter must start on line 1 with --- and end with ---
  */
 export function parsePageConfig(text: string): PageConfig {
-	const config: PageConfig = {};
-
-	// Check if document starts with frontmatter
-	if (!text.startsWith('---')) {
-		return config;
+	const data = readFrontmatter(text);
+	if (!data) {
+		return {};
 	}
 
-	// Find the closing ---
-	const lines = text.split('\n');
-	let endIndex = -1;
-	for (let i = 1; i < lines.length; i++) {
-		if (lines[i].trim() === '---') {
-			endIndex = i;
-			break;
-		}
-	}
+	const candidates: PageConfig = {
+		previewStyle: asOneOf<PreviewStyle>(data["preview-style"], ["inline", "card"]),
+		maxCardLength: asLength(data["max-card-length"], CARD_LENGTH_MIN, CARD_LENGTH_MAX),
+		maxInlineLength: asLength(data["max-inline-length"], INLINE_LENGTH_MIN, INLINE_LENGTH_MAX),
+		showFavicon: asBoolean(data["show-favicon"]),
+		includeDescription: asBoolean(data["include-description"]),
+		inlineColorMode: asOneOf<PreviewColorMode>(data["inline-color-mode"], ["none", "subtle"]),
+		cardColorMode: asOneOf<PreviewColorMode>(data["card-color-mode"], ["none", "subtle"]),
+	};
 
-	if (endIndex === -1) {
-		return config;
-	}
-
-	// Parse frontmatter lines
-	const frontmatter = lines.slice(1, endIndex);
-
-	for (const line of frontmatter) {
-		// Preview style
-		const styleMatch = line.match(/^preview-style:\s*(.+)$/i);
-		if (styleMatch) {
-			const value = styleMatch[1].trim().toLowerCase();
-			if (value === 'inline' || value === 'card') {
-				config.previewStyle = value;
-			}
-		}
-
-		// Max card length
-		const maxCardMatch = line.match(/^max-card-length:\s*(\d+)$/i);
-		if (maxCardMatch) {
-			const value = parseInt(maxCardMatch[1], 10);
-			if (value >= CARD_LENGTH_MIN && value <= CARD_LENGTH_MAX) {
-				config.maxCardLength = value;
-			}
-		}
-
-		// Max inline length
-		const maxInlineMatch = line.match(/^max-inline-length:\s*(\d+)$/i);
-		if (maxInlineMatch) {
-			const value = parseInt(maxInlineMatch[1], 10);
-			if (value >= INLINE_LENGTH_MIN && value <= INLINE_LENGTH_MAX) {
-				config.maxInlineLength = value;
-			}
-		}
-
-		// Show favicon
-		const faviconMatch = line.match(/^show-favicon:\s*(.+)$/i);
-		if (faviconMatch) {
-			const value = faviconMatch[1].trim().toLowerCase();
-			if (value === 'true' || value === 'false') {
-				config.showFavicon = value === 'true';
-			}
-		}
-
-		// Include description
-		const descMatch = line.match(/^include-description:\s*(.+)$/i);
-		if (descMatch) {
-			const value = descMatch[1].trim().toLowerCase();
-			if (value === 'true' || value === 'false') {
-				config.includeDescription = value === 'true';
-			}
-		}
-
-		// Inline color mode
-		const inlineColorMatch = line.match(/^inline-color-mode:\s*(.+)$/i);
-		if (inlineColorMatch) {
-			const value = inlineColorMatch[1].trim().toLowerCase();
-			if (value === 'none' || value === 'subtle') {
-				config.inlineColorMode = value;
-			}
-		}
-
-		// Card color mode
-		const cardColorMatch = line.match(/^card-color-mode:\s*(.+)$/i);
-		if (cardColorMatch) {
-			const value = cardColorMatch[1].trim().toLowerCase();
-			if (value === 'none' || value === 'subtle') {
-				config.cardColorMode = value;
-			}
-		}
-	}
-
-	return config;
+	// Only keep keys that resolved to a value, so hasFrontmatter can count them
+	return Object.fromEntries(
+		Object.entries(candidates).filter(([, value]) => value !== undefined)
+	) as PageConfig;
 }
 
 /**
- * Check if document has any frontmatter properties defined
+ * Check if the document's frontmatter sets any URL Enricher property.
+ * Other frontmatter (tags, aliases, ...) doesn't count.
  * @param text - Document text to check for frontmatter
- * @returns true if page has frontmatter with at least one property, false otherwise
+ * @returns true if at least one recognized property has a valid value, false otherwise
  */
 export function hasFrontmatter(text: string): boolean {
 	const config = parsePageConfig(text);
