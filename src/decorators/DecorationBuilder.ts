@@ -3,7 +3,7 @@ import type { EditorState, Text } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import type { InlineLinkPreviewSettings, PreviewStyle } from "../settings";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import { parsePageConfig, hasFrontmatter, type PageConfig } from "./FrontmatterParser";
+import { parsePageConfig, type PageConfig } from "./FrontmatterParser";
 import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock, ClaimedRanges, type UrlMatch } from "./UrlMatcher";
 import { UrlPreviewWidget, ErrorIndicatorWidget } from "./PreviewWidget";
 import { stripEmoji, cleanMediaUrls } from "./MetadataEnricher";
@@ -352,7 +352,9 @@ let lastFrontmatter: FrontmatterState | null = null;
 function getFrontmatterState(doc: Text): FrontmatterState {
 	const block = readFrontmatterBlock(doc);
 	if (lastFrontmatter?.block !== block) {
-		lastFrontmatter = { block, config: parsePageConfig(block), active: hasFrontmatter(block) };
+		const config = parsePageConfig(block);
+		// Same rule as hasFrontmatter(), without parsing the block twice
+		lastFrontmatter = { block, config, active: Object.keys(config).length > 0 };
 	}
 	return lastFrontmatter;
 }

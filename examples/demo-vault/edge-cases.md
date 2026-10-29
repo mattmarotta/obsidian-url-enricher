@@ -165,9 +165,9 @@ On first viewing this page:
 
 ### Cache Clearing
 
-Use **Settings → URL Enricher → Clear cache**, or run `window.urlEnricher.clearAllCaches()` in the console.
+Use **Settings → URL Enricher → Clear cache**, and visible previews are fetched again right away.
 
-Visible previews are fetched again right away.
+From the console, run `window.urlEnricher.clearAllCaches()` followed by `window.urlEnricher.refreshDecorations()`.
 
 ### Failed Request Caching
 
