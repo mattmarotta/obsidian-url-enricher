@@ -15,6 +15,7 @@ interface RedditPostData {
 }
 
 interface RedditMetadata {
+	context?: string;
 	title?: string;
 	description?: string;
 }
@@ -44,6 +45,17 @@ export class RedditMetadataHandler implements MetadataHandler {
 			(await this.fetchRedditMetadata(postContext)) ??
 			(await this.fetchRedditOEmbedMetadata(postContext));
 		if (!extraMetadata) {
+			return;
+		}
+
+		if (extraMetadata.context) {
+			// A resolved post replaces the page's own text entirely, so a
+			// leftover login-page description never shows under the post.
+			metadata.context = extraMetadata.context;
+			metadata.title = extraMetadata.title ?? metadata.title;
+			metadata.description = extraMetadata.description
+				? context.sanitizeText(extraMetadata.description)
+				: null;
 			return;
 		}
 
@@ -142,34 +154,18 @@ export class RedditMetadataHandler implements MetadataHandler {
 					: "";
 
 			const normalizedDescription = descriptionSource.replace(/\s+/g, " ").trim();
-			
-			// Special format for cards vs bubbles
-			// Cards: subreddit | post title | content (using special markers)
-			// Bubbles: r/Subreddit — Post Title
-			
-			let title = "";
-			let description = "";
-			
-			if (subredditName && rawTitle) {
-				// For cards: Store structured data with special markers
-				// Format: "r/Subreddit §REDDIT_CARD§ Post Title §REDDIT_CONTENT§ Content"
-				title = `r/${subredditName}`;
-				description = `§REDDIT_CARD§${rawTitle}`;
-				
-				if (normalizedDescription) {
-					// Store full content - decorator will handle truncation based on maxCardLength/maxBubbleLength
-					description += `§REDDIT_CONTENT§${normalizedDescription}`;
-				}
-			} else if (subredditName) {
-				title = `r/${subredditName}`;
-			} else if (rawTitle) {
-				title = rawTitle;
+
+			// Full post content is kept here; the decorator truncates it to the
+			// preview's length limit.
+			if (subredditName) {
+				return {
+					context: `r/${subredditName}`,
+					title: rawTitle,
+					description: normalizedDescription || undefined,
+				};
 			}
 
-			return {
-				title: title || undefined,
-				description: description || undefined,
-			};
+			return { title: rawTitle };
 		} catch {
 			return null;
 		}
@@ -202,8 +198,8 @@ export class RedditMetadataHandler implements MetadataHandler {
 			const subredditName = url.pathname.match(/^\/r\/([^/]+)\/comments\//i)?.[1];
 			if (subredditName) {
 				return {
-					title: `r/${subredditName}`,
-					description: `§REDDIT_CARD§${rawTitle}`,
+					context: `r/${subredditName}`,
+					title: rawTitle,
 				};
 			}
 

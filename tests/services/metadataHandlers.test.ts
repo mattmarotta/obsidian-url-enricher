@@ -423,8 +423,9 @@ describe('Metadata Handlers', () => {
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBe('r/programming');
-				expect(metadata.description).toContain('§REDDIT_CARD§Test Post Title');
+				expect(metadata.context).toBe('r/programming');
+				expect(metadata.title).toBe('Test Post Title');
+				expect(metadata.description).toBe('Post content here');
 			});
 
 			it('should enrich if title contains "the heart of the internet"', async () => {
@@ -455,7 +456,9 @@ describe('Metadata Handlers', () => {
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBe('r/test');
+				expect(metadata.context).toBe('r/test');
+				expect(metadata.title).toBe('Post Title');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should enrich if title is Reddit login page', async () => {
@@ -490,8 +493,9 @@ describe('Metadata Handlers', () => {
 					url: expect.stringContaining('.json'),
 					method: 'GET',
 				});
-				expect(metadata.title).toBe('r/test');
-				expect(metadata.description).toBe('§REDDIT_CARD§Actual Reddit Post');
+				expect(metadata.context).toBe('r/test');
+				expect(metadata.title).toBe('Actual Reddit Post');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should enrich when title is the short Reddit login title', async () => {
@@ -520,10 +524,9 @@ describe('Metadata Handlers', () => {
 
 				expect(mockRequest).toHaveBeenCalledTimes(1);
 				expect(mockRequest.mock.calls[0][0].url).toContain('.json');
-				expect(metadata.title).toBe('r/Warhammer40k');
-				expect(metadata.description).toBe(
-					"§REDDIT_CARD§A Beginner's Guide to the Painting Process"
-				);
+				expect(metadata.context).toBe('r/Warhammer40k');
+				expect(metadata.title).toBe("A Beginner's Guide to the Painting Process");
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should not treat ordinary titles containing Reddit boilerplate phrases as generic', async () => {
@@ -596,8 +599,9 @@ describe('Metadata Handlers', () => {
 				expect(new URL(mockRequest.mock.calls[2][0].url).searchParams.get('url')).toBe(
 					'https://www.reddit.com/r/learnpython/comments/1w1vcia/cna_someone_please_explain/'
 				);
-				expect(metadata.title).toBe('r/learnpython');
-				expect(metadata.description).toBe('§REDDIT_CARD§Can someone please explain this');
+				expect(metadata.context).toBe('r/learnpython');
+				expect(metadata.title).toBe('Can someone please explain this');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should leave metadata alone when a share link cannot be resolved', async () => {
@@ -646,10 +650,9 @@ describe('Metadata Handlers', () => {
 				expect(oEmbedUrl.pathname).toBe('/oembed');
 				expect(oEmbedUrl.searchParams.get('url')).toBe(url);
 
-				expect(metadata.title).toBe('r/Warhammer40k');
-				expect(metadata.description).toBe(
-					"§REDDIT_CARD§A Beginner's Guide to the Painting Process"
-				);
+				expect(metadata.context).toBe('r/Warhammer40k');
+				expect(metadata.title).toBe("A Beginner's Guide to the Painting Process");
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should prefer JSON metadata and preserve post content when available', async () => {
@@ -676,10 +679,9 @@ describe('Metadata Handlers', () => {
 				));
 
 				expect(mockRequest).toHaveBeenCalledTimes(1);
-				expect(metadata.title).toBe('r/test');
-				expect(metadata.description).toBe(
-					'§REDDIT_CARD§Title from JSON§REDDIT_CONTENT§Full post content'
-				);
+				expect(metadata.context).toBe('r/test');
+				expect(metadata.title).toBe('Title from JSON');
+				expect(metadata.description).toBe('Full post content');
 			});
 
 			it('should fall back to oEmbed when Reddit JSON is malformed', async () => {
@@ -698,8 +700,9 @@ describe('Metadata Handlers', () => {
 				));
 
 				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.title).toBe('r/test');
-				expect(metadata.description).toBe('§REDDIT_CARD§Title from oEmbed');
+				expect(metadata.context).toBe('r/test');
+				expect(metadata.title).toBe('Title from oEmbed');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should fall back to oEmbed when JSON has no usable post title', async () => {
@@ -727,8 +730,9 @@ describe('Metadata Handlers', () => {
 				));
 
 				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.title).toBe('r/test');
-				expect(metadata.description).toBe('§REDDIT_CARD§Recovered post title');
+				expect(metadata.context).toBe('r/test');
+				expect(metadata.title).toBe('Recovered post title');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should fall back to oEmbed when the JSON request throws', async () => {
@@ -747,8 +751,9 @@ describe('Metadata Handlers', () => {
 				));
 
 				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.title).toBe('r/test');
-				expect(metadata.description).toBe('§REDDIT_CARD§Recovered post title');
+				expect(metadata.context).toBe('r/test');
+				expect(metadata.title).toBe('Recovered post title');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should preserve existing metadata when oEmbed has no title', async () => {
@@ -820,8 +825,9 @@ describe('Metadata Handlers', () => {
 					url: expect.stringContaining('.json'),
 					method: 'GET',
 				});
-				expect(metadata.title).toBe('r/programming');
-				expect(metadata.description).toBe('§REDDIT_CARD§Test Post Title§REDDIT_CONTENT§This is the post content.');
+				expect(metadata.context).toBe('r/programming');
+				expect(metadata.title).toBe('Test Post Title');
+				expect(metadata.description).toBe('This is the post content.');
 			});
 
 			it('should handle posts without selftext', async () => {
@@ -852,8 +858,9 @@ describe('Metadata Handlers', () => {
 
 				await handler.enrich(context);
 
-				expect(metadata.title).toBe('r/pics');
-				expect(metadata.description).toBe('§REDDIT_CARD§Beautiful Photo');
+				expect(metadata.context).toBe('r/pics');
+				expect(metadata.title).toBe('Beautiful Photo');
+				expect(metadata.description).toBeNull();
 			});
 
 			it('should use public_description if selftext is missing', async () => {

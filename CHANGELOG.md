@@ -12,6 +12,7 @@ All notable changes to URL Enricher will be documented in this file.
 
 ### Fixed
 - Quoted frontmatter values such as `preview-style: "card"` are now recognized instead of silently ignored.
+- Long Reddit posts in card previews now truncate the same way as other sites.
 
 ### Removed
 - Developer console commands that had no effect (`setLogLevel` and the performance-tracking commands) were removed from `window.urlEnricher`.
