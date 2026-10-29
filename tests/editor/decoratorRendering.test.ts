@@ -411,3 +411,106 @@ describe("previews with a context label (real CodeMirror)", () => {
 		expect(text(".url-preview__text")).toEqual(["r/Sub — My cat today"]);
 	});
 });
+
+describe("cursor moves (real CodeMirror)", () => {
+	const LINK = "https://example.com/page";
+	const CURSOR_DOC = `Plain text before.\nSee ${LINK} here.\nPlain text after.`;
+	const linkStart = CURSOR_DOC.indexOf(LINK);
+
+	/** Counts metadata lookups, which happen once per URL per rebuild */
+	class CountingService {
+		lookups = 0;
+		private metadata: LinkMetadata = { title: "Page title", description: null, favicon: null };
+		hasCachedMetadata() {
+			return true;
+		}
+		getCachedMetadata() {
+			this.lookups++;
+			return this.metadata;
+		}
+		getMetadata() {
+			return Promise.resolve(this.metadata);
+		}
+	}
+
+	let view: EditorView | null = null;
+
+	afterEach(() => {
+		view?.dom.parentElement?.remove();
+		view?.destroy();
+		view = null;
+	});
+
+	function mountAt(service: CountingService, previewStyle: "inline" | "card", cursor: number): EditorView {
+		const settings = { ...DEFAULT_SETTINGS, previewStyle };
+		const parent = document.createElement("div");
+		document.body.appendChild(parent);
+		return new EditorView({
+			state: EditorState.create({
+				doc: CURSOR_DOC,
+				selection: { anchor: cursor },
+				extensions: [editorLivePreviewField, createUrlPreviewDecorator(service as never, () => settings)],
+			}),
+			parent,
+		});
+	}
+
+	const previews = () => view!.dom.querySelectorAll(".url-preview").length;
+
+	it("card: moving the selection, even into the link, does not rebuild", () => {
+		const service = new CountingService();
+		view = mountAt(service, "card", 0);
+		const lookups = service.lookups;
+		expect(previews()).toBe(1);
+
+		view.dispatch({ selection: { anchor: 5 } });
+		view.dispatch({ selection: { anchor: linkStart + 3 } });
+		view.dispatch({ selection: { anchor: CURSOR_DOC.length } });
+
+		expect(service.lookups).toBe(lookups);
+		expect(previews()).toBe(1);
+	});
+
+	it("inline: moving within plain text does not rebuild", () => {
+		const service = new CountingService();
+		view = mountAt(service, "inline", 0);
+		const lookups = service.lookups;
+
+		view.dispatch({ selection: { anchor: 5 } });
+		view.dispatch({ selection: { anchor: CURSOR_DOC.length - 2 } });
+
+		expect(service.lookups).toBe(lookups);
+		expect(previews()).toBe(1);
+	});
+
+	it("inline: moving into a link reveals the raw text, and moving out restores the preview", () => {
+		const service = new CountingService();
+		view = mountAt(service, "inline", 0);
+		expect(previews()).toBe(1);
+
+		view.dispatch({ selection: { anchor: linkStart + 4 } });
+		expect(previews()).toBe(0);
+		expect(view.dom.textContent).toContain(LINK);
+
+		// Moving within the same link keeps it revealed without rebuilding
+		const lookups = service.lookups;
+		view.dispatch({ selection: { anchor: linkStart + 10 } });
+		expect(service.lookups).toBe(lookups);
+		expect(previews()).toBe(0);
+
+		view.dispatch({ selection: { anchor: 0 } });
+		expect(previews()).toBe(1);
+		expect(view.dom.textContent).not.toContain(LINK);
+	});
+
+	it("inline: the link edge counts as inside it", () => {
+		const service = new CountingService();
+		view = mountAt(service, "inline", 0);
+
+		view.dispatch({ selection: { anchor: linkStart + LINK.length } });
+		expect(previews()).toBe(0);
+
+		view.dispatch({ selection: { anchor: linkStart + LINK.length + 1 } });
+		expect(previews()).toBe(1);
+	});
+});

@@ -3,7 +3,7 @@ import { EditorView, Decoration, DecorationSet, ViewPlugin, ViewUpdate } from "@
 import { Prec, RangeSetBuilder, StateEffect } from "@codemirror/state";
 import type { LinkPreviewService } from "../services/linkPreviewService";
 import type { InlineLinkPreviewSettings } from "../settings";
-import { buildUrlDecorations } from "../decorators/DecorationBuilder";
+import { buildUrlDecorations, type ScanRange } from "../decorators/DecorationBuilder";
 
 // StateEffect to trigger decoration refresh when settings change
 export const refreshDecorationsEffect = StateEffect.define<null>();
@@ -26,6 +26,10 @@ export function createUrlPreviewDecorator(
 			decorations: DecorationSet;
 			private pendingUpdates = new Map<string, Promise<void>>();
 			private updateTimeout: number | null = null;
+			// From the last build, for deciding whether a cursor move needs a rebuild
+			private urlRanges: ScanRange[] = [];
+			private cursorSensitive = false;
+			private urlsAtLastCursor = "";
 
 			constructor(view: EditorView) {
 				this.decorations = this.buildDecorations(view);
@@ -43,23 +47,47 @@ export function createUrlPreviewDecorator(
 				const isLivePreview = update.state.field(editorLivePreviewField);
 				const modeChanged = wasLivePreview !== isLivePreview;
 
-				// Check if selection (cursor position) changed
-				const selectionChanged = update.selectionSet;
-
-				// Rebuild if doc changed, viewport changed, mode changed, selection changed, OR if we received a refresh effect
+				// Rebuild if doc changed, viewport changed, mode changed, OR if we received a refresh effect
 				if (
 					update.docChanged ||
 					update.viewportChanged ||
 					modeChanged ||
-					selectionChanged ||
 					update.transactions.some(tr => tr.effects.some(e => e.is(refreshDecorationsEffect)))
+				) {
+					this.decorations = this.buildDecorations(update.view);
+					return;
+				}
+
+				// A cursor move only matters in inline mode, and only when it
+				// enters or leaves a URL (which then shows as raw text)
+				if (
+					update.selectionSet &&
+					this.cursorSensitive &&
+					this.urlsAtCursor(update.state.selection.main.head) !== this.urlsAtLastCursor
 				) {
 					this.decorations = this.buildDecorations(update.view);
 				}
 			}
 
+			/** Key identifying the URL ranges from the last build that contain `pos` */
+			private urlsAtCursor(pos: number): string {
+				let key = "";
+				for (const { from, to } of this.urlRanges) {
+					if (from > pos) {
+						break;
+					}
+					if (pos <= to) {
+						key += `${from}-${to},`;
+					}
+				}
+				return key;
+			}
+
 			buildDecorations(view: EditorView): DecorationSet {
 				const settings = getSettings();
+
+				this.urlRanges = [];
+				this.cursorSensitive = false;
 
 				// Only show in Live Preview mode
 				const isLivePreview = view.state.field(editorLivePreviewField);
@@ -69,17 +97,22 @@ export function createUrlPreviewDecorator(
 
 				const builder = new RangeSetBuilder<Decoration>();
 
-				// Build decorations using the DecorationBuilder module
-				const decorationsToAdd = buildUrlDecorations(
-					view,
+				// Build decorations for the visible part of the note only
+				const result = buildUrlDecorations(
+					view.state,
+					view.visibleRanges,
 					service,
 					settings,
 					this.pendingUpdates,
 					(url: string) => this.queueMetadataFetch(url, view)
 				);
 
+				this.urlRanges = result.urlRanges;
+				this.cursorSensitive = result.cursorSensitive;
+				this.urlsAtLastCursor = this.urlsAtCursor(view.state.selection.main.head);
+
 				// Sort decorations by position (required by RangeSetBuilder)
-				decorationsToAdd.sort((a, b) => a.from - b.from);
+				const decorationsToAdd = result.decorations.sort((a, b) => a.from - b.from);
 
 				// Add all decorations to builder in sorted order
 				for (const { from, to, decoration } of decorationsToAdd) {
@@ -120,7 +153,7 @@ export function createUrlPreviewDecorator(
 			 *    CodeMirror is mid-update, which throws and gets swallowed by the
 			 *    fetch's catch handler, losing the repaint
 			 *  - several URLs usually resolve at once, so this coalesces them into
-			 *    a single rebuild instead of one full-document rescan per URL
+			 *    a single rebuild instead of one rebuild per URL
 			 */
 			private requestRefresh(view: EditorView): void {
 				if (this.updateTimeout !== null) {

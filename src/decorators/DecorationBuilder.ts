@@ -1,10 +1,10 @@
 import { Decoration } from "@codemirror/view";
-import type { EditorView } from "@codemirror/view";
+import type { EditorState, Text } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import type { InlineLinkPreviewSettings, PreviewStyle } from "../settings";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import { parsePageConfig, hasFrontmatter } from "./FrontmatterParser";
-import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock } from "./UrlMatcher";
+import { parsePageConfig, hasFrontmatter, type PageConfig } from "./FrontmatterParser";
+import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock, ClaimedRanges, type UrlMatch } from "./UrlMatcher";
 import { UrlPreviewWidget, ErrorIndicatorWidget } from "./PreviewWidget";
 import { stripEmoji, cleanMediaUrls } from "./MetadataEnricher";
 import { sanitizeTextContent } from "../utils/text";
@@ -276,25 +276,112 @@ function createDecorationsForUrl(
 }
 
 /**
- * Build all decorations for URLs in the document
+ * A document range to scan, in document offsets
+ */
+export interface ScanRange {
+	from: number;
+	to: number;
+}
+
+/**
+ * Result of a decoration build
+ */
+export interface UrlDecorationBuild {
+	decorations: Array<{ from: number; to: number; decoration: Decoration }>;
+	/**
+	 * Every URL range that reached the cursor check, sorted by start,
+	 * including ones left undecorated because the cursor was inside them
+	 */
+	urlRanges: ScanRange[];
+	/** Whether moving the cursor into or out of a URL changes the output (inline mode) */
+	cursorSensitive: boolean;
+}
+
+/**
+ * Expand ranges to whole lines and merge any that overlap or touch, so links
+ * that straddle a range edge are still matched in full.
+ */
+export function expandToLines(doc: Text, ranges: readonly ScanRange[]): ScanRange[] {
+	const expanded = ranges
+		.map(({ from, to }) => ({ from: doc.lineAt(from).from, to: doc.lineAt(to).to }))
+		.sort((a, b) => a.from - b.from);
+
+	const merged: ScanRange[] = [];
+	for (const range of expanded) {
+		const last = merged[merged.length - 1];
+		// +1 joins ranges separated only by a line break
+		if (last && range.from <= last.to + 1) {
+			last.to = Math.max(last.to, range.to);
+		} else {
+			merged.push({ ...range });
+		}
+	}
+	return merged;
+}
+
+/**
+ * The frontmatter block (both `---` lines included), or "" if the document
+ * doesn't open with a closed one. Only this slice is read on each update.
+ */
+function readFrontmatterBlock(doc: Text): string {
+	if (doc.lines < 2 || doc.line(1).text !== "---") {
+		return "";
+	}
+
+	const lines = doc.iterLines(2);
+	let lineNumber = 2;
+	for (let next = lines.next(); !next.done; next = lines.next(), lineNumber++) {
+		if (next.value === "---") {
+			const closing = doc.line(lineNumber);
+			return doc.sliceString(0, Math.min(closing.to + 1, doc.length));
+		}
+	}
+	return "";
+}
+
+interface FrontmatterState {
+	block: string;
+	config: PageConfig;
+	active: boolean;
+}
+
+// Frontmatter rarely changes between updates, so the last parse is reused
+// while its text is unchanged.
+let lastFrontmatter: FrontmatterState | null = null;
+
+function getFrontmatterState(doc: Text): FrontmatterState {
+	const block = readFrontmatterBlock(doc);
+	if (lastFrontmatter?.block !== block) {
+		lastFrontmatter = { block, config: parsePageConfig(block), active: hasFrontmatter(block) };
+	}
+	return lastFrontmatter;
+}
+
+/**
+ * Build decorations for the URLs inside `ranges` (normally the editor's
+ * visible ranges). Metadata fetches are queued only for those URLs, so links
+ * elsewhere in the note load as they're scrolled into view.
  */
 export function buildUrlDecorations(
-	view: EditorView,
+	state: EditorState,
+	ranges: readonly ScanRange[],
 	service: LinkPreviewService,
 	globalSettings: InlineLinkPreviewSettings,
 	pendingUpdates: Map<string, Promise<void>>,
 	queueMetadataFetch: (url: string) => void
-): Array<{ from: number; to: number; decoration: Decoration }> {
+): UrlDecorationBuild {
 	const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
-	const doc = view.state.doc;
-	const text = doc.toString();
+	const urlRanges: ScanRange[] = [];
+	const doc = state.doc;
 
 	// Parse page-level configuration from frontmatter
-	const pageConfig = parsePageConfig(text);
+	const frontmatter = getFrontmatterState(doc);
+	const pageConfig = frontmatter.config;
 
 	// Check if frontmatter-only mode is enabled
-	if (globalSettings.requireFrontmatter && !hasFrontmatter(text)) {
-		return []; // Return empty decorations - plugin is opt-in via frontmatter
+	if (globalSettings.requireFrontmatter && !frontmatter.active) {
+		// Return empty decorations - plugin is opt-in via frontmatter
+		return { decorations, urlRanges, cursorSensitive: false };
 	}
 
 	// Merge frontmatter config with global settings (frontmatter takes precedence)
@@ -308,32 +395,25 @@ export function buildUrlDecorations(
 	const keepEmoji = globalSettings.keepEmoji; // Not exposed to frontmatter
 
 	// Get syntax tree for markdown context detection
-	const tree = syntaxTree(view.state);
+	const tree = syntaxTree(state);
 
 	// Get cursor position
-	const cursorPos = view.state.selection.main.head;
+	const cursorPos = state.selection.main.head;
 
-	// Track processed ranges to avoid duplicates
-	const processedRanges = new Set<string>();
-
-	// Helper function to process a URL match
+	// Helper function to process a URL match (positions are document offsets)
 	const processUrlMatch = (
 		url: string,
 		start: number,
 		end: number,
 		linkText?: string
 	): void => {
-		const rangeKey = `${start}-${end}`;
-		if (processedRanges.has(rangeKey)) {
-			return;
-		}
-		processedRanges.add(rangeKey);
-
 		// Check for code block context
 		const node = tree.resolveInner(start, 1);
 		if (isInCodeBlock(node)) {
 			return;
 		}
+
+		urlRanges.push({ from: start, to: end });
 
 		// Queue metadata fetch.
 		// This must happen BEFORE the cursor check below: the caret sits inside
@@ -385,20 +465,23 @@ export function buildUrlDecorations(
 		decorations.push(...urlDecorations);
 	};
 
-	// First pass: Wikilink URLs [[https://...]]
-	for (const match of findWikilinkUrls(text)) {
-		processUrlMatch(match.url, match.start, match.end);
+	for (const range of expandToLines(doc, ranges)) {
+		const text = doc.sliceString(range.from, range.to);
+		const offset = range.from;
+
+		// First pass: Wikilink URLs [[https://...]]
+		// Second pass: Markdown links [text](url)
+		const bracketed: UrlMatch[] = [...findWikilinkUrls(text), ...findMarkdownLinks(text)];
+		for (const match of bracketed) {
+			processUrlMatch(match.url, match.start + offset, match.end + offset, match.linkText);
+		}
+
+		// Third pass: Bare URLs, skipping any inside the links above
+		for (const match of findBareUrls(text, new ClaimedRanges(bracketed))) {
+			processUrlMatch(match.url, match.start + offset, match.end + offset);
+		}
 	}
 
-	// Second pass: Markdown links [text](url)
-	for (const match of findMarkdownLinks(text)) {
-		processUrlMatch(match.url, match.start, match.end, match.linkText);
-	}
-
-	// Third pass: Bare URLs
-	for (const match of findBareUrls(text, processedRanges)) {
-		processUrlMatch(match.url, match.start, match.end);
-	}
-
-	return decorations;
+	urlRanges.sort((a, b) => a.from - b.from);
+	return { decorations, urlRanges, cursorSensitive: previewStyle === "inline" };
 }
