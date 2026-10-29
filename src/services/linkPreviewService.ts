@@ -108,14 +108,6 @@ export class LinkPreviewService {
 	}
 
 	/**
-	 * Register a custom metadata handler for domain-specific enrichment
-	 * @param handler - MetadataHandler to register
-	 */
-	registerMetadataHandler(handler: MetadataHandler): void {
-		this.metadataHandlers.push(handler);
-	}
-
-	/**
 	 * Clear all cached metadata and favicon validation results
 	 */
 	clearCache(): void {

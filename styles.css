@@ -120,12 +120,6 @@ available in the app when your plugin is enabled.
 	gap: 0.5em;
 }
 
-/* Alternative: Use a data attribute for cleaner Reddit detection */
-.url-preview--card[data-domain*="reddit"] .url-preview__description {
-	font-size: 0.9em;
-	line-height: 1.6;
-}
-
 /* Material Design ripple effect on click (visual feedback) */
 .url-preview--card:active {
 	transform: translateY(0);
@@ -165,43 +159,6 @@ available in the app when your plugin is enabled.
 	/* Allow description to wrap naturally */
 	white-space: normal;
 	word-wrap: break-word;
-}
-
-/* Error State Styles */
-.url-preview--error {
-	/* Subtle error indication - don't change background dramatically */
-	opacity: 0.85;
-}
-
-.url-preview--error:hover {
-	opacity: 1;
-}
-
-.url-preview__error-indicator {
-	/* Position for card style is set inline */
-	display: inline-block;
-}
-
-/* Card-specific error positioning */
-.url-preview--card.url-preview--error {
-	position: relative;
-}
-
-.url-preview__error-title {
-	font-weight: 600;
-	color: var(--text-error);
-}
-
-.url-preview__error-url {
-	font-family: var(--font-monospace);
-	font-size: 0.85em;
-	color: var(--text-muted);
-}
-
-.url-preview__error-hint {
-	font-size: 0.75em;
-	color: var(--text-faint);
-	font-style: italic;
 }
 
 /* Card mode URL styling - subtle appearance below preview card */

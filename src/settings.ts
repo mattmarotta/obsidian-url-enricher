@@ -5,6 +5,8 @@ import {
 	CARD_LENGTH_MIN,
 	CARD_LENGTH_MAX,
 	CARD_LENGTH_RECOMMENDED_MIN,
+	DEFAULT_CARD_LENGTH,
+	DEFAULT_INLINE_LENGTH,
 	INLINE_LENGTH_MIN,
 	INLINE_LENGTH_MAX,
 	INLINE_LENGTH_RECOMMENDED_MIN,
@@ -30,8 +32,8 @@ export interface InlineLinkPreviewSettings {
 
 export const DEFAULT_SETTINGS: InlineLinkPreviewSettings = {
 	includeDescription: true,
-	maxCardLength: 300,
-	maxInlineLength: 150,
+	maxCardLength: DEFAULT_CARD_LENGTH,
+	maxInlineLength: DEFAULT_INLINE_LENGTH,
 	requestTimeoutMs: 7000,
 	showFavicon: true,
 	keepEmoji: true,

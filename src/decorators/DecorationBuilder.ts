@@ -10,8 +10,6 @@ import { stripEmoji } from "./MetadataEnricher";
 import { sanitizeTextContent } from "../utils/text";
 import {
 	ELLIPSIS,
-	DEFAULT_CARD_LENGTH,
-	DEFAULT_INLINE_LENGTH,
 	MIN_DESCRIPTION_LENGTH,
 	TITLE_SEPARATOR_LENGTH
 } from "../constants";
@@ -55,19 +53,7 @@ function calculateMaxLength(
 	maxCardLength: number,
 	maxInlineLength: number
 ): number {
-	const maxLength = (previewStyle === "card" ? maxCardLength : maxInlineLength) as unknown;
-	let maxLengthValue: number;
-
-	if (typeof maxLength === "string") {
-		maxLengthValue = Number(maxLength);
-	} else if (typeof maxLength === "number") {
-		maxLengthValue = maxLength;
-	} else {
-		// Default: 300 for cards, 150 for inline
-		maxLengthValue = previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_INLINE_LENGTH;
-	}
-
-	return Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_INLINE_LENGTH);
+	return previewStyle === "card" ? maxCardLength : maxInlineLength;
 }
 
 /**
@@ -293,7 +279,7 @@ export function buildUrlDecorations(
 
 		// Check for code block context
 		const node = tree.resolveInner(start, 1);
-		if (isInCodeBlock(node, start)) {
+		if (isInCodeBlock(node)) {
 			return;
 		}
 

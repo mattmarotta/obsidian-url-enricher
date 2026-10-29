@@ -8,12 +8,6 @@ interface URLEnricherAPI {
 		favicon: { entries: number; oldestTimestamp: number | null };
 	};
 	clearAllCaches: () => void;
-	setLogLevel: (level: "error" | "warn" | "info" | "debug") => void;
-	enablePerformanceTracking: () => void;
-	disablePerformanceTracking: () => void;
-	getPerformanceMetrics: () => unknown;
-	resetPerformanceMetrics: () => void;
-	isPerformanceTrackingEnabled: () => boolean;
 	refreshDecorations: () => void;
 	help: () => string;
 }

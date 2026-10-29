@@ -13,14 +13,6 @@ import { DEFAULT_SETTINGS, InlineLinkPreviewSettingTab, InlineLinkPreviewSetting
 import { LinkPreviewService } from "./services/linkPreviewService";
 import { FaviconCache } from "./services/faviconCache";
 import type { MarkdownViewWithEditor } from "./types/obsidian-extended";
-import { Logger, LogLevel } from "./utils/logger";
-import {
-	enablePerformanceTracking,
-	disablePerformanceTracking,
-	getAllPerformanceMetrics,
-	resetPerformanceMetrics,
-	isPerformanceTrackingEnabled
-} from "./utils/performance";
 
 export default class InlineLinkPreviewPlugin extends Plugin {
 	settings: InlineLinkPreviewSettings = DEFAULT_SETTINGS;
@@ -140,40 +132,6 @@ export default class InlineLinkPreviewPlugin extends Plugin {
 				this.faviconCache.clear();
 				},
 
-			// Logging control
-			setLogLevel: (level: "error" | "warn" | "info" | "debug") => {
-				const levelMap = {
-					error: LogLevel.ERROR,
-					warn: LogLevel.WARN,
-					info: LogLevel.INFO,
-					debug: LogLevel.DEBUG
-				};
-				Logger.setGlobalLevel(levelMap[level] ?? LogLevel.WARN);
-				},
-
-			// Performance tracking
-			enablePerformanceTracking: () => {
-				enablePerformanceTracking();
-				},
-
-			disablePerformanceTracking: () => {
-				disablePerformanceTracking();
-				},
-
-			getPerformanceMetrics: () => {
-				const metrics = getAllPerformanceMetrics();
-					return metrics;
-			},
-
-			resetPerformanceMetrics: () => {
-				resetPerformanceMetrics();
-				},
-
-			isPerformanceTrackingEnabled: () => {
-				const enabled = isPerformanceTrackingEnabled();
-					return enabled;
-			},
-
 			// Refresh decorations
 			refreshDecorations: () => {
 				this.refreshDecorations();
@@ -189,23 +147,11 @@ Cache Management:
   .getCacheStats()              - View cache statistics
   .clearAllCaches()             - Clear all caches
 
-Logging:
-  .setLogLevel(level)           - Set log level: "error", "warn", "info", "debug"
-
-Performance:
-  .enablePerformanceTracking()  - Enable performance tracking
-  .disablePerformanceTracking() - Disable performance tracking
-  .getPerformanceMetrics()      - View performance metrics
-  .resetPerformanceMetrics()    - Reset performance metrics
-  .isPerformanceTrackingEnabled() - Check if tracking is enabled
-
 Other:
   .refreshDecorations()         - Refresh all preview decorations
   .help()                       - Show this help message
 
 Example:
-  window.urlEnricher.setLogLevel("debug")
-  window.urlEnricher.enablePerformanceTracking()
   window.urlEnricher.getCacheStats()
 				`);
 			}

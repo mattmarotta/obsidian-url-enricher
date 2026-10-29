@@ -68,17 +68,6 @@ describe('LinkPreviewService', () => {
 			expect(mockRequestUrlBuilder.getCallCount('https://example.com')).toBe(2);
 		});
 
-		it('should register custom metadata handler', () => {
-			const mockHandler: MetadataHandler = {
-				matches: vi.fn(() => true),
-				enrich: vi.fn(),
-			};
-
-			service.registerMetadataHandler(mockHandler);
-
-			expect(service).toBeDefined();
-		});
-
 		it('should set persistent favicon cache', () => {
 			const cache = new FaviconCache(
 				vi.fn(async () => ({})),

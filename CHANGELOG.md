@@ -13,6 +13,9 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+### Removed
+- Developer console commands that had no effect (`setLogLevel` and the performance-tracking commands) were removed from `window.urlEnricher`.
+
 ## [1.4.4] - 2026-09-29
 
 ### Added

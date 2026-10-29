@@ -98,15 +98,6 @@ export class LRUCache<K, V> {
 	}
 
 	/**
-	 * Delete a key from the cache
-	 * @param key - Key to delete
-	 * @returns true if key was deleted, false if not found
-	 */
-	delete(key: K): boolean {
-		return this.cache.delete(key);
-	}
-
-	/**
 	 * Clear all items from the cache
 	 */
 	clear(): void {
@@ -139,42 +130,5 @@ export class LRUCache<K, V> {
 			evictions: this.evictions,
 			hitRate: Math.round(hitRate * 10000) / 100 // 2 decimal places as percentage
 		};
-	}
-
-	/**
-	 * Reset statistics without clearing cache
-	 */
-	resetStats(): void {
-		this.hits = 0;
-		this.misses = 0;
-		this.evictions = 0;
-	}
-
-	/**
-	 * Update the maximum cache size
-	 * Will evict items if new size is smaller than current size
-	 * @param newMaxSize - New maximum size
-	 */
-	setMaxSize(newMaxSize: number): void {
-		this.maxSize = Math.max(1, newMaxSize);
-
-		// Evict items if cache is now too large
-		while (this.cache.size > this.maxSize) {
-			this.evictOldest();
-		}
-	}
-
-	/**
-	 * Get all keys in the cache (in LRU order - oldest first)
-	 */
-	keys(): K[] {
-		return Array.from(this.cache.keys());
-	}
-
-	/**
-	 * Get all values in the cache (in LRU order - oldest first)
-	 */
-	values(): V[] {
-		return Array.from(this.cache.values());
 	}
 }

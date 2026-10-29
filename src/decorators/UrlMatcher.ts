@@ -15,7 +15,7 @@ export interface UrlMatch {
 /**
  * Check if a position is inside an inline code block or code fence
  */
-export function isInCodeBlock(node: SyntaxNode, _position: number): boolean {
+export function isInCodeBlock(node: SyntaxNode): boolean {
 	const contextNode = node;
 
 	// Check for inline code
@@ -174,11 +174,4 @@ export function* findBareUrls(text: string, processedRanges: Set<string>): Gener
 			type: 'bare'
 		};
 	}
-}
-
-/**
- * Check if two ranges overlap
- */
-export function rangesOverlap(start1: number, end1: number, start2: number, end2: number): boolean {
-	return start1 < end2 && start2 < end1;
 }
