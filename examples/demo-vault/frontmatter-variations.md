@@ -24,7 +24,7 @@ include-description: true
 ---
 ```
 
-**Result:** Card-style previews with descriptions limited to 300 characters total, showing favicons, with a grey background.
+**Result:** Card-style previews with descriptions limited to 300 characters total, showing favicons.
 
 ## Configuration Options Reference
 
@@ -45,7 +45,10 @@ include-description: true
 
 ### Visual Styling
 
-**Note:** Color modes (`preview-color-mode`, `custom-preview-color`) have been removed from frontmatter as of v1.0.2. Background colors must now be set globally in the plugin settings. This allows separate control for inline and card preview backgrounds.
+**`inline-color-mode: none/subtle`** - Background for inline previews
+**`card-color-mode: none/subtle`** - Background for card previews
+
+Values can be quoted (`preview-style: "card"`) and key names are case-insensitive. For custom colors, use a CSS snippet (see the README).
 
 ## Example URLs to See Configuration in Action
 
@@ -127,7 +130,7 @@ preview-style: inline
 ---
 ```
 
-**Result:** Plugin only activates on pages with frontmatter properties. Pages without frontmatter show plain URLs.
+**Result:** Plugin only activates on pages whose frontmatter sets at least one URL Enricher property (like `preview-style`). Pages without one, including pages whose frontmatter only has `tags` or `aliases`, show plain URLs.
 
 **Use case:** Selective preview activation for specific note types
 
@@ -139,7 +142,6 @@ Settings are applied in this order (later overrides earlier):
 
 1. **Global Settings** - Set in plugin settings
 2. **Frontmatter Properties** - Set per page (this page's frontmatter)
-3. **Manual Overrides** - Via console API (temporary)
 
 Example: If global settings use `inline` style but this page's frontmatter specifies `card`, this page shows cards.
 
@@ -158,4 +160,4 @@ Example: If global settings use `inline` style but this page's frontmatter speci
 - Hiding favicons = slight performance gain
 - Inline style = more compact, faster scrolling
 
-**See the Frontmatter Support documentation for complete details on all available properties.**
+**See the [README](../../README.md#quick-start) for the full list of frontmatter properties.**

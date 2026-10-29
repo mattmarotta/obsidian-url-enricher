@@ -80,5 +80,5 @@ This directory contains visual assets for documentation and promotional material
 
 - Keep all assets optimized for web (reasonable file sizes)
 - Update screenshots when UI changes significantly
-- See docs/developer/VERSION-MANAGEMENT.md for pre-release asset checklist
+- See the release checklist in [CONTRIBUTING.md](../CONTRIBUTING.md#release-checklist) before a release
 - GIFs should be optimized (<5MB) while maintaining quality

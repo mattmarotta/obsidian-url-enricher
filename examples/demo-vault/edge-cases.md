@@ -165,13 +165,13 @@ On first viewing this page:
 
 ### Cache Clearing
 
-Open console and run: `window.inlineLinkPreview.clearAllCaches()`
+Use **Settings → URL Enricher → Clear cache**, or run `window.urlEnricher.clearAllCaches()` in the console.
 
-Then refresh the page - you'll see URLs being fetched again.
+Visible previews are fetched again right away.
 
 ### Failed Request Caching
 
-Failed requests (like the non-existent domains above) are cached briefly to avoid repeated failed attempts.
+Failed requests (like the non-existent domains above) are cached like successful ones, so they aren't retried until you clear the cache or restart Obsidian.
 
 ---
 
@@ -208,7 +208,7 @@ When viewing this page in Live Preview mode, observe:
 5. **Performance** - Page remains responsive even with errors
 6. **Cache behavior** - Second page view is instant
 
-**Check the browser console (Cmd+Option+I or Ctrl+Shift+I) to see debug information about failed requests.**
+**Hover the ⚠️ next to a failed URL to see whether it was a network or HTTP error.**
 
 ---
 
@@ -218,7 +218,7 @@ If you don't see expected behavior:
 
 1. **Check you're in Live Preview mode** (not Reading mode or Source mode)
 2. **Verify frontmatter is on line 1** (no blank lines before `---`)
-3. **Check console for errors:** `window.inlineLinkPreview.setLogLevel("debug")`
-4. **Clear cache:** `window.inlineLinkPreview.clearAllCaches()`
+3. **Check the console for errors** (Cmd+Option+I or Ctrl+Shift+I)
+4. **Clear cache:** `window.urlEnricher.clearAllCaches()`
 
-See [TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md) for more help.
+See [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md) for more help.

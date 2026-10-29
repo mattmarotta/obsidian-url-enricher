@@ -104,7 +104,7 @@ export class InlineLinkPreviewSettingTab extends PluginSettingTab {
 				items: [
 					{
 						name: "Require frontmatter to activate",
-						desc: "Only show previews on pages with frontmatter properties. When enabled, the plugin is opt-in per page.",
+						desc: "Only show previews on pages whose frontmatter sets a URL Enricher property, such as preview-style. Other properties like tags don't count. When enabled, the plugin is opt-in per page.",
 						control: { type: "toggle", key: "requireFrontmatter" },
 					},
 				],

@@ -4,9 +4,6 @@ All notable changes to URL Enricher will be documented in this file.
 
 ## [Unreleased]
 
-### Added
--
-
 ### Changed
 - Removed the on-disk favicon cache. Favicon addresses are derived from the domain, so caching them saved nothing. The settings panel now shows how many previews are cached.
 

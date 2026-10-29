@@ -1,298 +1,124 @@
 # Obsidian URL Enricher Plugin
 
-**Quick Reference** for AI agents and developers working on this plugin.
+Quick reference for AI agents and developers working on this plugin.
 
 ## Overview
 
-This plugin adds rich, non-destructive link previews to Obsidian. URLs remain as plain text in your notes. The plugin enhances them with live inline previews or cards showing metadata (title, description, favicon) in editor view only.
+Adds non-destructive link previews to Obsidian's Live Preview editor. URLs stay as plain text in the note; a CodeMirror 6 ViewPlugin draws an inline preview or a card (favicon, title, description, site name) over them.
 
 - **Current version**: 1.4.4
-- **Plugin ID**: `url-enricher` (renamed from `obsidian-inline-link-preview` in 0.9.0)
-- **Entry point**: [src/main.ts](../../src/main.ts) → compiled to `main.js`
+- **Plugin ID**: `url-enricher`
+- **Entry point**: `src/main.ts`, bundled by esbuild to `main.js`
 - **Release artifacts**: `main.js`, `manifest.json`, `styles.css`
-- **Developer API**: `window.urlEnricher` (also `window.inlineLinkPreview` for compatibility)
+- **Developer API**: `window.urlEnricher` (also `window.inlineLinkPreview`): `getCacheStats()`, `clearAllCaches()`, `refreshDecorations()`, `help()`
 
-## Obsidian Plugin Guidelines
+## Obsidian plugin guidelines
 
-**Important**: All development must comply with Obsidian's official policies and guidelines:
+All changes must comply with:
 
-- **[Submit your plugin](https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin)** - Submission requirements and process
-- **[Developer policies](https://docs.obsidian.md/Developer+policies)** - Privacy, network usage, and telemetry policies
-- **[Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)** - Best practices and requirements
+- [Submit your plugin](https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin)
+- [Developer policies](https://docs.obsidian.md/Developer+policies) (privacy, network use, telemetry)
+- [Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)
 
-**Key Requirements for This Plugin**:
-- ✅ No client-side telemetry or analytics (enforced)
-- ✅ Network usage clearly disclosed in README (see "Privacy & Network Usage" section)
-- ✅ Uses only Obsidian's `requestUrl` API for HTTP requests (mobile-compatible)
-- ✅ No Node.js or Electron APIs (mobile support required)
-- ✅ `isDesktopOnly: false` in manifest.json
+Key requirements for this plugin:
 
-**Network Requests Made by This Plugin**:
-- User-provided URLs (metadata extraction)
-- Wikipedia API (article summaries)
-- Twitter oEmbed API (tweet content)
-- Google Favicon Service (high-res favicons)
+- No telemetry or analytics
+- Every network request is disclosed in README.md ("Privacy and network usage")
+- HTTP only through Obsidian's `requestUrl`; no Node.js or Electron APIs (mobile is supported, `isDesktopOnly: false`)
 
-All network activity is documented in README.md under "Privacy & Network Usage" section.
+**Network requests made by the plugin** (keep README.md in sync when this changes):
 
-## Quick Start
+- The URLs in the user's notes (HTML metadata). `www`/`new`/`np.reddit.com` links are fetched from `old.reddit.com` instead.
+- Reddit posts: `old.reddit.com/…/.json`, then `www.reddit.com/oembed` as a fallback; share links (`/r/<sub>/s/<id>`) are resolved through `www.reddit.com`.
+- Wikipedia: the article's own host, `/w/api.php` (intro extract).
+- Twitter/X: `publish.twitter.com/oembed`.
+- Favicons: `www.google.com/s2/favicons`, loaded as an image by the preview.
+
+## Quick start
 
 ```bash
-npm install                    # Install dependencies
-npm run dev                    # Watch mode (rebuilds on changes)
-npm run build                  # Production build (type-check + bundle)
-npm run lint                   # Run ESLint (enforces Obsidian plugin requirements)
-npm test                       # Run all 618 tests
-npm run set-version X.Y.Z      # Bump version (updates 6 files)
+npm install                    # Install dependencies (Node.js 18+, npm)
+git config core.hooksPath .husky   # Enable the pre-commit hook (once per clone)
+npm run dev                    # Watch mode
+npm run build                  # Type-check + production bundle
+npm run lint                   # ESLint with eslint-plugin-obsidianmd
+npm test                       # Vitest suite
+npm run set-version X.Y.Z      # Bump the version everywhere (see release process)
 ```
 
-**Node.js**: 18+ required
-**Package manager**: npm (required)
-**Bundler**: esbuild (required)
-**Linter**: ESLint v9 with `eslint-plugin-obsidianmd` (enforces plugin guidelines)
-
-## Project Structure
+## Project structure
 
 ```
 src/
-  main.ts                    # Plugin entry point (lifecycle only)
-  settings.ts                # Settings interface, defaults, UI
-  constants.ts               # Application-wide constants (20+ constants)
-  decorators/                # Editor decoration components (5 modules)
-    PreviewWidget.ts         # Widget rendering (inline, cards)
-    DecorationBuilder.ts     # Core decoration creation logic
-    UrlMatcher.ts            # URL pattern matching
-    MetadataEnricher.ts      # Text enrichment (hashtags, emojis)
-    FrontmatterParser.ts     # Per-note configuration
+  main.ts                      # Plugin lifecycle and developer API
+  settings.ts                  # Settings interface, defaults, normalization, settings tab
+  constants.ts                 # Shared constants (length limits, cache sizes, ...)
+  decorators/
+    DecorationBuilder.ts       # Scans visible ranges, truncates text, builds decorations
+    FrontmatterParser.ts       # Per-note overrides via getFrontMatterInfo + parseYaml
+    MetadataEnricher.ts        # Emoji stripping, media-link cleanup, hashtag/mention styling
+    PreviewWidget.ts           # Inline/card widget and error indicator
+    UrlMatcher.ts              # Wikilink, markdown-link, and bare-URL matching
   editor/
-    urlPreviewDecorator.ts   # CodeMirror ViewPlugin coordinator (120 lines)
-  services/                  # Business logic services (6 modules + shared types)
-    linkPreviewService.ts    # Core metadata fetching with LRU cache
-    MetadataFetcher.ts       # HTTP request handling
-    HtmlParser.ts            # HTML metadata parsing
-    FaviconResolver.ts       # Favicon resolution
-    MetadataValidator.ts     # Soft 404 detection
-    faviconCache.ts          # Persistent favicon cache (30-day expiration)
-    metadataHandlers/        # Domain-specific metadata extraction
-    types.ts                 # Shared service contracts
-  utils/                     # Utility functions (8 modules)
-    LRUCache.ts              # Generic LRU cache (max 1000 items)
-    logger.ts                # Structured logging (4 log levels)
-    performance.ts           # Performance tracking and profiling
-tests/
-  # 618 tests across 14 test files, 100% pass rate
-eslint.config.js             # ESLint v9 flat config (enforces Obsidian plugin rules)
+    urlPreviewDecorator.ts     # CodeMirror ViewPlugin: when to rebuild, fetch queueing
+  services/
+    linkPreviewService.ts      # Fetch pipeline, in-memory LRU cache, concurrency limit
+    MetadataFetcher.ts         # requestUrl wrapper with timeout
+    HtmlParser.ts              # Open Graph / Twitter Card / JSON-LD parsing
+    MetadataValidator.ts       # Soft-404 detection
+    favicon.ts                 # Google favicon URL for a page
+    types.ts                   # LinkMetadata
+    metadataHandlers/
+      index.ts                 # Default handler list
+      metadataHandler.ts       # Handler interface and context
+      googleSearchMetadataHandler.ts
+      linkedinMetadataHandler.ts
+      redditMetadataHandler.ts
+      twitterMetadataHandler.ts
+      wikipediaMetadataHandler.ts
+  types/
+    obsidian-extended.ts       # Editor typings Obsidian doesn't export
+    window.d.ts                # window.urlEnricher typings
+  utils/
+    LRUCache.ts                # Size-bounded cache with hit/miss stats
+    text.ts                    # HTML entity decoding, tag stripping, whitespace
+    url.ts                     # rewriteUrlForFetch (Reddit → old.reddit.com)
+tests/                         # Vitest; `obsidian` is aliased to tests/mocks/obsidian.ts
 ```
 
-## Key Technical Concepts
+## Key technical concepts
 
-**Non-Destructive Decorations**: CodeMirror 6 ViewPlugin adds visual previews without modifying markdown source. URLs remain as plain text.
+- **Non-destructive decorations.** Inline mode replaces the URL range with a widget; card mode adds a widget before the URL and dims the URL. The note text never changes.
+- **Visible ranges only.** Each rebuild scans `view.visibleRanges` (expanded to whole lines), so only on-screen links are matched and fetched. Scrolling triggers a rebuild that fetches newly visible links.
+- **Rebuild triggers.** Doc changes, viewport changes, Live Preview toggles, and the refresh effect. A cursor move rebuilds only in inline mode, and only when the cursor enters or leaves a URL (the URL under the cursor shows as raw text).
+- **Truncation happens once,** in `DecorationBuilder.processMetadata`. Widgets render what they are given.
+- **`LinkMetadata.context`** is an optional leading label (Reddit sets `r/<sub>`). Inline renders `<context> — <title>`; cards put the context in the header, then the title and description.
+- **Caching.** Metadata is cached in memory only (LRU, `METADATA_CACHE_MAX_SIZE`), so it is lost when Obsidian restarts. Favicon URLs are computed from the hostname, not cached.
+- **Concurrency.** At most `MAX_CONCURRENT_REQUESTS` fetches run at once; duplicate requests for a URL share one promise.
+- **Per-note settings.** Frontmatter overrides global settings (`pageConfig.x ?? settings.x`) and applies as you type. Only the frontmatter block is read, and its parse is cached on its text.
+- **CSS classes.** Base `.url-preview`, with `--inline` / `--card`, color modes `--none` / `--subtle`, and `--loading`.
 
-**Preview Styles**: Two styles available:
-- **Inline** (renamed from "bubble" in 0.9.0): Compact preview with favicon + title
-- **Card**: Full preview with image, title, description, favicon, URL
+## Critical gotchas
 
-**Type Safety**: 100% type-safe codebase. Zero `any` types. Use `unknown` with type guards for external data.
+1. **Frontmatter must start on line 1** with `---`. Values may be quoted (`preview-style: "card"`). "Require frontmatter to activate" needs at least one URL Enricher property (such as `preview-style`); other frontmatter like `tags` doesn't count.
+2. **Reload to see metadata changes.** Run `window.urlEnricher.clearAllCaches()` then `window.urlEnricher.refreshDecorations()` in the console, or use Settings → URL Enricher → Clear cache.
+3. **Build, lint, and test must all pass.** The pre-commit hook runs all three, but only after `git config core.hooksPath .husky`.
+4. **No `any`.** Use `unknown` and narrow it (for example the result of `parseYaml`).
+5. **No `innerHTML`/`outerHTML` and no `.style` assignments** (including `style.setProperty`). Use the DOM API and CSS classes in `styles.css`. Custom colors are left to user CSS snippets.
+6. **Use popout-safe globals:** `createEl` / `createDiv` / `createSpan`, `activeDocument`, `window.setTimeout`.
+7. **No console logging** beyond essential warnings and errors.
+8. **Constants go in `src/constants.ts`,** not inline.
+9. **Never commit build artifacts:** `main.js`, `node_modules/`, `data.json` are gitignored.
 
-**LRU Cache**: Memory-bounded metadata cache (max 1000 items) with automatic eviction.
+## Documentation
 
-**Concurrency Limiting**: Max 10 parallel HTTP requests to prevent server overload.
+- `README.md`: users, including the privacy section
+- `TROUBLESHOOTING.md`: common problems
+- `CONTRIBUTING.md`: setup, code standards, **release checklist**
+- `.github/workflows/README.md`: CI and release workflows
+- `examples/demo-vault/`: sample notes for manual testing
+- `CHANGELOG.md`: Keep a Changelog sections (`Added`, `Changed`, `Fixed`, `Removed`) under `## [Unreleased]`. It becomes the GitHub release notes, so write for users.
 
-**Performance Tracking**: Optional profiling via `window.urlEnricher` API (disabled by default).
+## Release process
 
-**CSS Classes**: Base class is `.url-preview` with modifiers `.url-preview--inline` and `.url-preview--card` (simplified in 0.9.0).
-
-## ⚠️ Critical Gotchas
-
-**1. Frontmatter MUST start on line 1**
-```yaml
-# ❌ WRONG - Will not work!
-# My Note Title
-
----
-preview-style: card
----
-
-# ✅ CORRECT - Frontmatter first!
----
-preview-style: card  # Use "inline" or "card" (was "bubble" before 0.9.0)
----
-
-# My Note Title
-```
-
-**2. Clear cache when testing metadata changes**
-```javascript
-// In browser console (Cmd+Option+I / Ctrl+Shift+I)
-window.urlEnricher.clearAllCaches()  // or window.inlineLinkPreview for compatibility
-window.urlEnricher.refreshDecorations()
-```
-Cache persists for 30 days. You won't see changes without clearing!
-
-**3. Git hooks require manual setup**
-```bash
-# After cloning, run this:
-git config core.hooksPath .husky
-
-# Verify it worked:
-git config core.hooksPath
-# Should output: .husky
-```
-
-**4. 100% Type Safety Required**
-```typescript
-// ❌ NEVER use any
-function parseData(value: any) { }
-
-// ✅ Use unknown with type guards
-function parseData(value: unknown): Data | null {
-  if (!isValidData(value)) return null;
-  return value;
-}
-```
-
-**5. Build, lint, AND test must all pass**
-```bash
-# ❌ Only running one or two is not enough
-npm run build
-
-# ✅ Run all three (pre-commit hook does this automatically)
-npm run build && npm run lint && npm test
-```
-
-**6. Never commit build artifacts**
-- ❌ `main.js` (generated)
-- ❌ `node_modules/` (dependencies)
-- ❌ `dist/` (build output)
-- ✅ Only commit source files
-
-**7. Constants must go in constants.ts**
-```typescript
-// ❌ Magic numbers inline
-if (cache.size > 1000) { }
-
-// ✅ Named constants
-import { METADATA_CACHE_MAX_SIZE } from "./constants";
-if (cache.size > METADATA_CACHE_MAX_SIZE) { }
-```
-
-**8. Obsidian Plugin Review Requirements**
-
-These patterns are **required for Obsidian plugin approval**. Violations will be flagged by the automated review bot.
-
-**ESLint Enforcement:** Run `npm run lint` to check compliance. We use `eslint-plugin-obsidianmd` which automatically detects `.style` assignments and other violations during development.
-
-**No Inline Styles - Use CSS Classes:**
-```typescript
-// ❌ NEVER assign styles via JavaScript
-element.style.color = "red";
-element.style.fontSize = "16px";
-element.style.cssText = "color: red; font-size: 16px;";
-
-// ✅ ALWAYS use CSS classes defined in styles.css
-element.className = "my-custom-class";
-element.addClass("another-class");
-
-// ❌ NEVER use .style.setProperty() - NO EXCEPTIONS
-// This includes CSS custom properties for user-provided values
-document.documentElement.style.setProperty('--custom-color', userColor);
-
-// ✅ Use CSS classes with predefined CSS variables
-element.addClass('url-preview--subtle'); // Uses var(--background-modifier-border)
-```
-
-**Why No Custom Colors?**
-Custom color pickers were removed for two reasons:
-1. **Plugin Review Compliance**: `.style.setProperty()` is prohibited by Obsidian's review bot (no exceptions)
-2. **Dark Mode Compatibility**: Hard-coded custom colors break readability when users switch between light/dark themes
-
-Users who need custom colors can use CSS snippets (documented in README.md).
-
-**No innerHTML - Use DOM API:**
-```typescript
-// ❌ NEVER use innerHTML or outerHTML (security risk)
-element.innerHTML = `<strong>Title:</strong> ${text}`;
-textarea.innerHTML = htmlEntities; // Even for decoding
-
-// ✅ ALWAYS use DOM API
-const strong = document.createElement('strong');
-strong.textContent = 'Title:';
-element.appendChild(strong);
-element.appendChild(document.createTextNode(text));
-
-// ✅ For HTML entity decoding, use manual parsing
-const decoded = value.replace(/&(#x?[0-9a-f]+|\w+);/gi, (match, entity) =>
-  decodeEntity(entity) ?? match
-);
-```
-
-**Minimize Console Logging:**
-```typescript
-// ❌ Excessive debug logging
-console.log('[plugin] Processing URL:', url);
-console.log('[plugin] Metadata fetched:', metadata);
-console.log('[plugin] Settings updated');
-
-// ✅ Use Logger utility for debugging (disabled by default)
-import { Logger } from './utils/logger';
-const logger = new Logger('ModuleName');
-logger.debug('Processing URL:', url);  // Only shows if debug level enabled
-
-// ✅ Keep only essential error logging
-console.warn('[url-enricher] Failed to fetch metadata:', error);
-console.error('[url-enricher] Critical failure:', error);
-
-// ✅ Intentional developer tools output is fine
-console.log('Developer API available at window.urlEnricher');
-```
-
-**Real-Time Frontmatter Updates:**
-Per-page settings via frontmatter apply instantly as users type—no need to navigate away from the page.
-
-**How it works:**
-- CodeMirror 6's `ViewPlugin.update()` triggers on document changes (including frontmatter edits)
-- `parsePageConfig()` parses frontmatter on every decoration rebuild
-- Widget-scoped CSS classes enable per-page customization (e.g., `url-preview--subtle` on individual widgets)
-- Frontmatter settings override global settings using nullish coalescing: `pageConfig.inlineColorMode ?? globalSettings.inlineColorMode`
-
-**Example:**
-```yaml
----
-inline-color-mode: none    # Transparent background for this page
-card-color-mode: subtle    # Subtle background for cards
----
-```
-
-Changes apply immediately when you edit frontmatter—decorations rebuild automatically.
-
-See [CHANGELOG.md Unreleased](../../CHANGELOG.md#unreleased) for recent compliance improvements.
-
-## Documentation Structure (Updated for v1.0.0)
-
-**New Modular Documentation** (as of v1.0.0):
-- **README.md**: Concise (~130 lines, down from 619) with links to detailed docs
-- **assets/**: Visual assets folder (demo.gif, screenshots) - see [assets/README.md](../../assets/README.md)
-- **docs/**: Comprehensive documentation organized by audience
-
-### For Users:
-- [docs/USER-GUIDE.md](../USER-GUIDE.md) - Complete usage guide (~500 lines)
-- [docs/QUICK-REFERENCE.md](../QUICK-REFERENCE.md) - Cheat sheet for settings/commands
-- [docs/TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Common issues and solutions
-- [docs/ADVANCED.md](../ADVANCED.md) - Console API, debugging, performance
-- [docs/features/FRONTMATTER-SUPPORT.md](../features/FRONTMATTER-SUPPORT.md) - Per-page configuration
-
-### For Developers:
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contributing guidelines, code standards, **release checklist**
-- [.github/workflows/README.md](.github/workflows/README.md) - CI/CD workflows and the release process
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
-
-**Visual Assets Guide**: [assets/README.md](assets/README.md) - Instructions for creating demo GIFs and screenshots
-
-**CHANGELOG Format**:
-- Follows [Keep a Changelog](https://keepachangelog.com/) format where possible
-- Use sections: `### Added`, `### Changed`, `### Fixed`, `### Removed`
-- For breaking changes, use `### Breaking Changes` with nested `####` subsections
-- **Critical**: CHANGELOG.md content becomes GitHub release notes automatically
-- Write in user-facing language, not technical commit messages
-
-**Release Process**: See the [Release Checklist in CONTRIBUTING.md](CONTRIBUTING.md#release-checklist). `master` is protected, so the version bump lands via its own PR and the tag is pushed **after** that merge — never `git push origin master --tags`.
+Follow the [Release Checklist in CONTRIBUTING.md](CONTRIBUTING.md#release-checklist). `master` is protected: the version bump lands through its own PR, and the tag is pushed **after** that merge. Never run `git push origin master --tags`.

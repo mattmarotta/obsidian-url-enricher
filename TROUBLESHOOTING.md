@@ -22,8 +22,8 @@ Common issues and solutions for URL Enricher.
 
 **Frontmatter activation mode?**
 
-- If "Require frontmatter to activate" is ON in settings
-- Add any frontmatter to activate: `---\npreview-style: inline\n---`
+- If "Require frontmatter to activate" is ON in settings, previews only show on notes whose frontmatter sets at least one URL Enricher property, such as `preview-style: inline`
+- Other frontmatter (`tags`, `aliases`, ...) doesn't activate the plugin
 
 **Clear cache**
 
@@ -52,7 +52,8 @@ preview-style: card
 **Check property spelling**
 
 - `preview-style` (not `previewstyle` or `previe-style`)
-- See [Frontmatter Reference](#frontmatter-reference) below
+- Quoted values (`preview-style: "card"`) work too
+- If the frontmatter isn't valid YAML (for example an unclosed quote), all of it is ignored until it's fixed
 
 ### Stale or wrong previews?
 
@@ -60,31 +61,19 @@ preview-style: card
 
 - **Settings → URL Enricher → Clear cache button**
 
-Metadata is cached for 30 days for performance.
+Fetched previews are kept in memory until Obsidian restarts.
 
 ## Console Commands
 
 For advanced debugging, open console: `Cmd+Option+I` (Mac) or `Ctrl+Shift+I` (Windows)
 
-All commands under `window.inlineLinkPreview`:
+All commands are under `window.urlEnricher` (also available as `window.inlineLinkPreview`):
 
 ```javascript
-// Help
 help()                             // Show all commands
-
-// Cache
-getCacheStats()                    // View cache statistics
-clearAllCaches()                   // Clear metadata + favicon caches
+getCacheStats()                    // Cached preview count, hits, misses
+clearAllCaches()                   // Clear cached previews
 refreshDecorations()               // Force refresh all previews
-
-// Logging
-setLogLevel("debug")               // debug | info | warn | error
-
-// Performance
-enablePerformanceTracking()        // Start tracking
-getPerformanceMetrics()            // View metrics table
-resetPerformanceMetrics()          // Reset to zero
-disablePerformanceTracking()       // Stop tracking
 ```
 
 ## Common Issues
@@ -113,10 +102,6 @@ disablePerformanceTracking()       // Stop tracking
 - **Solution:** Check internet connection or URL spelling
 
 ### Favicons Not Loading
-
-**Cache stale** (30 day expiration)
-
-- **Settings → URL Enricher → Clear cache button**
 
 **Website has no favicon**
 
@@ -149,51 +134,17 @@ Some sites block automated requests:
 
 ## Performance Troubleshooting
 
-### Performance Tracking
+Previews are built only for the part of the note on screen, and links are fetched as you scroll to them, so long notes stay responsive. If previews feel slow to appear:
 
-```javascript
-// Enable tracking (disabled by default)
-window.inlineLinkPreview.enablePerformanceTracking()
-
-// Use plugin for 1-2 minutes
-
-// View metrics
-window.inlineLinkPreview.getPerformanceMetrics()
-```
-
-**Look for:**
-
-- `fetchMetadata` > 500ms avg → Websites slow
-- `parseHtml` > 50ms avg → Complex HTML
-- `resolveFavicon` > 300ms avg → Network issues
+- Slow websites are the usual cause. Lower **Request timeout** in settings to give up on them sooner.
+- Turn off **Include description** or reduce the maximum lengths for lighter previews.
 
 ## Cache Troubleshooting
 
 ### View Cache Stats
 
-```javascript
-window.inlineLinkPreview.getCacheStats()
-```
-
-**Example output:**
-
-```
-=== Metadata Cache ===
-Size: 342 / 1000 items
-Hits: 1,234
-Misses: 156
-Hit Rate: 88.79%
-
-=== Favicon Cache ===
-Cached Domains: 89
-Oldest Entry: reddit.com (7 days ago)
-```
-
-**Good indicators:**
-
-- Hit rate > 80%
-- Low eviction count
-- Cache growing over time
+- **Settings → URL Enricher → Cache management** shows how many previews are cached.
+- In the console, `window.urlEnricher.getCacheStats()` returns the size, hits, misses, and hit rate.
 
 ### Clear Cache
 
@@ -204,20 +155,19 @@ Oldest Entry: reddit.com (7 days ago)
 **Via Console (Advanced):**
 
 ```javascript
-window.inlineLinkPreview.clearAllCaches()
+window.urlEnricher.clearAllCaches()
+window.urlEnricher.refreshDecorations()
 ```
 
 **When to clear:**
 
 - Previews show outdated content
-- Favicons show wrong icons
 - Testing plugin changes
-- After updating the plugin
 
 **Cache details:**
 
-- **Metadata:** In-memory, 30 day expiration, 1000 item max
-- **Favicon:** Disk storage, 30 day expiration, unlimited
+- Previews are kept in memory only, up to 1000 links, and are lost when Obsidian restarts
+- Favicon addresses are built from each link's domain and aren't stored by the plugin
 
 ## Still Having Issues?
 
