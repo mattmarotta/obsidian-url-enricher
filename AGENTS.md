@@ -100,7 +100,7 @@ tests/                         # Vitest; `obsidian` is aliased to tests/mocks/ob
 
 ## Critical gotchas
 
-1. **Frontmatter must start on line 1** with `---`. Values may be quoted (`preview-style: "card"`). "Require frontmatter to activate" needs at least one URL Enricher property (such as `preview-style`); other frontmatter like `tags` doesn't count.
+1. **Frontmatter must start on line 1** with `---`. Values are read with standard YAML rules, so a value saved as `'"card"'` (what the Properties panel writes when you type the quotes) is the literal text `"card"` and is ignored. Keep it that way to match how Obsidian and other plugins read properties. "Require frontmatter to activate" needs at least one URL Enricher property (such as `preview-style`); other frontmatter like `tags` doesn't count.
 2. **Reload to see metadata changes.** Run `window.urlEnricher.clearAllCaches()` then `window.urlEnricher.refreshDecorations()` in the console, or use Settings → URL Enricher → Clear cache.
 3. **Build, lint, and test must all pass.** The pre-commit hook runs all three, but only after `git config core.hooksPath .husky`.
 4. **No `any`.** Use `unknown` and narrow it (for example the result of `parseYaml`).

@@ -48,7 +48,7 @@ include-description: true
 **`inline-color-mode: none/subtle`** - Background for inline previews
 **`card-color-mode: none/subtle`** - Background for card previews
 
-Values can be quoted (`preview-style: "card"`) and key names are case-insensitive. For custom colors, use a CSS snippet (see the README).
+Key names are case-insensitive. For custom colors, use a CSS snippet (see the README).
 
 ## Example URLs to See Configuration in Action
 

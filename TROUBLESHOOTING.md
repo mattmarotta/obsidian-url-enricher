@@ -52,7 +52,7 @@ preview-style: card
 **Check property spelling**
 
 - `preview-style` (not `previewstyle` or `previe-style`)
-- Quoted values (`preview-style: "card"`) work too
+- In the Properties panel, type `card`, not `"card"`. Obsidian saves typed quotes as part of the value, so `"card"` won't match
 - If the frontmatter isn't valid YAML (for example an unclosed quote), all of it is ignored until it's fixed
 
 ### Stale or wrong previews?
