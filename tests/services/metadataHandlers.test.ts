@@ -338,14 +338,17 @@ describe('Metadata Handlers', () => {
 	describe('RedditMetadataHandler', () => {
 		let handler: RedditMetadataHandler;
 		let mockRequest: ReturnType<typeof vi.fn>;
-		let context: MetadataHandlerContext;
 		let metadata: LinkMetadata;
+
+		const oEmbed = (title: string) => ({ status: 200, text: JSON.stringify({ title, author_name: 'someone' }) });
+		const enrich = (url: string) => handler.enrich(createMockContext(url, metadata, mockRequest));
 
 		beforeEach(() => {
 			handler = new RedditMetadataHandler();
 			mockRequest = vi.fn();
+			// What the service passes in when it skips the page fetch
 			metadata = {
-				title: '',
+				title: 'reddit.com',
 				description: null,
 				favicon: null,
 				siteName: null,
@@ -353,670 +356,133 @@ describe('Metadata Handlers', () => {
 		});
 
 		describe('matches', () => {
-			it('should match reddit.com', () => {
-				let ctx = createMockContext('https://www.reddit.com/r/programming', metadata, mockRequest);
-				expect(handler.matches(ctx)).toBe(true);
-			});
-
-			it('should match reddit.com without www', () => {
-				let ctx = createMockContext('https://reddit.com/r/programming', metadata, mockRequest);
-				expect(handler.matches(ctx)).toBe(true);
-			});
-
-			it('should match old.reddit.com', () => {
-				let ctx = createMockContext('https://old.reddit.com/r/programming', metadata, mockRequest);
-				expect(handler.matches(ctx)).toBe(true);
+			it.each([
+				'https://www.reddit.com/r/programming',
+				'https://reddit.com/r/programming',
+				'https://old.reddit.com/r/programming',
+				'https://new.reddit.com/r/programming',
+			])('should match %s', (url) => {
+				expect(handler.matches(createMockContext(url, metadata, mockRequest))).toBe(true);
 			});
 
 			it('should not match non-Reddit domains', () => {
-				let ctx = createMockContext('https://example.com', metadata, mockRequest);
-				expect(handler.matches(ctx)).toBe(false);
+				expect(handler.matches(createMockContext('https://notreddit.com/r/x', metadata, mockRequest))).toBe(false);
+				expect(handler.matches(createMockContext('https://reddit.com.evil.org/r/x', metadata, mockRequest))).toBe(false);
+			});
+
+			it('should replace the page fetch for Reddit only', () => {
+				expect(handler.replacesPageFetch(new URL('https://www.reddit.com/r/programming'))).toBe(true);
+				expect(handler.replacesPageFetch(new URL('https://example.com/'))).toBe(false);
 			});
 		});
 
-		describe('enrich', () => {
-			it('should not enrich if title is specific and description exists', async () => {
-				metadata.title = 'Specific Title';
-				metadata.description = 'Existing description';
-				const url = new URL('https://reddit.com/r/programming/comments/abc123/test_post');
+		describe('posts', () => {
+			it('should use the oEmbed title, with the subreddit as context', async () => {
+				const url = 'https://www.reddit.com/r/Cooking/comments/2ya11p/eli5_if_we_are_never_supposed/';
+				mockRequest.mockResolvedValueOnce(oEmbed('ELI5: cast iron'));
 
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(mockRequest).not.toHaveBeenCalled();
-			});
-
-			it('should enrich if title is generic ("reddit.com")', async () => {
-				metadata.title = 'reddit.com';
-				const url = new URL('https://reddit.com/r/programming/comments/abc123/test_post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'programming',
-									title: 'Test Post Title',
-									selftext: 'Post content here',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.context).toBe('r/programming');
-				expect(metadata.title).toBe('Test Post Title');
-				expect(metadata.description).toBe('Post content here');
-			});
-
-			it('should enrich if title contains "the heart of the internet"', async () => {
-				metadata.title = 'Reddit - The Heart of the Internet';
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'test',
-									title: 'Post Title',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.context).toBe('r/test');
-				expect(metadata.title).toBe('Post Title');
-				expect(metadata.description).toBeNull();
-			});
-
-			it('should enrich if title is Reddit login page', async () => {
-				metadata.title = 'Welcome to Reddit — Log in or sign up...';
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'test',
-									title: 'Actual Reddit Post',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-					originalUrl: url.toString(),
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s: string | null | undefined) => s ?? null,
-					settings: DEFAULT_SETTINGS,
-				};
-
-				await handler.enrich(context);
-
-				expect(mockRequest).toHaveBeenCalledWith({
-					url: expect.stringContaining('.json'),
-					method: 'GET',
-				});
-				expect(metadata.context).toBe('r/test');
-				expect(metadata.title).toBe('Actual Reddit Post');
-				expect(metadata.description).toBeNull();
-			});
-
-			it('should enrich when title is the short Reddit login title', async () => {
-				metadata.title = 'Welcome to Reddit';
-				metadata.description =
-					'Log in or sign up to personalize your feed, join conversations, vote, and explore communities.';
-
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'Warhammer40k',
-									title: "A Beginner's Guide to the Painting Process",
-								},
-							}],
-						},
-					}]),
-				});
-
-				const url = 'https://www.reddit.com/r/Warhammer40k/comments/h0z87m/a_beginners_guide_to_the_painting_process/';
-				const context = createMockContext(url, metadata, mockRequest);
-
-				await handler.enrich(context);
+				await enrich(url);
 
 				expect(mockRequest).toHaveBeenCalledTimes(1);
-				expect(mockRequest.mock.calls[0][0].url).toContain('.json');
-				expect(metadata.context).toBe('r/Warhammer40k');
-				expect(metadata.title).toBe("A Beginner's Guide to the Painting Process");
+				const oEmbedUrl = new URL(mockRequest.mock.calls[0][0].url);
+				expect(oEmbedUrl.origin + oEmbedUrl.pathname).toBe('https://www.reddit.com/oembed');
+				expect(oEmbedUrl.searchParams.get('url')).toBe(url);
+				expect(metadata.context).toBe('r/Cooking');
+				expect(metadata.title).toBe('ELI5: cast iron');
 				expect(metadata.description).toBeNull();
 			});
 
-			it('should not treat ordinary titles containing Reddit boilerplate phrases as generic', async () => {
-				metadata.title =
-					'Welcome to Reddit, here is my first Space Marine; it wields the heart of the internet as its weapon';
-				metadata.description = 'Existing description';
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
+			it('should send oEmbed a www.reddit.com URL for other Reddit hosts', async () => {
+				mockRequest.mockResolvedValueOnce(oEmbed('Post'));
 
-				context = {
-					originalUrl: url.toString(),
-					url,
-					metadata,
-					request: mockRequest,
-					sanitizeText: (s: string | null | undefined) => s ?? null,
-					settings: DEFAULT_SETTINGS,
-				};
+				await enrich('https://old.reddit.com/r/test/comments/abc123/post/?utm_source=share');
 
-				await handler.enrich(context);
-
-				expect(mockRequest).not.toHaveBeenCalled();
-				expect(metadata.title).toBe(
-					'Welcome to Reddit, here is my first Space Marine; it wields the heart of the internet as its weapon'
-				);
+				const oEmbedUrl = new URL(mockRequest.mock.calls[0][0].url);
+				expect(oEmbedUrl.searchParams.get('url')).toBe('https://www.reddit.com/r/test/comments/abc123/post/');
 			});
 
-			it('should not fetch if URL does not match /comments/ pattern', async () => {
-				const url = new URL('https://reddit.com/r/programming');
+			it('should label posts on user profiles with the user', async () => {
+				mockRequest.mockResolvedValueOnce(oEmbed('Profile post'));
 
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
+				await enrich('https://www.reddit.com/user/spez/comments/abc123/hello/');
 
-				await handler.enrich(context);
-
-				expect(mockRequest).not.toHaveBeenCalled();
+				expect(metadata.context).toBe('u/spez');
+				expect(metadata.title).toBe('Profile post');
 			});
 
-			it('should resolve share links (/r/<sub>/s/<id>) to the full post URL', async () => {
-				metadata.title = 'Welcome to Reddit';
+			it.each([
+				['an HTTP error', { status: 404, text: '' }],
+				['malformed JSON', { status: 200, text: 'not json' }],
+				['an empty title', { status: 200, text: JSON.stringify({ title: '   ' }) }],
+			])('should fall back to the subreddit label on %s', async (_, response) => {
+				mockRequest.mockResolvedValueOnce(response);
+
+				await enrich('https://www.reddit.com/r/test/comments/abc123/post/');
+
+				expect(metadata.title).toBe('r/test');
+				expect(metadata.context).toBeUndefined();
+			});
+
+			it('should fall back to the subreddit label when the request throws', async () => {
+				mockRequest.mockRejectedValueOnce(new Error('Network error'));
+
+				await enrich('https://www.reddit.com/r/test/comments/abc123/post/');
+
+				expect(metadata.title).toBe('r/test');
+			});
+		});
+
+		describe('share links', () => {
+			const shareUrl = 'https://www.reddit.com/r/learnpython/s/acLJEVUdmr';
+
+			it('should resolve share links (/r/<sub>/s/<id>) to the full post', async () => {
 				const challengePage =
 					'<title>Reddit</title><form hidden method="GET" ' +
 					'action="/r/learnpython/comments/1w1vcia/cna_someone_please_explain/">';
-
 				mockRequest
 					.mockResolvedValueOnce({ status: 200, text: challengePage })
-					.mockResolvedValueOnce({ status: 403, text: '' })
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify({ title: 'Can someone please explain this' }),
-					});
+					.mockResolvedValueOnce(oEmbed('Can someone please explain this'));
 
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/learnpython/s/acLJEVUdmr',
-					metadata,
-					mockRequest
-				));
+				await enrich(shareUrl);
 
-				expect(mockRequest).toHaveBeenCalledTimes(3);
-				expect(mockRequest.mock.calls[0][0].url).toBe(
-					'https://www.reddit.com/r/learnpython/s/acLJEVUdmr'
-				);
-				expect(new URL(mockRequest.mock.calls[1][0].url).pathname).toBe(
-					'/r/learnpython/comments/1w1vcia/cna_someone_please_explain/.json'
-				);
-				expect(new URL(mockRequest.mock.calls[2][0].url).searchParams.get('url')).toBe(
+				expect(mockRequest).toHaveBeenCalledTimes(2);
+				expect(mockRequest.mock.calls[0][0].url).toBe(shareUrl);
+				expect(new URL(mockRequest.mock.calls[1][0].url).searchParams.get('url')).toBe(
 					'https://www.reddit.com/r/learnpython/comments/1w1vcia/cna_someone_please_explain/'
 				);
 				expect(metadata.context).toBe('r/learnpython');
 				expect(metadata.title).toBe('Can someone please explain this');
-				expect(metadata.description).toBeNull();
 			});
 
-			it('should leave metadata alone when a share link cannot be resolved', async () => {
-				metadata.title = 'Welcome to Reddit';
+			it('should fall back to the subreddit label when a share link cannot be resolved', async () => {
 				mockRequest.mockResolvedValueOnce({ status: 200, text: '<title>Reddit</title>' });
 
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/learnpython/s/acLJEVUdmr',
-					metadata,
-					mockRequest
-				));
+				await enrich(shareUrl);
 
 				expect(mockRequest).toHaveBeenCalledTimes(1);
-				expect(metadata.title).toBe('Welcome to Reddit');
+				expect(metadata.title).toBe('r/learnpython');
+				expect(metadata.context).toBeUndefined();
 			});
+		});
 
-			it('should fall back to Reddit oEmbed when JSON returns 403', async () => {
-				metadata.title = 'Welcome to Reddit';
-				metadata.description =
-					'Log in or sign up to personalize your feed, join conversations, vote, and explore communities.';
+		describe('other Reddit links', () => {
+			it.each([
+				['https://www.reddit.com/r/learnpython', 'r/learnpython'],
+				['https://www.reddit.com/r/learnpython/top/?t=week', 'r/learnpython'],
+				['https://www.reddit.com/r/learnpython/wiki/index', 'r/learnpython'],
+				['https://www.reddit.com/user/spez/', 'u/spez'],
+				['https://www.reddit.com/u/spez', 'u/spez'],
+				['https://www.reddit.com/', 'Reddit'],
+				['https://www.reddit.com/search/?q=obsidian', 'Reddit'],
+			])('should label %s as "%s" without any request', async (url, label) => {
+				metadata.description = 'Log in or sign up to personalize your feed';
 
-				const url =
-					'https://www.reddit.com/r/Warhammer40k/comments/h0z87m/a_beginners_guide_to_the_painting_process/';
+				await enrich(url);
 
-				mockRequest
-					.mockResolvedValueOnce({
-						status: 403,
-						text: '',
-					})
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify({
-							title: "A Beginner's Guide to the Painting Process",
-						}),
-					});
-
-				const context = createMockContext(url, metadata, mockRequest);
-
-				await handler.enrich(context);
-
-				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(new URL(mockRequest.mock.calls[0][0].url).pathname.endsWith('/.json')).toBe(true);
-
-				const oEmbedUrl = new URL(mockRequest.mock.calls[1][0].url);
-				expect(oEmbedUrl.origin).toBe('https://www.reddit.com');
-				expect(oEmbedUrl.pathname).toBe('/oembed');
-				expect(oEmbedUrl.searchParams.get('url')).toBe(url);
-
-				expect(metadata.context).toBe('r/Warhammer40k');
-				expect(metadata.title).toBe("A Beginner's Guide to the Painting Process");
+				expect(mockRequest).not.toHaveBeenCalled();
+				expect(metadata.title).toBe(label);
 				expect(metadata.description).toBeNull();
-			});
-
-			it('should prefer JSON metadata and preserve post content when available', async () => {
-				metadata.title = 'Welcome to Reddit';
-				mockRequest.mockResolvedValueOnce({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'test',
-									title: 'Title from JSON',
-									selftext: 'Full post content',
-								},
-							}],
-						},
-					}]),
-				});
-
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/test/comments/abc123/post',
-					metadata,
-					mockRequest
-				));
-
-				expect(mockRequest).toHaveBeenCalledTimes(1);
-				expect(metadata.context).toBe('r/test');
-				expect(metadata.title).toBe('Title from JSON');
-				expect(metadata.description).toBe('Full post content');
-			});
-
-			it('should fall back to oEmbed when Reddit JSON is malformed', async () => {
-				metadata.title = 'Welcome to Reddit';
-				mockRequest
-					.mockResolvedValueOnce({ status: 200, text: 'not valid JSON' })
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify({ title: 'Title from oEmbed' }),
-					});
-
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/test/comments/abc123/post',
-					metadata,
-					mockRequest
-				));
-
-				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.context).toBe('r/test');
-				expect(metadata.title).toBe('Title from oEmbed');
-				expect(metadata.description).toBeNull();
-			});
-
-			it('should fall back to oEmbed when JSON has no usable post title', async () => {
-				metadata.title = 'Welcome to Reddit';
-				mockRequest
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify([{
-							data: {
-								children: [{
-									data: { subreddit: 'test', title: '   ' },
-								}],
-							},
-						}]),
-					})
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify({ title: 'Recovered post title' }),
-					});
-
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/test/comments/abc123/post',
-					metadata,
-					mockRequest
-				));
-
-				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.context).toBe('r/test');
-				expect(metadata.title).toBe('Recovered post title');
-				expect(metadata.description).toBeNull();
-			});
-
-			it('should fall back to oEmbed when the JSON request throws', async () => {
-				metadata.title = 'Welcome to Reddit';
-				mockRequest
-					.mockRejectedValueOnce(new Error('Network error'))
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify({ title: 'Recovered post title' }),
-					});
-
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/test/comments/abc123/post',
-					metadata,
-					mockRequest
-				));
-
-				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.context).toBe('r/test');
-				expect(metadata.title).toBe('Recovered post title');
-				expect(metadata.description).toBeNull();
-			});
-
-			it('should preserve existing metadata when oEmbed has no title', async () => {
-				metadata.title = 'Welcome to Reddit';
-				metadata.description = 'Existing description';
-				mockRequest
-					.mockResolvedValueOnce({ status: 403, text: '' })
-					.mockResolvedValueOnce({
-						status: 200,
-						text: JSON.stringify({ title: '   ' }),
-					});
-
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/test/comments/abc123/post',
-					metadata,
-					mockRequest
-				));
-
-				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.title).toBe('Welcome to Reddit');
-				expect(metadata.description).toBe('Existing description');
-			});
-
-			it('should handle malformed oEmbed JSON gracefully', async () => {
-				metadata.title = 'Welcome to Reddit';
-				mockRequest
-					.mockResolvedValueOnce({ status: 403, text: '' })
-					.mockResolvedValueOnce({ status: 200, text: 'not valid JSON' });
-
-				await handler.enrich(createMockContext(
-					'https://www.reddit.com/r/test/comments/abc123/post',
-					metadata,
-					mockRequest
-				));
-
-				expect(mockRequest).toHaveBeenCalledTimes(2);
-				expect(metadata.title).toBe('Welcome to Reddit');
-			});
-
-			it('should fetch and parse Reddit post metadata', async () => {
-				const url = new URL('https://reddit.com/r/programming/comments/abc123/test_post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'programming',
-									title: 'Test Post Title',
-									selftext: 'This is the post content.',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(mockRequest).toHaveBeenCalledWith({
-					url: expect.stringContaining('.json'),
-					method: 'GET',
-				});
-				expect(metadata.context).toBe('r/programming');
-				expect(metadata.title).toBe('Test Post Title');
-				expect(metadata.description).toBe('This is the post content.');
-			});
-
-			it('should handle posts without selftext', async () => {
-				const url = new URL('https://reddit.com/r/pics/comments/abc123/photo');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'pics',
-									title: 'Beautiful Photo',
-									// No selftext
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.context).toBe('r/pics');
-				expect(metadata.title).toBe('Beautiful Photo');
-				expect(metadata.description).toBeNull();
-			});
-
-			it('should use public_description if selftext is missing', async () => {
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'test',
-									title: 'Test Post',
-									public_description: 'Public description here',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.description).toContain('Public description here');
-			});
-
-			it('should normalize whitespace in description', async () => {
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'test',
-									title: 'Test',
-									selftext: 'Text   with\n\nextra    whitespace',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.description).toContain('Text with extra whitespace');
-			});
-
-			it('should handle HTTP errors gracefully', async () => {
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockResolvedValue({
-					status: 404,
-					text: '',
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.title).toBe('');
-			});
-
-			it('should handle invalid JSON gracefully', async () => {
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: 'Invalid JSON',
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.title).toBe('');
-			});
-
-			it('should handle network errors gracefully', async () => {
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post');
-				mockRequest.mockRejectedValue(new Error('Network error'));
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(metadata.title).toBe('');
-			});
-
-			it('should preserve query parameters when creating JSON URL', async () => {
-				const url = new URL('https://reddit.com/r/test/comments/abc123/post?context=3');
-				mockRequest.mockResolvedValue({
-					status: 200,
-					text: JSON.stringify([{
-						data: {
-							children: [{
-								data: {
-									subreddit: 'test',
-									title: 'Test',
-								},
-							}],
-						},
-					}]),
-				});
-
-				context = {
-				originalUrl: url.toString(),
-				url,
-				metadata,
-				request: mockRequest,
-				sanitizeText: (s: string | null | undefined) => s ?? null,
-				settings: DEFAULT_SETTINGS,
-			};
-
-				await handler.enrich(context);
-
-				expect(mockRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						url: expect.stringContaining('context=3'),
-					})
-				);
+				expect(metadata.context).toBeUndefined();
 			});
 		});
 	});

@@ -122,7 +122,7 @@ For anything else, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 Some sites need extra work to produce a useful preview:
 
 - **Wikipedia**: fetches the article introduction and reports Wikipedia as the site name.
-- **Reddit**: fetches through `old.reddit.com`, because the main site serves a bot challenge page instead of metadata to non-browser clients. Post previews lead with the subreddit, for example `r/ObsidianMD — Post title`.
+- **Reddit**: Reddit no longer serves its pages without a login, so the plugin never fetches them. Post previews get their title from Reddit's oEmbed endpoint and lead with the subreddit, for example `r/ObsidianMD — Post title`. Other Reddit links are labeled from the address, for example `r/ObsidianMD` or `u/spez`.
 - **Twitter/X**: fetches tweet content through the public oEmbed endpoint.
 - **Google Search**: extracts the search query for the title.
 - **LinkedIn**: strips leading hashtags and comment counts from titles.
@@ -131,8 +131,8 @@ Some sites need extra work to produce a useful preview:
 
 The plugin makes network requests to build previews, only for links visible in the note you're viewing:
 
-- **Page metadata**: fetches HTML from the URLs in your notes to read titles and descriptions. Links to `reddit.com` (including `www.`, `new.`, and `np.reddit.com`) are fetched from `old.reddit.com` instead.
-- **Reddit**: for post links, requests the post's JSON from `old.reddit.com`, falling back to Reddit's oEmbed endpoint at `www.reddit.com/oembed`. Share links (`reddit.com/r/<sub>/s/<id>`) are first opened on `www.reddit.com` to find the full post address.
+- **Page metadata**: fetches HTML from the URLs in your notes to read titles and descriptions. Reddit pages are not fetched.
+- **Reddit**: for post links, requests the title from Reddit's oEmbed endpoint at `www.reddit.com/oembed`. Share links (`reddit.com/r/<sub>/s/<id>`) are first opened on `www.reddit.com` to find the full post address. Other Reddit links make no request.
 - **Wikipedia API**: queries the article's intro from the same Wikipedia site as the link (for example `en.wikipedia.org/w/api.php`).
 - **Twitter oEmbed API**: fetches tweet content for Twitter/X links from `publish.twitter.com`.
 - **Google favicon service**: favicons are loaded from `www.google.com/s2/favicons`, which receives the link's domain name.

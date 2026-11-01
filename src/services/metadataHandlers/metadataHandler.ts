@@ -17,5 +17,10 @@ export interface MetadataHandlerContext {
 
 export interface MetadataHandler {
 	matches(context: MetadataHandlerContext): boolean | Promise<boolean>;
+	/**
+	 * Return true to skip fetching the page's HTML for this URL. enrich() then
+	 * starts from fallback metadata (the hostname as title) and fills it in.
+	 */
+	replacesPageFetch?(url: URL): boolean;
 	enrich(context: MetadataHandlerContext): Promise<void>;
 }

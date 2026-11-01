@@ -34,9 +34,8 @@ https://www.reddit.com/r/PixelBook/comments/1nxv8v5/i_am_deeply_embedded_within_
 https://www.reddit.com/r/Cooking/comments/2ya11p/eli5_if_we_are_never_supposed_to_wash_an_cast/
 
 **What's enhanced:**
-- Post titles and content
-- Subreddit information
-- Better description extraction from post content
+- Post titles, led by the subreddit (`r/Cooking — Post title`)
+- Subreddit and user links are labeled from the address (`r/Cooking`, `u/spez`) instead of showing Reddit's login page
 
 ---
 
