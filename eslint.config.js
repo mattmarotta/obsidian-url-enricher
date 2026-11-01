@@ -29,6 +29,8 @@ export default defineConfig([
 		rules: {
 			// Preset default is "off"; Obsidian's plugin scanner enables it.
 			"obsidianmd/prefer-active-doc": "warn",
+			// Also flagged by the community plugin report
+			"@typescript-eslint/no-unnecessary-type-assertion": "warn",
 			"@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
 		},
 	},

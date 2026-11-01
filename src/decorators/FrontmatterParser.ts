@@ -81,6 +81,12 @@ function asLength(value: unknown, min: number, max: number): number | undefined 
 	return parsed !== undefined && parsed >= min && parsed <= max ? parsed : undefined;
 }
 
+function setIfDefined<K extends keyof PageConfig>(config: PageConfig, key: K, value: PageConfig[K]): void {
+	if (value !== undefined) {
+		config[key] = value;
+	}
+}
+
 /**
  * Parse frontmatter from the document to extract page-level preview configuration
  * Frontmatter must start on line 1 with --- and end with ---
@@ -91,20 +97,16 @@ export function parsePageConfig(text: string): PageConfig {
 		return {};
 	}
 
-	const candidates: PageConfig = {
-		previewStyle: asOneOf<PreviewStyle>(data["preview-style"], ["inline", "card"]),
-		maxCardLength: asLength(data["max-card-length"], CARD_LENGTH_MIN, CARD_LENGTH_MAX),
-		maxInlineLength: asLength(data["max-inline-length"], INLINE_LENGTH_MIN, INLINE_LENGTH_MAX),
-		showFavicon: asBoolean(data["show-favicon"]),
-		includeDescription: asBoolean(data["include-description"]),
-		inlineColorMode: asOneOf<PreviewColorMode>(data["inline-color-mode"], ["none", "subtle"]),
-		cardColorMode: asOneOf<PreviewColorMode>(data["card-color-mode"], ["none", "subtle"]),
-	};
-
-	// Only keep keys that resolved to a value, so hasFrontmatter can count them
-	return Object.fromEntries(
-		Object.entries(candidates).filter(([, value]) => value !== undefined)
-	) as PageConfig;
+	// Only keys that resolved to a value are set, so hasFrontmatter can count them
+	const config: PageConfig = {};
+	setIfDefined(config, "previewStyle", asOneOf<PreviewStyle>(data["preview-style"], ["inline", "card"]));
+	setIfDefined(config, "maxCardLength", asLength(data["max-card-length"], CARD_LENGTH_MIN, CARD_LENGTH_MAX));
+	setIfDefined(config, "maxInlineLength", asLength(data["max-inline-length"], INLINE_LENGTH_MIN, INLINE_LENGTH_MAX));
+	setIfDefined(config, "showFavicon", asBoolean(data["show-favicon"]));
+	setIfDefined(config, "includeDescription", asBoolean(data["include-description"]));
+	setIfDefined(config, "inlineColorMode", asOneOf<PreviewColorMode>(data["inline-color-mode"], ["none", "subtle"]));
+	setIfDefined(config, "cardColorMode", asOneOf<PreviewColorMode>(data["card-color-mode"], ["none", "subtle"]));
+	return config;
 }
 
 /**
