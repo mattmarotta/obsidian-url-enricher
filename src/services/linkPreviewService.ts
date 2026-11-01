@@ -4,7 +4,7 @@
  * This service orchestrates the entire metadata fetching pipeline:
  * - Fetches HTML from URLs with timeout support
  * - Parses HTML metadata (Open Graph, Twitter Cards, JSON-LD)
- * - Resolves and validates favicons
+ * - Derives favicons from the page's domain
  * - Applies domain-specific metadata handlers (Wikipedia, Reddit, Twitter, etc.)
  * - Caches results for performance
  * - Detects soft 404s and handles errors gracefully
@@ -21,11 +21,10 @@ import {
 } from "./metadataHandlers";
 import { sanitizeTextContent } from "../utils/text";
 import { rewriteUrlForFetch } from "../utils/url";
-import { FaviconCache } from "./faviconCache";
 import type { InlineLinkPreviewSettings } from "../settings";
 import { MetadataFetcher } from "./MetadataFetcher";
 import { HtmlParser } from "./HtmlParser";
-import { FaviconResolver } from "./FaviconResolver";
+import { getFaviconUrl } from "./favicon";
 import { MetadataValidator } from "./MetadataValidator";
 import { LRUCache } from "../utils/LRUCache";
 import { METADATA_CACHE_MAX_SIZE, MAX_CONCURRENT_REQUESTS } from "../constants";
@@ -53,7 +52,6 @@ export class LinkPreviewService {
 	// Extracted modules
 	private fetcher: MetadataFetcher;
 	private htmlParser: HtmlParser;
-	private faviconResolver: FaviconResolver;
 	private validator: MetadataValidator;
 
 	constructor(
@@ -70,20 +68,7 @@ export class LinkPreviewService {
 		// Initialize modules
 		this.fetcher = new MetadataFetcher(options);
 		this.htmlParser = new HtmlParser();
-		this.faviconResolver = new FaviconResolver(
-			(request) => this.fetcher.performRequest(request),
-			(response, header) => this.fetcher.getHeader(response, header),
-			() => this.fetcher.buildRequestHeaders()
-		);
 		this.validator = new MetadataValidator();
-	}
-
-	/**
-	 * Set the persistent favicon cache
-	 * @param cache - FaviconCache instance for storing favicons across sessions
-	 */
-	setPersistentFaviconCache(cache: FaviconCache): void {
-		this.faviconResolver.setPersistentCache(cache);
 	}
 
 	/**
@@ -108,19 +93,10 @@ export class LinkPreviewService {
 	}
 
 	/**
-	 * Register a custom metadata handler for domain-specific enrichment
-	 * @param handler - MetadataHandler to register
-	 */
-	registerMetadataHandler(handler: MetadataHandler): void {
-		this.metadataHandlers.push(handler);
-	}
-
-	/**
-	 * Clear all cached metadata and favicon validation results
+	 * Clear all cached metadata
 	 */
 	clearCache(): void {
 		this.cache.clear();
-		this.faviconResolver.clearValidationCache();
 	}
 
 	/**
@@ -226,7 +202,6 @@ export class LinkPreviewService {
 			}
 
 			const contentType = this.fetcher.getHeader(response, "content-type") ?? "";
-			const finalUrl = this.fetcher.getHeader(response, "x-final-url") ?? url;
 
 			// Parse HTML metadata or use fallback
 			let parsedMetadata;
@@ -235,7 +210,7 @@ export class LinkPreviewService {
 				return await this.finalizeMetadata(url, this.buildFallbackMetadata(url));
 			} else {
 				// Parse HTML metadata
-				parsedMetadata = this.htmlParser.parseHtmlMetadata(finalUrl, response.text);
+				parsedMetadata = this.htmlParser.parseHtmlMetadata(response.text);
 
 				// Check for "soft 404s" - pages that return 200 but show error content
 				// Only check if the setting is enabled
@@ -248,7 +223,7 @@ export class LinkPreviewService {
 				const linkMetadata: LinkMetadata = {
 					title: parsedMetadata.title || this.ensureTitle(null, url),
 					description: parsedMetadata.description || null,
-					favicon: parsedMetadata.favicon || null,
+					favicon: null,
 					siteName: parsedMetadata.siteName || null
 				};
 
@@ -314,7 +289,7 @@ export class LinkPreviewService {
 		return {
 			title: this.ensureTitle(null, url),
 			description: null,
-			favicon: this.faviconResolver.deriveFaviconFromUrl(url),
+			favicon: getFaviconUrl(url),
 		};
 	}
 
@@ -326,7 +301,7 @@ export class LinkPreviewService {
 		finalized.title = this.ensureTitle(finalized.title, pageUrl);
 		finalized.description = this.sanitizeText(finalized.description);
 
-		finalized.favicon = await this.faviconResolver.resolveFavicon(pageUrl);
+		finalized.favicon = getFaviconUrl(pageUrl);
 		return finalized;
 	}
 

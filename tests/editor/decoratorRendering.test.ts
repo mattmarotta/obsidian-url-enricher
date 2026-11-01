@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { EditorState, RangeSetBuilder } from "@codemirror/state";
 import { EditorView, Decoration, DecorationSet, ViewPlugin, WidgetType } from "@codemirror/view";
 import { editorLivePreviewField } from "obsidian";
@@ -251,4 +251,266 @@ describe("decorator rendering (real CodeMirror)", () => {
 		expect(view.dom.querySelectorAll(".competing-widget").length).toBe(0);
 	});
 
+});
+
+describe("previews with a context label (real CodeMirror)", () => {
+	const POST_URL = "https://www.reddit.com/r/Sub/comments/abc123/post_title/";
+	const POST_DOC = `See ${POST_URL}\nmore text`;
+
+	/** Serves one fixed metadata object for every URL. */
+	class StaticService {
+		constructor(private metadata: LinkMetadata) {}
+		hasCachedMetadata() {
+			return true;
+		}
+		getCachedMetadata() {
+			return this.metadata;
+		}
+		getMetadata() {
+			return Promise.resolve(this.metadata);
+		}
+	}
+
+	let view: EditorView | null = null;
+
+	beforeEach(() => {
+		view?.destroy();
+		view = null;
+	});
+
+	afterEach(() => {
+		view?.dom.parentElement?.remove();
+		view?.destroy();
+		view = null;
+	});
+
+	function mountPost(metadata: LinkMetadata, overrides: Partial<typeof DEFAULT_SETTINGS>): EditorView {
+		const settings = { ...DEFAULT_SETTINGS, ...overrides };
+		const plugin = createUrlPreviewDecorator(new StaticService(metadata) as never, () => settings);
+		const parent = document.createElement("div");
+		document.body.appendChild(parent);
+		return new EditorView({
+			state: EditorState.create({
+				doc: POST_DOC,
+				selection: { anchor: 0 },
+				extensions: [editorLivePreviewField, plugin],
+			}),
+			parent,
+		});
+	}
+
+	function text(selector: string): string[] {
+		return Array.from(view!.dom.querySelectorAll(selector)).map((e) => e.textContent ?? "");
+	}
+
+	const redditPost: LinkMetadata = {
+		context: "r/Sub",
+		title: "Post title",
+		description: "The body of the post.",
+		favicon: "https://icon.example/reddit.png",
+	};
+
+	it("inline: renders '<context> — <title>' and leaves the description out", () => {
+		view = mountPost(redditPost, { previewStyle: "inline" });
+
+		expect(text(".url-preview__text")).toEqual(["r/Sub — Post title"]);
+		expect(text(".url-preview__title")).toEqual(["r/Sub"]);
+		expect(text(".url-preview__description")).toEqual(["Post title"]);
+		expect(view.dom.querySelectorAll(".url-preview--inline .url-preview__favicon").length).toBe(1);
+	});
+
+	it("card: puts the context in the header, then the post title, then the description", () => {
+		view = mountPost(redditPost, { previewStyle: "card" });
+
+		const card = view.dom.querySelector(".url-preview--card")!;
+		expect(card.querySelector(".url-preview__header .url-preview__favicon")).not.toBeNull();
+		expect(card.querySelector(".url-preview__header .url-preview__title")?.textContent).toBe("r/Sub");
+		expect(card.querySelector("div.url-preview__post-title")?.textContent).toBe("Post title");
+		expect(card.querySelector("div.url-preview__description")?.textContent).toBe("The body of the post.");
+		expect(card.querySelector(".url-preview__footer")?.textContent).toBe("REDDIT");
+
+		const order = Array.from(card.querySelectorAll(".url-preview__title, .url-preview__post-title, .url-preview__description"))
+			.map((e) => e.className);
+		expect(order).toEqual(["url-preview__title", "url-preview__post-title", "url-preview__description"]);
+	});
+
+	it("card: truncates a long selftext to fit the limit and ends it with an ellipsis", () => {
+		const limit = 120;
+		view = mountPost(
+			{ ...redditPost, description: "word ".repeat(200).trim() },
+			{ previewStyle: "card", maxCardLength: limit },
+		);
+
+		const [context] = text(".url-preview__header .url-preview__title");
+		const [title] = text(".url-preview__post-title");
+		const [description] = text(".url-preview__description");
+		expect(context).toBe("r/Sub");
+		expect(title).toBe("Post title");
+		expect(description.endsWith("…")).toBe(true);
+		expect(context.length + title.length + description.length).toBeLessThanOrEqual(limit);
+	});
+
+	it("card: shortens the title once the description no longer fits", () => {
+		const limit = 60;
+		view = mountPost(
+			{ ...redditPost, title: "A very long post title ".repeat(10).trim() },
+			{ previewStyle: "card", maxCardLength: limit },
+		);
+
+		const [title] = text(".url-preview__post-title");
+		expect(title.endsWith("…")).toBe(true);
+		expect("r/Sub".length + title.length).toBeLessThanOrEqual(limit);
+		expect(text(".url-preview__description")).toEqual([]);
+	});
+
+	it("inline: truncates a long title so '<context> — <title>' fits the limit", () => {
+		const limit = 40;
+		view = mountPost(
+			{ ...redditPost, title: "An extremely long Reddit post title that goes on and on" },
+			{ previewStyle: "inline", maxInlineLength: limit },
+		);
+
+		const [shown] = text(".url-preview__text");
+		expect(shown.startsWith("r/Sub — An extremely")).toBe(true);
+		expect(shown.endsWith("…")).toBe(true);
+		expect(shown.length).toBeLessThanOrEqual(limit);
+	});
+
+	it("inline: drops the title when too little room remains", () => {
+		view = mountPost(redditPost, { previewStyle: "inline", maxInlineLength: 12 });
+
+		expect(text(".url-preview__text")).toEqual(["r/Sub"]);
+		expect(view.dom.querySelectorAll(".url-preview__separator").length).toBe(0);
+	});
+
+	it("removes media links before measuring and showing the description", () => {
+		view = mountPost(
+			{ ...redditPost, description: "Look at this i.redd.it/abc123.jpg photo" },
+			{ previewStyle: "card" },
+		);
+
+		expect(text(".url-preview__description")).toEqual(["Look at this photo"]);
+	});
+
+	it("shows only the context when include-description is off, as before", () => {
+		view = mountPost(redditPost, { previewStyle: "card", includeDescription: false });
+
+		expect(text(".url-preview__header .url-preview__title")).toEqual(["r/Sub"]);
+		expect(text(".url-preview__post-title")).toEqual([]);
+		expect(text(".url-preview__description")).toEqual([]);
+
+		view.dom.parentElement?.remove();
+		view.destroy();
+		view = mountPost(redditPost, { previewStyle: "inline", includeDescription: false });
+		expect(text(".url-preview__text")).toEqual(["r/Sub"]);
+	});
+
+	it("removes media links from the post title", () => {
+		view = mountPost({ ...redditPost, title: "My cat imgur.com/abc123 today" }, { previewStyle: "inline" });
+
+		expect(text(".url-preview__text")).toEqual(["r/Sub — My cat today"]);
+	});
+});
+
+describe("cursor moves (real CodeMirror)", () => {
+	const LINK = "https://example.com/page";
+	const CURSOR_DOC = `Plain text before.\nSee ${LINK} here.\nPlain text after.`;
+	const linkStart = CURSOR_DOC.indexOf(LINK);
+
+	/** Counts metadata lookups, which happen once per URL per rebuild */
+	class CountingService {
+		lookups = 0;
+		private metadata: LinkMetadata = { title: "Page title", description: null, favicon: null };
+		hasCachedMetadata() {
+			return true;
+		}
+		getCachedMetadata() {
+			this.lookups++;
+			return this.metadata;
+		}
+		getMetadata() {
+			return Promise.resolve(this.metadata);
+		}
+	}
+
+	let view: EditorView | null = null;
+
+	afterEach(() => {
+		view?.dom.parentElement?.remove();
+		view?.destroy();
+		view = null;
+	});
+
+	function mountAt(service: CountingService, previewStyle: "inline" | "card", cursor: number): EditorView {
+		const settings = { ...DEFAULT_SETTINGS, previewStyle };
+		const parent = document.createElement("div");
+		document.body.appendChild(parent);
+		return new EditorView({
+			state: EditorState.create({
+				doc: CURSOR_DOC,
+				selection: { anchor: cursor },
+				extensions: [editorLivePreviewField, createUrlPreviewDecorator(service as never, () => settings)],
+			}),
+			parent,
+		});
+	}
+
+	const previews = () => view!.dom.querySelectorAll(".url-preview").length;
+
+	it("card: moving the selection, even into the link, does not rebuild", () => {
+		const service = new CountingService();
+		view = mountAt(service, "card", 0);
+		const lookups = service.lookups;
+		expect(previews()).toBe(1);
+
+		view.dispatch({ selection: { anchor: 5 } });
+		view.dispatch({ selection: { anchor: linkStart + 3 } });
+		view.dispatch({ selection: { anchor: CURSOR_DOC.length } });
+
+		expect(service.lookups).toBe(lookups);
+		expect(previews()).toBe(1);
+	});
+
+	it("inline: moving within plain text does not rebuild", () => {
+		const service = new CountingService();
+		view = mountAt(service, "inline", 0);
+		const lookups = service.lookups;
+
+		view.dispatch({ selection: { anchor: 5 } });
+		view.dispatch({ selection: { anchor: CURSOR_DOC.length - 2 } });
+
+		expect(service.lookups).toBe(lookups);
+		expect(previews()).toBe(1);
+	});
+
+	it("inline: moving into a link reveals the raw text, and moving out restores the preview", () => {
+		const service = new CountingService();
+		view = mountAt(service, "inline", 0);
+		expect(previews()).toBe(1);
+
+		view.dispatch({ selection: { anchor: linkStart + 4 } });
+		expect(previews()).toBe(0);
+		expect(view.dom.textContent).toContain(LINK);
+
+		// Moving within the same link keeps it revealed without rebuilding
+		const lookups = service.lookups;
+		view.dispatch({ selection: { anchor: linkStart + 10 } });
+		expect(service.lookups).toBe(lookups);
+		expect(previews()).toBe(0);
+
+		view.dispatch({ selection: { anchor: 0 } });
+		expect(previews()).toBe(1);
+		expect(view.dom.textContent).not.toContain(LINK);
+	});
+
+	it("inline: the link edge counts as inside it", () => {
+		const service = new CountingService();
+		view = mountAt(service, "inline", 0);
+
+		view.dispatch({ selection: { anchor: linkStart + LINK.length } });
+		expect(previews()).toBe(0);
+
+		view.dispatch({ selection: { anchor: linkStart + LINK.length + 1 } });
+		expect(previews()).toBe(1);
+	});
 });

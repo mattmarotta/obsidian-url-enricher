@@ -2,18 +2,11 @@
  * Window interface augmentation for URL Enricher developer API
  */
 
+import type { CacheStats } from "../utils/LRUCache";
+
 interface URLEnricherAPI {
-	getCacheStats: () => {
-		metadata: { size: number; maxSize: number };
-		favicon: { entries: number; oldestTimestamp: number | null };
-	};
+	getCacheStats: () => CacheStats;
 	clearAllCaches: () => void;
-	setLogLevel: (level: "error" | "warn" | "info" | "debug") => void;
-	enablePerformanceTracking: () => void;
-	disablePerformanceTracking: () => void;
-	getPerformanceMetrics: () => unknown;
-	resetPerformanceMetrics: () => void;
-	isPerformanceTrackingEnabled: () => boolean;
 	refreshDecorations: () => void;
 	help: () => string;
 }

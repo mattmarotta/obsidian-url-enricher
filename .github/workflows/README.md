@@ -38,7 +38,7 @@ This directory contains automated CI/CD workflows for the URL Enricher plugin.
 
 ### Release Workflow (`release.yml`)
 
-**Triggers:** Push of version tags (e.g., `v1.0.0`, `1.0.0`)
+**Triggers:** Push of any tag. Tags must be bare versions (e.g., `1.0.0`); a `v` prefix fails the release.
 
 **Purpose:** Automate the release process
 
@@ -47,7 +47,8 @@ This directory contains automated CI/CD workflows for the URL Enricher plugin.
    - Runs tests to ensure quality
    - Builds plugin
    - Extracts version from git tag
-   - Generates changelog from commit messages
+   - Verifies the tag matches `manifest.json` and `versions.json`, and that the tagged commit is on `master`
+   - Uses the matching `## [X.Y.Z]` section of CHANGELOG.md as the release notes
    - Attests build provenance for main.js, manifest.json, styles.css
    - Creates GitHub release with:
      - Changelog
@@ -103,13 +104,13 @@ change, and the tag is created **after** that PR merges.
    > a release that Obsidian cannot see, because it reads `manifest.json` from
    > the default branch rather than from the tag.
 
-4. **Release workflow runs automatically:**
+5. **Release workflow runs automatically:**
    - Runs tests
    - Builds plugin
    - Creates GitHub release
    - Uploads plugin files
 
-5. **GitHub release will be created** at:
+6. **GitHub release will be created** at:
   ```
   https://github.com/your-username/obsidian-url-enricher/releases
   ```
@@ -152,7 +153,7 @@ Some workflows use GitHub secrets:
 
 If the release workflow fails, check:
 
-1. **Tag format** - Should be numeric version (e.g., `1.0.0` or `v1.0.0`)
+1. **Tag format** - Must be a bare version matching `manifest.json` (e.g., `1.0.0`, not `v1.0.0`)
 2. **Tests passing** - All tests must pass before release
 3. **Build successful** - Plugin must build without errors
 4. **Permissions** - Repository must allow GitHub Actions to create releases

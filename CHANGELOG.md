@@ -4,14 +4,16 @@ All notable changes to URL Enricher will be documented in this file.
 
 ## [Unreleased]
 
-### Added
--
-
 ### Changed
--
+- Removed the on-disk favicon cache. Favicon addresses are derived from the domain, so caching them saved nothing. The settings panel now shows how many previews are cached.
 
 ### Fixed
--
+- Quoted frontmatter values such as `preview-style: "card"` are now recognized instead of silently ignored.
+- Long Reddit posts in card previews now truncate the same way as other sites.
+- Typing and moving the cursor no longer slow down in notes with hundreds of links. Previews are now built only for the visible part of a note, and links are fetched as you scroll to them.
+
+### Removed
+- Developer console commands that had no effect (`setLogLevel` and the performance-tracking commands) were removed from `window.urlEnricher`.
 
 ## [1.4.4] - 2026-09-29
 

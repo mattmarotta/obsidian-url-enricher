@@ -1,6 +1,6 @@
 import { WidgetType } from "@codemirror/view";
 import type { PreviewStyle, PreviewColorMode } from "../settings";
-import { enrichTextWithStyledElements, cleanMediaUrls } from "./MetadataEnricher";
+import { enrichTextWithStyledElements } from "./MetadataEnricher";
 
 /**
  * Widget that displays an error indicator next to a URL when metadata fetching fails
@@ -35,45 +35,62 @@ export class ErrorIndicatorWidget extends WidgetType {
 }
 
 /**
+ * Everything a preview widget renders. Text fields arrive already sanitized
+ * and truncated by DecorationBuilder; the widget only lays them out.
+ */
+export interface UrlPreviewWidgetOptions {
+	readonly url: string;
+	/** Short label leading the preview, e.g. "r/ObsidianMD" */
+	readonly context?: string | null;
+	readonly title: string | null;
+	readonly description: string | null;
+	readonly faviconUrl: string | null;
+	readonly isLoading: boolean;
+	readonly previewStyle: PreviewStyle;
+	readonly siteName?: string | null;
+	readonly error?: string | null;
+	readonly inlineColorMode?: PreviewColorMode;
+	readonly cardColorMode?: PreviewColorMode;
+}
+
+type ResolvedWidgetOptions = Readonly<Required<UrlPreviewWidgetOptions>>;
+
+/**
  * Widget that displays a rich preview (inline or card) for a URL
- * Includes title, description, favicon, and site name
+ * Includes context, title, description, favicon, and site name
  */
 export class UrlPreviewWidget extends WidgetType {
-	constructor(
-		private url: string,
-		private title: string | null,
-		private description: string | null,
-		private faviconUrl: string | null,
-		private isLoading: boolean,
-		private previewStyle: PreviewStyle,
-		private maxLength: number,
-		private siteName: string | null = null,
-		private error: string | null = null,
-		private inlineColorMode: PreviewColorMode = 'subtle',
-		private cardColorMode: PreviewColorMode = 'subtle'
-	) {
+	private readonly options: ResolvedWidgetOptions;
+
+	constructor(options: UrlPreviewWidgetOptions) {
 		super();
+		this.options = {
+			...options,
+			context: options.context ?? null,
+			siteName: options.siteName ?? null,
+			error: options.error ?? null,
+			inlineColorMode: options.inlineColorMode ?? "subtle",
+			cardColorMode: options.cardColorMode ?? "subtle",
+		};
 	}
 
 	toDOM(): HTMLElement {
+		const { url, context, title, faviconUrl, isLoading, previewStyle, inlineColorMode, cardColorMode } = this.options;
 		const container = createSpan();
 
 		// Apply style classes and color mode classes
-		if (this.previewStyle === "card") {
-			container.className = `url-preview url-preview--card url-preview--${this.cardColorMode}`;
+		if (previewStyle === "card") {
+			container.className = `url-preview url-preview--card url-preview--${cardColorMode}`;
 		} else {
 			// Inline style - always flows inline with text
-			container.className = `url-preview url-preview--inline url-preview--${this.inlineColorMode}`;
+			container.className = `url-preview url-preview--inline url-preview--${inlineColorMode}`;
 		}
 
-		if (this.isLoading) {
+		if (isLoading) {
 			container.className += " url-preview--loading";
 			container.textContent = "Loading...";
 			return container;
 		}
-
-		// Clean media URLs from description
-		const cleanedDescription = this.description ? cleanMediaUrls(this.description) : this.description;
 
 		// Prevent mousedown from moving cursor into the URL
 		container.onmousedown = (e) => {
@@ -85,23 +102,24 @@ export class UrlPreviewWidget extends WidgetType {
 		container.onclick = (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			window.open(this.url, "_blank");
+			window.open(url, "_blank");
 		};
 
 		// Favicon
 		let favicon: HTMLImageElement | null = null;
-		if (this.faviconUrl) {
+		if (faviconUrl) {
 			favicon = createEl("img");
-			favicon.src = this.faviconUrl;
+			favicon.src = faviconUrl;
 			favicon.className = "url-preview__favicon";
 			favicon.alt = "";
 		}
 
-		if (this.previewStyle === "card") {
-			// Cards always get a header row carrying the title, with the favicon
-			// beside it when there is one. Building this only when a favicon
-			// existed used to drop the title entirely for favicon-less cards.
-			if (favicon || this.title) {
+		if (previewStyle === "card") {
+			// Cards always get a header row carrying the context (or title), with
+			// the favicon beside it when there is one. Building this only when a
+			// favicon existed used to drop the title entirely for favicon-less cards.
+			const headerText = context ?? title;
+			if (favicon || headerText) {
 				const headerRow = createDiv();
 				headerRow.className = "url-preview__header";
 
@@ -109,12 +127,8 @@ export class UrlPreviewWidget extends WidgetType {
 					headerRow.appendChild(favicon);
 				}
 
-				if (this.title) {
-					const titleSpan = createSpan();
-					titleSpan.className = "url-preview__title";
-					const enrichedTitle = enrichTextWithStyledElements(this.title);
-					titleSpan.appendChild(enrichedTitle);
-					headerRow.appendChild(titleSpan);
+				if (headerText) {
+					headerRow.appendChild(this.createTextSpan("url-preview__title", headerText));
 				}
 
 				container.appendChild(headerRow);
@@ -128,126 +142,78 @@ export class UrlPreviewWidget extends WidgetType {
 		const textContainer = createSpan();
 		textContainer.className = "url-preview__text";
 
-		// Check if this is Reddit content with special markers
-		const isReddit = !!(cleanedDescription && cleanedDescription.includes("§REDDIT_CARD§"));
-
-		if (this.previewStyle === "card") {
-			this.renderCardContent(textContainer, cleanedDescription, isReddit);
+		if (previewStyle === "card") {
+			this.renderCardContent(textContainer);
 		} else {
-			this.renderInlineContent(textContainer, cleanedDescription, isReddit);
+			this.renderInlineContent(textContainer);
 		}
 
 		container.appendChild(textContainer);
 
 		// Add site name footer for card mode
-		if (this.previewStyle === "card") {
+		if (previewStyle === "card") {
 			this.renderCardFooter(container);
 		}
 
 		return container;
 	}
 
+	private createTextSpan(className: string, text: string): HTMLElement {
+		const span = createSpan();
+		span.className = className;
+		span.appendChild(enrichTextWithStyledElements(text));
+		return span;
+	}
+
+	private createTextDiv(className: string, text: string): HTMLElement {
+		const div = createDiv();
+		div.className = className;
+		div.appendChild(enrichTextWithStyledElements(text));
+		return div;
+	}
+
+	private createSeparator(): HTMLElement {
+		const separator = createSpan();
+		separator.className = "url-preview__separator";
+		separator.textContent = " — ";
+		return separator;
+	}
+
 	/**
-	 * Render content for card-style previews
+	 * Render content for card-style previews.
+	 * The header already shows the context (or the title when there is none).
 	 */
-	private renderCardContent(textContainer: HTMLElement, cleanedDescription: string | null, isReddit: boolean): void {
-		if (isReddit && cleanedDescription) {
-			// Reddit card: parse structured format
-			const parts = cleanedDescription.split("§REDDIT_CARD§");
-			const titleAndContent = parts[1] || "";
-			const [postTitle, ...contentParts] = titleAndContent.split("§REDDIT_CONTENT§");
-			let postContent = contentParts.join("§REDDIT_CONTENT§");
+	private renderCardContent(textContainer: HTMLElement): void {
+		const { context, title, description } = this.options;
 
-			// Calculate total length and truncate if needed
-			const totalLength = (this.title?.length || 0) + postTitle.length + postContent.length;
-			if (totalLength > this.maxLength) {
-				const usedLength = (this.title?.length || 0) + postTitle.length + 6; // +6 for separators
-				const remainingLength = this.maxLength - usedLength;
-				if (remainingLength > 20) {
-					postContent = postContent.substring(0, remainingLength) + "...";
-				} else {
-					postContent = "";
-				}
-			}
+		if (context && title) {
+			textContainer.appendChild(this.createTextDiv("url-preview__post-title", title));
+		}
 
-			// Post title (below subreddit/favicon)
-			if (postTitle) {
-				const postTitleDiv = createDiv();
-				postTitleDiv.className = "url-preview__post-title";
-				const enrichedTitle = enrichTextWithStyledElements(postTitle.trim());
-				postTitleDiv.appendChild(enrichedTitle);
-				textContainer.appendChild(postTitleDiv);
-			}
-
-			// Post content preview
-			if (postContent) {
-				const contentDiv = createDiv();
-				contentDiv.className = "url-preview__description";
-				const enrichedContent = enrichTextWithStyledElements(postContent.trim());
-				contentDiv.appendChild(enrichedContent);
-				textContainer.appendChild(contentDiv);
-			}
-		} else if (cleanedDescription) {
-			// Standard card: description below title
-			const descDiv = createDiv();
-			descDiv.className = "url-preview__description";
-			const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
-			descDiv.appendChild(enrichedDesc);
-			textContainer.appendChild(descDiv);
+		if (description) {
+			textContainer.appendChild(this.createTextDiv("url-preview__description", description));
 		}
 	}
 
 	/**
-	 * Render content for inline-style previews
+	 * Render content for inline-style previews:
+	 * "<title> — <description>", or "<context> — <title>" when there is a context
 	 */
-	private renderInlineContent(textContainer: HTMLElement, cleanedDescription: string | null, isReddit: boolean): void {
-		if (isReddit && cleanedDescription) {
-			// Reddit inline: "r/Subreddit — Post Title"
-			const parts = cleanedDescription.split("§REDDIT_CARD§");
-			const titlePart = parts[1] ? parts[1].split("§REDDIT_CONTENT§")[0] : "";
+	private renderInlineContent(textContainer: HTMLElement): void {
+		const { context, title, description } = this.options;
 
-			if (this.title) {
-				const titleSpan = createSpan();
-				titleSpan.className = "url-preview__title";
-				const enrichedTitle = enrichTextWithStyledElements(this.title); // r/Subreddit
-				titleSpan.appendChild(enrichedTitle);
-				textContainer.appendChild(titleSpan);
-			}
+		const lead = context ?? title;
+		const trailing = context ? title : description;
 
-			if (titlePart) {
-				const separator = createSpan();
-				separator.className = "url-preview__separator";
-				separator.textContent = " — ";
-				textContainer.appendChild(separator);
+		if (!lead) {
+			return;
+		}
 
-				const descSpan = createSpan();
-				descSpan.className = "url-preview__description";
-				const enrichedTitlePart = enrichTextWithStyledElements(titlePart.trim());
-				descSpan.appendChild(enrichedTitlePart);
-				textContainer.appendChild(descSpan);
-			}
-		} else {
-			// Standard inline format
-			if (this.title) {
-				const titleSpan = createSpan();
-				titleSpan.className = "url-preview__title";
-				const enrichedTitle = enrichTextWithStyledElements(this.title);
-				titleSpan.appendChild(enrichedTitle);
-				textContainer.appendChild(titleSpan);
+		textContainer.appendChild(this.createTextSpan("url-preview__title", lead));
 
-				if (cleanedDescription) {
-					const separator = createSpan();
-					separator.className = "url-preview__separator";
-					separator.textContent = " — ";
-					textContainer.appendChild(separator);
-
-					const descSpan = createSpan();
-					descSpan.className = "url-preview__description";
-					const enrichedDesc = enrichTextWithStyledElements(cleanedDescription);
-					descSpan.appendChild(enrichedDesc);
-					textContainer.appendChild(descSpan);
-				}
-			}
+		if (trailing) {
+			textContainer.appendChild(this.createSeparator());
+			textContainer.appendChild(this.createTextSpan("url-preview__description", trailing));
 		}
 	}
 
@@ -255,12 +221,12 @@ export class UrlPreviewWidget extends WidgetType {
 	 * Render site name footer for card previews
 	 */
 	private renderCardFooter(container: HTMLElement): void {
-		let siteName = this.siteName; // Try metadata first
+		let siteName = this.options.siteName; // Try metadata first
 
 		// Fallback to extracting from URL if metadata doesn't provide site name
 		if (!siteName) {
 			try {
-				const parsed = new URL(this.url);
+				const parsed = new URL(this.options.url);
 				siteName = parsed.hostname;
 
 				// Remove www. prefix if present
@@ -288,17 +254,20 @@ export class UrlPreviewWidget extends WidgetType {
 	}
 
 	eq(other: UrlPreviewWidget): boolean {
+		const a = this.options;
+		const b = other.options;
 		return (
-			other.url === this.url &&
-			other.title === this.title &&
-			other.description === this.description &&
-			other.faviconUrl === this.faviconUrl &&
-			other.isLoading === this.isLoading &&
-			other.previewStyle === this.previewStyle &&
-			other.siteName === this.siteName &&
-			other.error === this.error &&
-			other.inlineColorMode === this.inlineColorMode &&
-			other.cardColorMode === this.cardColorMode
+			a.url === b.url &&
+			a.context === b.context &&
+			a.title === b.title &&
+			a.description === b.description &&
+			a.faviconUrl === b.faviconUrl &&
+			a.isLoading === b.isLoading &&
+			a.previewStyle === b.previewStyle &&
+			a.siteName === b.siteName &&
+			a.error === b.error &&
+			a.inlineColorMode === b.inlineColorMode &&
+			a.cardColorMode === b.cardColorMode
 		);
 	}
 

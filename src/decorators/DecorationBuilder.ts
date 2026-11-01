@@ -1,17 +1,15 @@
 import { Decoration } from "@codemirror/view";
-import type { EditorView } from "@codemirror/view";
+import type { EditorState, Text } from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
 import type { InlineLinkPreviewSettings, PreviewStyle } from "../settings";
 import type { LinkPreviewService } from "../services/linkPreviewService";
-import { parsePageConfig, hasFrontmatter } from "./FrontmatterParser";
-import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock } from "./UrlMatcher";
+import { parsePageConfig, type PageConfig } from "./FrontmatterParser";
+import { findWikilinkUrls, findMarkdownLinks, findBareUrls, isInCodeBlock, ClaimedRanges, type UrlMatch } from "./UrlMatcher";
 import { UrlPreviewWidget, ErrorIndicatorWidget } from "./PreviewWidget";
-import { stripEmoji } from "./MetadataEnricher";
+import { stripEmoji, cleanMediaUrls } from "./MetadataEnricher";
 import { sanitizeTextContent } from "../utils/text";
 import {
 	ELLIPSIS,
-	DEFAULT_CARD_LENGTH,
-	DEFAULT_INLINE_LENGTH,
 	MIN_DESCRIPTION_LENGTH,
 	TITLE_SEPARATOR_LENGTH
 } from "../constants";
@@ -55,30 +53,70 @@ function calculateMaxLength(
 	maxCardLength: number,
 	maxInlineLength: number
 ): number {
-	const maxLength = (previewStyle === "card" ? maxCardLength : maxInlineLength) as unknown;
-	let maxLengthValue: number;
-
-	if (typeof maxLength === "string") {
-		maxLengthValue = Number(maxLength);
-	} else if (typeof maxLength === "number") {
-		maxLengthValue = maxLength;
-	} else {
-		// Default: 300 for cards, 150 for inline
-		maxLengthValue = previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_INLINE_LENGTH;
-	}
-
-	return Number.isFinite(maxLengthValue) ? Math.max(0, Math.round(maxLengthValue)) : (previewStyle === "card" ? DEFAULT_CARD_LENGTH : DEFAULT_INLINE_LENGTH);
+	return previewStyle === "card" ? maxCardLength : maxInlineLength;
 }
 
 /**
  * Process metadata for display
  */
 interface ProcessedMetadata {
+	context: string | null;
 	title: string | null;
 	description: string | null;
 	faviconUrl: string | null;
 	siteName: string | null;
 	error: string | null;
+}
+
+/**
+ * Truncate so the result, ellipsis included, is at most `room` characters.
+ */
+function truncateToFit(text: string, room: number): string {
+	if (text.length <= room) {
+		return text;
+	}
+	return text.slice(0, Math.max(0, room - ELLIPSIS.length)).trim() + ELLIPSIS;
+}
+
+/**
+ * Fit a preview that leads with a context label (e.g. "r/Sub") into `limit`.
+ *
+ * - Inline renders "<context> — <title>" and never shows the description.
+ * - Cards render the context, title, and description on separate lines;
+ *   the description is shortened first, then the title.
+ *
+ * Text that would be left with fewer than MIN_DESCRIPTION_LENGTH characters
+ * is dropped rather than shown as a stub.
+ */
+function fitWithContext(
+	context: string,
+	title: string | null,
+	description: string | null,
+	limit: number,
+	previewStyle: PreviewStyle
+): Pick<ProcessedMetadata, "context" | "title" | "description"> {
+	if (context.length >= limit) {
+		return { context: truncateToFit(context, limit), title: null, description: null };
+	}
+
+	if (previewStyle !== "card") {
+		const room = limit - context.length - TITLE_SEPARATOR_LENGTH;
+		if (title && title.length > room) {
+			title = room >= MIN_DESCRIPTION_LENGTH ? truncateToFit(title, room) : null;
+		}
+		return { context, title, description: null };
+	}
+
+	const room = limit - context.length;
+	const titleLength = title?.length ?? 0;
+	if (description && titleLength + description.length > room) {
+		const descriptionRoom = room - titleLength;
+		description = descriptionRoom >= MIN_DESCRIPTION_LENGTH ? truncateToFit(description, descriptionRoom) : null;
+	}
+	if (title && title.length > room) {
+		title = room >= MIN_DESCRIPTION_LENGTH ? truncateToFit(title, room) : null;
+	}
+	return { context, title, description };
 }
 
 function processMetadata(
@@ -96,6 +134,7 @@ function processMetadata(
 ): ProcessedMetadata {
 	const limit = calculateMaxLength(settings.previewStyle, settings.maxCardLength, settings.maxInlineLength);
 
+	let context: string | null = null;
 	let title: string | null = null;
 	let description: string | null = null;
 	let faviconUrl: string | null = null;
@@ -103,8 +142,12 @@ function processMetadata(
 	let error: string | null = null;
 
 	if (!metadata) {
-		return { title, description, faviconUrl, siteName, error };
+		return { context, title, description, faviconUrl, siteName, error };
 	}
+
+	context = metadata.context
+		? sanitizeLinkText(metadata.context, settings.keepEmoji) || null
+		: null;
 
 	// Always prefer fetched metadata title over custom link text for consistency
 	// Fallback chain: metadata title → custom link text → derived from URL
@@ -114,17 +157,26 @@ function processMetadata(
 			? sanitizeLinkText(linkText, settings.keepEmoji)
 			: deriveTitleFromUrl(url));
 
+	// Media links are removed before measuring, so lengths match what's shown
 	description = metadata.description
-		? sanitizeLinkText(metadata.description, settings.keepEmoji)
+		? cleanMediaUrls(sanitizeLinkText(metadata.description, settings.keepEmoji)) || null
 		: null;
 
-	// Remove description if it's the same as title
-	if (description && equalsIgnoreCase(description, title)) {
+	// Remove description if it's the same as title. A context's title is post
+	// content shown on its own line, so a matching body is left alone there.
+	if (!context && description && equalsIgnoreCase(description, title)) {
 		description = null;
 	}
 
+	if (context) {
+		// The title after a context is post content, so it gets the same media
+		// cleanup as descriptions, and "include description" hides it too -
+		// leaving just the context, e.g. "r/Sub".
+		const postTitle = settings.includeDescription ? cleanMediaUrls(title) || null : null;
+		({ context, title, description } = fitWithContext(context, postTitle, description, limit, settings.previewStyle));
+	}
 	// Truncate title if it exceeds max length on its own
-	if (title.length > limit && limit > 0) {
+	else if (title.length > limit && limit > 0) {
 		title = truncate(title, limit);
 		description = null; // No room for description when title is truncated
 	}
@@ -150,7 +202,7 @@ function processMetadata(
 	siteName = metadata.siteName || null;
 	error = metadata.error || null;
 
-	return { title, description, faviconUrl, siteName, error };
+	return { context, title, description, faviconUrl, siteName, error };
 }
 
 /**
@@ -160,19 +212,15 @@ function createDecorationsForUrl(
 	url: string,
 	urlStart: number,
 	urlEnd: number,
-	linkText: string | undefined,
 	metadata: ProcessedMetadata,
 	isLoading: boolean,
 	settings: {
 		previewStyle: PreviewStyle;
-		maxCardLength: number;
-		maxInlineLength: number;
 		inlineColorMode: import("../settings").PreviewColorMode;
 		cardColorMode: import("../settings").PreviewColorMode;
 	}
 ): Array<{ from: number; to: number; decoration: Decoration }> {
 	const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
-	const limit = calculateMaxLength(settings.previewStyle, settings.maxCardLength, settings.maxInlineLength);
 
 	// If there's an error, add error indicator
 	if (metadata.error) {
@@ -185,26 +233,28 @@ function createDecorationsForUrl(
 	}
 
 	// Only show preview if we have metadata or are loading
-	if (!isLoading && !metadata.title) {
+	if (!isLoading && !metadata.title && !metadata.context) {
 		return decorations;
 	}
+
+	const widget = new UrlPreviewWidget({
+		url,
+		context: metadata.context,
+		title: metadata.title,
+		description: metadata.description,
+		faviconUrl: metadata.faviconUrl,
+		isLoading,
+		previewStyle: settings.previewStyle,
+		siteName: metadata.siteName,
+		error: metadata.error,
+		inlineColorMode: settings.inlineColorMode,
+		cardColorMode: settings.cardColorMode,
+	});
 
 	if (settings.previewStyle === "card") {
 		// Card mode: Show card ABOVE the URL, leave URL as-is
 		const cardWidget = Decoration.widget({
-			widget: new UrlPreviewWidget(
-				url,
-				metadata.title,
-				metadata.description,
-				metadata.faviconUrl,
-				isLoading,
-				settings.previewStyle,
-				limit,
-				metadata.siteName,
-				metadata.error,
-				settings.inlineColorMode,
-				settings.cardColorMode
-			),
+			widget,
 			side: -1 // Place widget BEFORE the URL
 		});
 		decorations.push({ from: urlStart, to: urlStart, decoration: cardWidget });
@@ -217,19 +267,7 @@ function createDecorationsForUrl(
 	} else {
 		// Inline mode: Replace URL with inline preview (hide URL)
 		const replacementWidget = Decoration.replace({
-			widget: new UrlPreviewWidget(
-				url,
-				metadata.title,
-				metadata.description,
-				metadata.faviconUrl,
-				isLoading,
-				settings.previewStyle,
-				limit,
-				metadata.siteName,
-				metadata.error,
-				settings.inlineColorMode,
-				settings.cardColorMode
-			),
+			widget,
 		});
 		decorations.push({ from: urlStart, to: urlEnd, decoration: replacementWidget });
 	}
@@ -238,25 +276,114 @@ function createDecorationsForUrl(
 }
 
 /**
- * Build all decorations for URLs in the document
+ * A document range to scan, in document offsets
+ */
+export interface ScanRange {
+	from: number;
+	to: number;
+}
+
+/**
+ * Result of a decoration build
+ */
+export interface UrlDecorationBuild {
+	decorations: Array<{ from: number; to: number; decoration: Decoration }>;
+	/**
+	 * Every URL range that reached the cursor check, sorted by start,
+	 * including ones left undecorated because the cursor was inside them
+	 */
+	urlRanges: ScanRange[];
+	/** Whether moving the cursor into or out of a URL changes the output (inline mode) */
+	cursorSensitive: boolean;
+}
+
+/**
+ * Expand ranges to whole lines and merge any that overlap or touch, so links
+ * that straddle a range edge are still matched in full.
+ */
+export function expandToLines(doc: Text, ranges: readonly ScanRange[]): ScanRange[] {
+	const expanded = ranges
+		.map(({ from, to }) => ({ from: doc.lineAt(from).from, to: doc.lineAt(to).to }))
+		.sort((a, b) => a.from - b.from);
+
+	const merged: ScanRange[] = [];
+	for (const range of expanded) {
+		const last = merged[merged.length - 1];
+		// +1 joins ranges separated only by a line break
+		if (last && range.from <= last.to + 1) {
+			last.to = Math.max(last.to, range.to);
+		} else {
+			merged.push({ ...range });
+		}
+	}
+	return merged;
+}
+
+/**
+ * The frontmatter block (both `---` lines included), or "" if the document
+ * doesn't open with a closed one. Only this slice is read on each update.
+ */
+function readFrontmatterBlock(doc: Text): string {
+	if (doc.lines < 2 || doc.line(1).text !== "---") {
+		return "";
+	}
+
+	const lines = doc.iterLines(2);
+	let lineNumber = 2;
+	for (let next = lines.next(); !next.done; next = lines.next(), lineNumber++) {
+		if (next.value === "---") {
+			const closing = doc.line(lineNumber);
+			return doc.sliceString(0, Math.min(closing.to + 1, doc.length));
+		}
+	}
+	return "";
+}
+
+interface FrontmatterState {
+	block: string;
+	config: PageConfig;
+	active: boolean;
+}
+
+// Frontmatter rarely changes between updates, so the last parse is reused
+// while its text is unchanged.
+let lastFrontmatter: FrontmatterState | null = null;
+
+function getFrontmatterState(doc: Text): FrontmatterState {
+	const block = readFrontmatterBlock(doc);
+	if (lastFrontmatter?.block !== block) {
+		const config = parsePageConfig(block);
+		// Same rule as hasFrontmatter(), without parsing the block twice
+		lastFrontmatter = { block, config, active: Object.keys(config).length > 0 };
+	}
+	return lastFrontmatter;
+}
+
+/**
+ * Build decorations for the URLs inside `ranges` (normally the editor's
+ * visible ranges). Metadata fetches are queued only for those URLs, so links
+ * elsewhere in the note load as they're scrolled into view.
  */
 export function buildUrlDecorations(
-	view: EditorView,
+	state: EditorState,
+	ranges: readonly ScanRange[],
 	service: LinkPreviewService,
 	globalSettings: InlineLinkPreviewSettings,
 	pendingUpdates: Map<string, Promise<void>>,
 	queueMetadataFetch: (url: string) => void
-): Array<{ from: number; to: number; decoration: Decoration }> {
+): UrlDecorationBuild {
 	const decorations: Array<{ from: number; to: number; decoration: Decoration }> = [];
-	const doc = view.state.doc;
-	const text = doc.toString();
+	const urlRanges: ScanRange[] = [];
+	const doc = state.doc;
 
 	// Parse page-level configuration from frontmatter
-	const pageConfig = parsePageConfig(text);
+	const frontmatter = getFrontmatterState(doc);
+	const pageConfig = frontmatter.config;
 
 	// Check if frontmatter-only mode is enabled
-	if (globalSettings.requireFrontmatter && !hasFrontmatter(text)) {
-		return []; // Return empty decorations - plugin is opt-in via frontmatter
+	if (globalSettings.requireFrontmatter && !frontmatter.active) {
+		// Return empty decorations - plugin is opt-in via frontmatter
+		return { decorations, urlRanges, cursorSensitive: false };
 	}
 
 	// Merge frontmatter config with global settings (frontmatter takes precedence)
@@ -270,32 +397,25 @@ export function buildUrlDecorations(
 	const keepEmoji = globalSettings.keepEmoji; // Not exposed to frontmatter
 
 	// Get syntax tree for markdown context detection
-	const tree = syntaxTree(view.state);
+	const tree = syntaxTree(state);
 
 	// Get cursor position
-	const cursorPos = view.state.selection.main.head;
+	const cursorPos = state.selection.main.head;
 
-	// Track processed ranges to avoid duplicates
-	const processedRanges = new Set<string>();
-
-	// Helper function to process a URL match
+	// Helper function to process a URL match (positions are document offsets)
 	const processUrlMatch = (
 		url: string,
 		start: number,
 		end: number,
 		linkText?: string
 	): void => {
-		const rangeKey = `${start}-${end}`;
-		if (processedRanges.has(rangeKey)) {
-			return;
-		}
-		processedRanges.add(rangeKey);
-
 		// Check for code block context
 		const node = tree.resolveInner(start, 1);
-		if (isInCodeBlock(node, start)) {
+		if (isInCodeBlock(node)) {
 			return;
 		}
+
+		urlRanges.push({ from: start, to: end });
 
 		// Queue metadata fetch.
 		// This must happen BEFORE the cursor check below: the caret sits inside
@@ -335,13 +455,10 @@ export function buildUrlDecorations(
 			url,
 			start,
 			end,
-			linkText,
 			processed,
 			isLoading,
 			{
 				previewStyle,
-				maxCardLength,
-				maxInlineLength,
 				inlineColorMode,
 				cardColorMode
 			}
@@ -350,20 +467,23 @@ export function buildUrlDecorations(
 		decorations.push(...urlDecorations);
 	};
 
-	// First pass: Wikilink URLs [[https://...]]
-	for (const match of findWikilinkUrls(text)) {
-		processUrlMatch(match.url, match.start, match.end);
+	for (const range of expandToLines(doc, ranges)) {
+		const text = doc.sliceString(range.from, range.to);
+		const offset = range.from;
+
+		// First pass: Wikilink URLs [[https://...]]
+		// Second pass: Markdown links [text](url)
+		const bracketed: UrlMatch[] = [...findWikilinkUrls(text), ...findMarkdownLinks(text)];
+		for (const match of bracketed) {
+			processUrlMatch(match.url, match.start + offset, match.end + offset, match.linkText);
+		}
+
+		// Third pass: Bare URLs, skipping any inside the links above
+		for (const match of findBareUrls(text, new ClaimedRanges(bracketed))) {
+			processUrlMatch(match.url, match.start + offset, match.end + offset);
+		}
 	}
 
-	// Second pass: Markdown links [text](url)
-	for (const match of findMarkdownLinks(text)) {
-		processUrlMatch(match.url, match.start, match.end, match.linkText);
-	}
-
-	// Third pass: Bare URLs
-	for (const match of findBareUrls(text, processedRanges)) {
-		processUrlMatch(match.url, match.start, match.end);
-	}
-
-	return decorations;
+	urlRanges.sort((a, b) => a.from - b.from);
+	return { decorations, urlRanges, cursorSensitive: previewStyle === "inline" };
 }

@@ -21,13 +21,13 @@ ln -s "$(pwd)" "/path/to/vault/.obsidian/plugins/url-enricher"
 git config core.hooksPath .husky
 ```
 
-This runs TypeScript validation and tests before each commit.
+This runs the build (TypeScript validation), lint, and tests before each commit.
 
 ## Before You Commit
 
 - [ ] `npm run build` passes (no TypeScript errors)
 - [ ] `npm run lint` passes (ESLint checks Obsidian plugin requirements)
-- [ ] `npm test` passes (all 618 tests)
+- [ ] `npm test` passes
 - [ ] Used conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
 - [ ] Updated relevant documentation
 
@@ -118,11 +118,6 @@ element.appendChild(document.createTextNode(text));
 console.log('[plugin] Processing URL:', url);
 console.log('[plugin] Metadata fetched:', metadata);
 
-// ✅ Correct - Use Logger utility (disabled by default)
-import { Logger } from './utils/logger';
-const logger = new Logger('ModuleName');
-logger.debug('Processing URL:', url);
-
 // ✅ OK - Essential errors and warnings
 console.warn('[url-enricher] Failed to fetch:', error);
 console.error('[url-enricher] Critical failure:', error);
@@ -137,7 +132,7 @@ Per-page frontmatter settings apply instantly as users type—no navigation requ
 
 **Implementation:**
 - CodeMirror 6's `ViewPlugin.update()` triggers on document changes
-- `parsePageConfig()` parses frontmatter on every rebuild
+- Each rebuild reads the frontmatter block and re-parses it with `parsePageConfig()` when its text changed
 - Widget-scoped CSS classes enable per-widget customization
 - Frontmatter overrides global settings: `pageConfig.field ?? globalSettings.field`
 
@@ -281,11 +276,11 @@ This is the #1 reason frontmatter tests fail!
 **Clear caches when testing metadata changes**
 ```javascript
 // In browser console (Cmd+Option+I / Ctrl+Shift+I)
-window.inlineLinkPreview.clearAllCaches()
-window.inlineLinkPreview.refreshDecorations()
+window.urlEnricher.clearAllCaches()
+window.urlEnricher.refreshDecorations()
 ```
 
-The plugin caches metadata and favicons for 30 days. You won't see changes without clearing!
+Fetched metadata stays in memory until Obsidian restarts. You won't see changes without clearing!
 
 **All checks required before commit**
 ```bash
@@ -296,7 +291,7 @@ npm run build
 npm run build && npm run lint && npm test
 
 # ✅ Or let pre-commit hook do it
-git commit -m "feat: my change"  # Runs all checks automatically
+git commit -m "feat: my change"  # Runs build, lint, and tests
 ```
 
 ### Documentation
@@ -313,7 +308,7 @@ git commit -m "feat: my change"  # Runs all checks automatically
 ### Performance
 
 **LRU cache has max size (1000 items)**
-- Monitor with: `window.inlineLinkPreview.getCacheStats()`
+- Monitor with: `window.urlEnricher.getCacheStats()`
 
 **Concurrency limited to 10 parallel requests**
 - Prevents overwhelming servers
@@ -387,7 +382,7 @@ export function createDefaultMetadataHandlers(): MetadataHandler[] {
 
 3. **Add tests:** See existing handlers for examples
 
-4. **Update README:** Add to "Domain Enhancements" section
+4. **Update README:** Add to the "Site-specific handling" section, and list any new hosts the handler contacts under "Privacy and network usage" (and in AGENTS.md)
 
 ## Project Structure
 

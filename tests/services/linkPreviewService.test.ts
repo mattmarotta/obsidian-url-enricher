@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LinkPreviewService } from '../../src/services/linkPreviewService';
 import type { InlineLinkPreviewSettings } from '../../src/settings';
 import { mockRequestUrlBuilder } from '../mocks/obsidian';
-import { FaviconCache } from '../../src/services/faviconCache';
 import type { MetadataHandler, MetadataHandlerContext } from '../../src/services/metadataHandlers/metadataHandler';
 
 describe('LinkPreviewService', () => {
@@ -68,28 +67,6 @@ describe('LinkPreviewService', () => {
 			expect(mockRequestUrlBuilder.getCallCount('https://example.com')).toBe(2);
 		});
 
-		it('should register custom metadata handler', () => {
-			const mockHandler: MetadataHandler = {
-				matches: vi.fn(() => true),
-				enrich: vi.fn(),
-			};
-
-			service.registerMetadataHandler(mockHandler);
-
-			expect(service).toBeDefined();
-		});
-
-		it('should set persistent favicon cache', () => {
-			const cache = new FaviconCache(
-				vi.fn(async () => ({})),
-				vi.fn(async () => {})
-			);
-
-			service.setPersistentFaviconCache(cache);
-
-			expect(service).toBeDefined();
-		});
-
 		it('should clear all caches', async () => {
 			mockRequestUrlBuilder.mockResponse('https://example.com', {
 				status: 200,
@@ -107,6 +84,45 @@ describe('LinkPreviewService', () => {
 			// Should fetch again
 			await service.getMetadata('https://example.com');
 			expect(mockRequestUrlBuilder.getCallCount('https://example.com')).toBe(2);
+		});
+	});
+
+	describe('Favicons', () => {
+		const googleFavicon = 'https://www.google.com/s2/favicons?domain=www.example.com&sz=128';
+
+		it('should use the Google favicon service for fetched metadata', async () => {
+			mockRequestUrlBuilder.mockResponse('https://www.example.com/page', {
+				status: 200,
+				text: '<html><head><title>Test</title><link rel="icon" href="/own-icon.png"></head></html>',
+				headers: { 'content-type': 'text/html' },
+			});
+
+			const result = await service.getMetadata('https://www.example.com/page');
+
+			expect(result.title).toBe('Test');
+			expect(result.favicon).toBe(googleFavicon);
+		});
+
+		it('should use the Google favicon service for fallback metadata', async () => {
+			mockRequestUrlBuilder.mockResponse('https://www.example.com/file.pdf', {
+				status: 200,
+				text: '',
+				headers: { 'content-type': 'application/pdf' },
+			});
+
+			const result = await service.getMetadata('https://www.example.com/file.pdf');
+
+			expect(result.title).toBe('example.com');
+			expect(result.favicon).toBe(googleFavicon);
+		});
+
+		it('should use the Google favicon service when the fetch fails', async () => {
+			mockRequestUrlBuilder.mockError('https://www.example.com/down', new Error('Network error'));
+
+			const result = await service.getMetadata('https://www.example.com/down');
+
+			expect(result.error).toMatch(/^network:/);
+			expect(result.favicon).toBe(googleFavicon);
 		});
 	});
 

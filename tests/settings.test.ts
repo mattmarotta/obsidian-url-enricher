@@ -12,8 +12,7 @@ function createFakePlugin(overrides: Partial<InlineLinkPreviewSettings> = {}) {
 		settings: { ...DEFAULT_SETTINGS, ...overrides },
 		saveSettings: vi.fn().mockResolvedValue(undefined),
 		refreshDecorations: vi.fn(),
-		linkPreviewService: { clearCache: vi.fn() },
-		faviconCache: undefined as { getStats: () => { entries: number; oldestTimestamp: number | null } } | undefined,
+		linkPreviewService: { clearCache: vi.fn(), getCacheStats: vi.fn(() => ({ size: 0 })) },
 	};
 }
 
@@ -396,27 +395,34 @@ describe('Settings', () => {
 				);
 			});
 
-			it('should omit the cache stats entry when there is no favicon cache', () => {
-				const plugin = createFakePlugin();
-				plugin.faviconCache = undefined;
-				const tab = createSettingTab(plugin);
-				const cacheGroup = (tab.getSettingDefinitions() as SettingDefinitionGroup[]).find(
-					(g) => g.heading === 'Cache management',
-				);
-				const names = (cacheGroup?.items ?? []).map((item) => ('name' in item ? item.name : undefined));
-				expect(names).not.toContain('Cache statistics');
-				expect(names).toContain('Clear cached previews');
-			});
-
-			it('should include the cache stats entry when a favicon cache is present', () => {
-				const plugin = createFakePlugin();
-				plugin.faviconCache = { getStats: () => ({ entries: 3, oldestTimestamp: Date.now() }) };
-				const tab = createSettingTab(plugin);
+			it('should include the cache stats and clear-cache entries', () => {
+				const tab = createSettingTab(createFakePlugin());
 				const cacheGroup = (tab.getSettingDefinitions() as SettingDefinitionGroup[]).find(
 					(g) => g.heading === 'Cache management',
 				);
 				const names = (cacheGroup?.items ?? []).map((item) => ('name' in item ? item.name : undefined));
 				expect(names).toContain('Cache statistics');
+				expect(names).toContain('Clear cached previews');
+			});
+
+			it('should show the number of cached previews from the link preview service', () => {
+				const plugin = createFakePlugin();
+				plugin.linkPreviewService.getCacheStats.mockReturnValue({ size: 3 });
+				const tab = createSettingTab(plugin);
+				const cacheGroup = (tab.getSettingDefinitions() as SettingDefinitionGroup[]).find(
+					(g) => g.heading === 'Cache management',
+				);
+				const statsItem = (cacheGroup?.items ?? []).find(
+					(item) => 'name' in item && item.name === 'Cache statistics',
+				);
+				expect(statsItem && 'render' in statsItem).toBe(true);
+
+				const setting = { settingEl: document.createElement('div'), descEl: document.createElement('div') };
+				(setting.settingEl as unknown as { addClass: (cls: string) => void }).addClass = (cls) =>
+					setting.settingEl.classList.add(cls);
+				(statsItem as { render: (setting: unknown) => void }).render(setting);
+
+				expect(setting.descEl.textContent).toBe('Cached previews: 3 (kept in memory until Obsidian restarts)');
 			});
 		});
 

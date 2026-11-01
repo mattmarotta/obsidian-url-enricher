@@ -5,6 +5,10 @@
 echo "Running TypeScript type checking..."
 npm run build
 
+# Run ESLint (Obsidian plugin guidelines)
+echo "Running lint..."
+npm run lint
+
 # Run tests
 echo "Running tests..."
 npm test

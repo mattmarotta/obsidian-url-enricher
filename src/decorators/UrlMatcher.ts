@@ -15,7 +15,7 @@ export interface UrlMatch {
 /**
  * Check if a position is inside an inline code block or code fence
  */
-export function isInCodeBlock(node: SyntaxNode, _position: number): boolean {
+export function isInCodeBlock(node: SyntaxNode): boolean {
 	const contextNode = node;
 
 	// Check for inline code
@@ -128,10 +128,46 @@ export function* findMarkdownLinks(text: string): Generator<UrlMatch> {
 }
 
 /**
+ * Ranges already claimed by wikilinks and markdown links, so bare-URL matches
+ * inside them can be skipped. Each overlap check is a binary search.
+ */
+export class ClaimedRanges {
+	private readonly starts: number[] = [];
+	/** maxEnds[i] is the furthest end among the first i + 1 ranges by start */
+	private readonly maxEnds: number[] = [];
+
+	constructor(ranges: Iterable<{ start: number; end: number }>) {
+		const sorted = Array.from(ranges).sort((a, b) => a.start - b.start);
+		let maxEnd = -Infinity;
+		for (const { start, end } of sorted) {
+			maxEnd = Math.max(maxEnd, end);
+			this.starts.push(start);
+			this.maxEnds.push(maxEnd);
+		}
+	}
+
+	/** Whether [start, end) overlaps any claimed range */
+	overlaps(start: number, end: number): boolean {
+		// Find the last claimed range that starts before `end`
+		let lo = 0;
+		let hi = this.starts.length;
+		while (lo < hi) {
+			const mid = (lo + hi) >>> 1;
+			if (this.starts[mid] < end) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
+		}
+		return lo > 0 && this.maxEnds[lo - 1] > start;
+	}
+}
+
+/**
  * Find all bare URLs in text (not in markdown links or wikilinks)
  * Returns only properly bounded URLs (start of line or preceded by whitespace)
  */
-export function* findBareUrls(text: string, processedRanges: Set<string>): Generator<UrlMatch> {
+export function* findBareUrls(text: string, claimed: ClaimedRanges): Generator<UrlMatch> {
 	const urlRegex = /https?:\/\/[^\s)\]]+/g;
 	let match;
 
@@ -140,17 +176,8 @@ export function* findBareUrls(text: string, processedRanges: Set<string>): Gener
 		const urlStart = match.index;
 		const urlEnd = urlStart + url.length;
 
-		// Skip if this URL overlaps with any already-processed range
-		let overlapsExisting = false;
-		for (const existingKey of processedRanges) {
-			const [existingStart, existingEnd] = existingKey.split('-').map(Number);
-			// Check if ranges overlap
-			if (urlStart < existingEnd && existingStart < urlEnd) {
-				overlapsExisting = true;
-				break;
-			}
-		}
-		if (overlapsExisting) {
+		// Skip if this URL overlaps a wikilink or markdown link
+		if (claimed.overlaps(urlStart, urlEnd)) {
 			continue;
 		}
 
@@ -174,11 +201,4 @@ export function* findBareUrls(text: string, processedRanges: Set<string>): Gener
 			type: 'bare'
 		};
 	}
-}
-
-/**
- * Check if two ranges overlap
- */
-export function rangesOverlap(start1: number, end1: number, start2: number, end2: number): boolean {
-	return start1 < end2 && start2 < end1;
 }

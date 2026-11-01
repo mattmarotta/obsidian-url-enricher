@@ -219,19 +219,16 @@ Open browser console (Cmd+Option+I or Ctrl+Shift+I) and try:
 
 ```javascript
 // Show all available commands
-window.inlineLinkPreview.help()
+window.urlEnricher.help()
 
 // Clear all caches (force re-fetch)
-window.inlineLinkPreview.clearAllCaches()
+window.urlEnricher.clearAllCaches()
 
 // View cache statistics
-window.inlineLinkPreview.getCacheStats()
+window.urlEnricher.getCacheStats()
 
-// Enable debug logging
-window.inlineLinkPreview.setLogLevel("debug")
-
-// Disable logging
-window.inlineLinkPreview.setLogLevel("none")
+// Redraw all previews
+window.urlEnricher.refreshDecorations()
 ```
 
 ---
@@ -256,9 +253,9 @@ window.inlineLinkPreview.setLogLevel("none")
 
 ### Performance Testing
 1. Open [mixed-content.md](mixed-content.md)
-2. Clear cache: `window.inlineLinkPreview.clearAllCaches()`
-3. Reload page and watch network requests
-4. Check cache stats: `window.inlineLinkPreview.getCacheStats()`
+2. Clear cache: `window.urlEnricher.clearAllCaches()`
+3. Scroll through the note and watch links load as they come into view
+4. Check cache stats: `window.urlEnricher.getCacheStats()`
 
 ---
 
@@ -282,17 +279,13 @@ Total example files: **7**
 
 ### Documentation
 
-- [User Guide](../../docs/USER-GUIDE.md) - Complete usage documentation
-- [Quick Reference](../../docs/QUICK-REFERENCE.md) - Cheat sheet
-- [Troubleshooting](../../docs/TROUBLESHOOTING.md) - Common issues
-- [Advanced Features](../../docs/ADVANCED.md) - Console API, debugging
-- [Frontmatter Support](../../docs/features/FRONTMATTER-SUPPORT.md) - Complete frontmatter reference
+- [README](../../README.md) - Usage, frontmatter reference, privacy
+- [Troubleshooting](../../TROUBLESHOOTING.md) - Common issues
 
 ### Developer Documentation
 
 - [Contributing Guide](../../CONTRIBUTING.md) - How to contribute
-- [Architecture](../../docs/developer/ARCHITECTURE.md) - System design
-- [Testing](../../docs/developer/TESTING.md) - Test infrastructure
+- [Testing](../../tests/TESTING.md) - Test infrastructure
 
 ### External
 
@@ -310,9 +303,9 @@ Total example files: **7**
 - Give network requests time to complete on first load
 
 **Performance:**
-- Cached URLs load instantly on subsequent views
-- Clear cache periodically: `window.inlineLinkPreview.clearAllCaches()`
-- Use shorter max-length values for faster rendering
+- Cached URLs load instantly on subsequent views (until Obsidian restarts)
+- Only links on screen are fetched; the rest load as you scroll
+- Use shorter max-length values for lighter previews
 
 **Customization:**
 - Start with global settings in plugin settings panel
@@ -321,8 +314,8 @@ Total example files: **7**
 
 **Troubleshooting:**
 - Check browser console for errors
-- Enable debug logging: `window.inlineLinkPreview.setLogLevel("debug")`
-- See [TROUBLESHOOTING.md](../../docs/TROUBLESHOOTING.md) for common issues
+- Hover the ⚠️ next to a URL to see why it failed
+- See [TROUBLESHOOTING.md](../../TROUBLESHOOTING.md) for common issues
 
 ---
 

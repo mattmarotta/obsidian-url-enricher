@@ -101,7 +101,7 @@ Not supported: image embeds `![](url)`, URLs inside code blocks, and non-HTTP pr
 **Frontmatter not applying**
 
 - The block must start on line 1 with `---`.
-- Check the key spelling, for example `preview-style` rather than `previewstyle`.
+- Check the key spelling, for example `preview-style` rather than `previewstyle`. Quoted values such as `"card"` also work.
 
 **Stale or incorrect previews**
 
@@ -122,21 +122,22 @@ For anything else, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 Some sites need extra work to produce a useful preview:
 
 - **Wikipedia**: fetches the article introduction and reports Wikipedia as the site name.
-- **Reddit**: fetches through `old.reddit.com`, because the main site serves a bot challenge page instead of metadata to non-browser clients.
+- **Reddit**: fetches through `old.reddit.com`, because the main site serves a bot challenge page instead of metadata to non-browser clients. Post previews lead with the subreddit, for example `r/ObsidianMD — Post title`.
 - **Twitter/X**: fetches tweet content through the public oEmbed endpoint.
 - **Google Search**: extracts the search query for the title.
 - **LinkedIn**: strips leading hashtags and comment counts from titles.
 
 ## Privacy and network usage
 
-The plugin makes network requests to build previews:
+The plugin makes network requests to build previews, only for links visible in the note you're viewing:
 
-- **Page metadata**: fetches HTML from the URLs in your notes to read titles, descriptions, and favicons.
-- **Wikipedia API**: queries article summaries for Wikipedia links.
-- **Twitter oEmbed API**: fetches tweet content for Twitter/X links.
-- **Google favicon service**: requests higher-resolution favicons for display.
+- **Page metadata**: fetches HTML from the URLs in your notes to read titles and descriptions. Links to `reddit.com` (including `www.`, `new.`, and `np.reddit.com`) are fetched from `old.reddit.com` instead.
+- **Reddit**: for post links, requests the post's JSON from `old.reddit.com`, falling back to Reddit's oEmbed endpoint at `www.reddit.com/oembed`. Share links (`reddit.com/r/<sub>/s/<id>`) are first opened on `www.reddit.com` to find the full post address.
+- **Wikipedia API**: queries the article's intro from the same Wikipedia site as the link (for example `en.wikipedia.org/w/api.php`).
+- **Twitter oEmbed API**: fetches tweet content for Twitter/X links from `publish.twitter.com`.
+- **Google favicon service**: favicons are loaded from `www.google.com/s2/favicons`, which receives the link's domain name.
 
-It does not collect telemetry, analytics, or any user data. Requests are only made for public pages you have linked to, results are cached locally in your vault's plugin folder, and you control which URLs are processed.
+It does not collect telemetry, analytics, or any user data. Requests are only made for public pages you have linked to, and you control which URLs are processed. Fetched previews are kept in memory only: nothing is written to disk, and they're fetched again after Obsidian restarts.
 
 ## Development
 

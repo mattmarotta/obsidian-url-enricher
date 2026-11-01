@@ -2,11 +2,6 @@
  * Application-wide constants
  */
 
-// Cache settings
-export const FAVICON_CACHE_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-export const FAVICON_CACHE_SAVE_DEBOUNCE_MS = 1000; // 1 second
-export const FAVICON_CACHE_KEY = "favicon-cache";
-
 // URL matching settings
 export const URL_CONTEXT_SEARCH_BACKWARDS = 1000; // chars
 export const URL_CONTEXT_SEARCH_FORWARDS = 100; // chars
@@ -38,9 +33,6 @@ export const ELLIPSIS = "\u2026";
 // Description truncation threshold
 export const MIN_DESCRIPTION_LENGTH = 10;
 export const TITLE_SEPARATOR_LENGTH = 3; // " — "
-
-// Console log prefix
-export const LOG_PREFIX = "[url-enricher]";
 
 // Cache limits
 export const METADATA_CACHE_MAX_SIZE = 1000; // Max URLs to cache
