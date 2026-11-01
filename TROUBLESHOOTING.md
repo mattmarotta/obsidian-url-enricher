@@ -125,6 +125,15 @@ Some sites block automated requests:
 - Use custom link text: `[Descriptive Text](url)`
 - Accept that some sites can't be previewed
 
+### Reddit Previews Look Sparse
+
+Reddit now requires a login to view its pages, so the plugin can't read them. This is expected, not a bug, and clearing the cache won't change it.
+
+- **Post links** show the subreddit and title (`r/technology — Post title`), but no post text, in both inline and card mode
+- **Share links** (`reddit.com/r/<sub>/s/<id>`) are resolved to the post and look the same as post links
+- **Subreddit and user links** show a label from the address (`r/learnpython`, `u/spez`), with no description
+- **A post showing only `r/<sub>`** means Reddit didn't return the title (for example, the post was deleted or Reddit was unreachable). Restart Obsidian or clear the cache to try again
+
 ### URLs in Tables
 
 **Known limitation:** URLs in markdown tables show as standard links, not enriched previews.
