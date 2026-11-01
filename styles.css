@@ -161,44 +161,31 @@ available in the app when your plugin is enabled.
 	word-wrap: break-word;
 }
 
-/* Card mode URL styling - subtle appearance below preview card */
-/* Maximum specificity to override all Obsidian link styles */
-.cm-line .url-preview-card-url,
-.url-preview-card-url.cm-url,
-.url-preview-card-url.cm-link,
-.url-preview-card-url.cm-hmd-internal-link,
-span.url-preview-card-url,
-.url-preview-card-url,
-a.url-preview-card-url {
-	font-size: 0.85em !important;
-	color: var(--text-faint) !important;
-	text-decoration: none !important;
-	opacity: 0.7 !important;
-	background: transparent !important;
-	border-bottom: none !important;
-	/* Override link-specific properties */
-	cursor: text !important;
-	pointer-events: auto !important;
+/* Card mode URL styling - subtle appearance below preview card.
+ * The URL text keeps Obsidian's link spans; ours is the innermost span
+ * (the decorator runs at Prec.highest, and higher-precedence marks nest
+ * inside), so a selector scoped to the editor beats the link styling
+ * with no forced overrides. Link spans nested inside ours are covered too. */
+.markdown-source-view.mod-cm6 .cm-line .url-preview-card-url {
+	font-size: 0.85em;
+	color: var(--text-faint);
+	text-decoration: none;
+	opacity: 0.7;
+	background: transparent;
+	border-bottom: none;
+	cursor: text;
 }
 
-.cm-line .url-preview-card-url:hover,
-.url-preview-card-url.cm-url:hover,
-.url-preview-card-url.cm-link:hover,
-.url-preview-card-url.cm-hmd-internal-link:hover,
-span.url-preview-card-url:hover,
-.url-preview-card-url:hover,
-a.url-preview-card-url:hover {
-	opacity: 0.9 !important;
-	text-decoration: none !important;
-	color: var(--text-faint) !important;
+.markdown-source-view.mod-cm6 .cm-line .url-preview-card-url:hover {
+	opacity: 0.9;
 }
 
-/* Extra-specific override for the mark when CodeMirror also applies its own .cm-url styling */
-.cm-line .cm-url.url-preview-card-url {
-	font-size: 0.85em !important;
-	color: var(--text-faint) !important;
-	opacity: 0.7 !important;
-	display: inline !important;
+.markdown-source-view.mod-cm6 .cm-line .url-preview-card-url span {
+	color: inherit;
+	text-decoration: none;
+	background: transparent;
+	border-bottom: none;
+	cursor: inherit;
 }
 
 /* Hashtag and Mention Styling - Non-clickable visual enhancement */
