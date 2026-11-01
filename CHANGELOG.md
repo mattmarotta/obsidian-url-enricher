@@ -13,6 +13,11 @@ All notable changes to URL Enricher will be documented in this file.
 ### Fixed
 -
 
+## [1.5.1] - 2026-11-01
+
+### Changed
+- Internal code cleanup flagged by Obsidian's community plugin review. No change in behavior.
+
 ## [1.5.0] - 2026-11-01
 
 ### Changed

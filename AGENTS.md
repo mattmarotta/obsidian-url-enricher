@@ -6,7 +6,7 @@ Quick reference for AI agents and developers working on this plugin.
 
 Adds non-destructive link previews to Obsidian's Live Preview editor. URLs stay as plain text in the note; a CodeMirror 6 ViewPlugin draws an inline preview or a card (favicon, title, description, site name) over them.
 
-- **Current version**: 1.5.0
+- **Current version**: 1.5.1
 - **Plugin ID**: `url-enricher`
 - **Entry point**: `src/main.ts`, bundled by esbuild to `main.js`
 - **Release artifacts**: `main.js`, `manifest.json`, `styles.css`
