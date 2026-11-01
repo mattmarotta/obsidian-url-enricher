@@ -92,7 +92,6 @@ refreshDecorations()               // Force refresh all previews
 
 **Soft 404s**
 
-- Reddit: "this community doesn't exist"
 - YouTube: "video unavailable"
 - **Solution:** URL is broken, remove it
 

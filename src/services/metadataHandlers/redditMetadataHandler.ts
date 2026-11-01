@@ -1,114 +1,80 @@
 import type { RequestUrlResponse } from "obsidian";
 import type { MetadataHandler, MetadataHandlerContext } from "./metadataHandler";
 
-interface RedditPostData {
-	data?: {
-		children?: Array<{
-			data?: {
-				title?: unknown;
-				selftext?: unknown;
-				public_description?: unknown;
-				subreddit?: unknown;
-			};
-		}>;
-	};
-}
+const REDDIT_HOST_REGEX = /(^|\.)reddit\.com$/i;
+const POST_PATH_REGEX = /^\/(?:r|u|user)\/[^/]+\/comments\/[a-z0-9]+/i;
+const SHARE_PATH_REGEX = /^\/r\/(\w+)\/s\/\w+\/?$/i;
+const SUBREDDIT_PATH_REGEX = /^\/r\/([^/]+)/i;
+const USER_PATH_REGEX = /^\/(?:u|user)\/([^/]+)/i;
 
-interface RedditMetadata {
-	context?: string;
-	title?: string;
-	description?: string;
-}
-
+/**
+ * Reddit pages can't be scraped: old.reddit.com redirects to a login page and
+ * www.reddit.com serves a bot challenge. So the plugin never fetches the page
+ * itself. Posts get their title from Reddit's oEmbed API, the one public
+ * endpoint that still answers; every other Reddit link is labeled from its URL.
+ */
 export class RedditMetadataHandler implements MetadataHandler {
 	matches({ url }: MetadataHandlerContext): boolean {
-		return /(^|\.)reddit\.com$/i.test(url.hostname);
+		return REDDIT_HOST_REGEX.test(url.hostname);
+	}
+
+	replacesPageFetch(url: URL): boolean {
+		return REDDIT_HOST_REGEX.test(url.hostname);
 	}
 
 	async enrich(context: MetadataHandlerContext): Promise<void> {
 		const { metadata } = context;
+		metadata.title = this.labelFromUrl(context.url);
+		metadata.description = null;
 
-		const needsTitle = this.isGenericTitle(metadata.title);
-		const needsDescription = !metadata.description;
-
-		if (!needsTitle && !needsDescription) {
-			return;
-		}
-
-		const postUrl = await this.resolveShareUrl(context);
+		const postUrl = await this.resolvePostUrl(context);
 		if (!postUrl) {
 			return;
 		}
 
-		const postContext = { ...context, url: postUrl };
-		const extraMetadata =
-			(await this.fetchRedditMetadata(postContext)) ??
-			(await this.fetchRedditOEmbedMetadata(postContext));
-		if (!extraMetadata) {
-			return;
-		}
-
-		if (extraMetadata.context) {
-			// A resolved post replaces the page's own text entirely, so a
-			// leftover login-page description never shows under the post.
-			metadata.context = extraMetadata.context;
-			metadata.title = extraMetadata.title ?? metadata.title;
-			metadata.description = extraMetadata.description
-				? context.sanitizeText(extraMetadata.description)
-				: null;
-			return;
-		}
-
-		if (extraMetadata.title) {
-			metadata.title = extraMetadata.title;
-		}
-
-		if (extraMetadata.description) {
-			const sanitizedDescription = context.sanitizeText(extraMetadata.description);
-			if (sanitizedDescription) {
-				metadata.description = sanitizedDescription;
-			}
+		// A share link resolves to a post, so label it from the post's URL
+		const label = this.labelFromUrl(postUrl);
+		const title = context.sanitizeText(await this.fetchOEmbedTitle(context, postUrl));
+		if (title) {
+			metadata.context = label;
+			metadata.title = title;
+		} else {
+			metadata.title = label;
 		}
 	}
 
-	private isGenericTitle(title: string | null | undefined): boolean {
-		if (!title) {
-			return true;
+	/** "r/learnpython", "u/spez", or "Reddit" for anything else. */
+	private labelFromUrl(url: URL): string {
+		const subreddit = url.pathname.match(SUBREDDIT_PATH_REGEX)?.[1];
+		if (subreddit) {
+			return `r/${subreddit}`;
 		}
-
-		const normalized = title.trim().toLowerCase();
-		const isHeartOfInternetTitle =
-			/^reddit\s*[-–—]\s*the heart of the internet$/.test(normalized);
-		const isLoginPageTitle =
-			/^welcome to reddit\s*[-–—]\s*log in or sign up(?:\.{3}|…)?$/.test(normalized);
-
-		return (
-			normalized === "reddit.com" ||
-			normalized === "reddit" ||
-			normalized === "welcome to reddit" ||
-			isHeartOfInternetTitle ||
-			isLoginPageTitle
-		);
+		const user = url.pathname.match(USER_PATH_REGEX)?.[1];
+		if (user) {
+			return `u/${user}`;
+		}
+		return "Reddit";
 	}
 
 	/**
-	 * Share links (/r/<sub>/s/<id>) redirect to the full /comments/ URL, but
-	 * requestUrl doesn't expose the final URL and neither JSON nor oEmbed accept
-	 * the short form. Fetch the link and pull the post path out of the page it
-	 * lands on (canonical link, or the bot-challenge form's action).
+	 * The post URL for a link, or null if the link isn't a post.
+	 * Share links (/r/<sub>/s/<id>) redirect to the post, but requestUrl doesn't
+	 * expose the final URL and oEmbed rejects the short form, so the post path
+	 * is read from the page the redirect lands on (the bot-challenge page
+	 * still includes it).
 	 */
-	private async resolveShareUrl(context: MetadataHandlerContext): Promise<URL | null> {
-		const { url, request } = context;
-		const shareMatch = url.pathname.match(/^\/r\/(\w+)\/s\/\w+\/?$/i);
-		if (!shareMatch) {
-			return url;
+	private async resolvePostUrl(context: MetadataHandlerContext): Promise<URL | null> {
+		const { url } = context;
+		if (POST_PATH_REGEX.test(url.pathname)) {
+			return new URL(url.pathname, "https://www.reddit.com");
 		}
 
-		const subreddit = shareMatch[1];
-		const response = await this.safeRequest(request, {
-			url: new URL(url.pathname, "https://www.reddit.com"),
-			method: "GET",
-		});
+		const subreddit = url.pathname.match(SHARE_PATH_REGEX)?.[1];
+		if (!subreddit) {
+			return null;
+		}
+
+		const response = await this.safeRequest(context, new URL(url.pathname, "https://www.reddit.com"));
 		if (!response?.text) {
 			return null;
 		}
@@ -118,118 +84,29 @@ export class RedditMetadataHandler implements MetadataHandler {
 		return postPath ? new URL(postPath, "https://www.reddit.com") : null;
 	}
 
-	private async fetchRedditMetadata(context: MetadataHandlerContext): Promise<RedditMetadata | null> {
-		const { url, request } = context;
-
-		if (!/\/comments\//.test(url.pathname)) {
-			return null;
-		}
-
-		const jsonUrl = this.createJsonUrl(url);
-		const response = await this.safeRequest(request, {
-			url: jsonUrl,
-			method: "GET",
-		});
-		if (!response || response.status >= 400) {
-			return null;
-		}
-
-		try {
-			const payload = JSON.parse(response.text) as RedditPostData[];
-			const post = payload?.[0]?.data?.children?.[0]?.data;
-			if (!post) {
-				return null;
-			}
-
-			const rawTitle = typeof post.title === "string" ? post.title.trim() : "";
-			if (!rawTitle) {
-				return null;
-			}
-			const subredditName = typeof post.subreddit === "string" ? post.subreddit.trim() : "";
-			const descriptionSource =
-				typeof post.selftext === "string"
-					? post.selftext
-					: typeof post.public_description === "string"
-					? post.public_description
-					: "";
-
-			const normalizedDescription = descriptionSource.replace(/\s+/g, " ").trim();
-
-			// Full post content is kept here; the decorator truncates it to the
-			// preview's length limit.
-			if (subredditName) {
-				return {
-					context: `r/${subredditName}`,
-					title: rawTitle,
-					description: normalizedDescription || undefined,
-				};
-			}
-
-			return { title: rawTitle };
-		} catch {
-			return null;
-		}
-	}
-
-	private async fetchRedditOEmbedMetadata(context: MetadataHandlerContext): Promise<RedditMetadata | null> {
-		const { url, request } = context;
-		if (!/\/comments\//.test(url.pathname)) {
-			return null;
-		}
-
+	private async fetchOEmbedTitle(context: MetadataHandlerContext, postUrl: URL): Promise<string | null> {
 		const oEmbedUrl = new URL("https://www.reddit.com/oembed");
-		oEmbedUrl.searchParams.set("url", url.href);
+		oEmbedUrl.searchParams.set("url", postUrl.href);
 
-		const response = await this.safeRequest(request, {
-			url: oEmbedUrl,
-			method: "GET",
-		});
+		const response = await this.safeRequest(context, oEmbedUrl);
 		if (!response || response.status >= 400) {
 			return null;
 		}
 
 		try {
 			const payload = JSON.parse(response.text) as { title?: unknown };
-			const rawTitle = typeof payload?.title === "string" ? payload.title.trim() : "";
-			if (!rawTitle) {
-				return null;
-			}
-
-			const subredditName = url.pathname.match(/^\/r\/([^/]+)\/comments\//i)?.[1];
-			if (subredditName) {
-				return {
-					context: `r/${subredditName}`,
-					title: rawTitle,
-				};
-			}
-
-			return { title: rawTitle };
+			const title = typeof payload?.title === "string" ? payload.title.trim() : "";
+			return title || null;
 		} catch {
 			return null;
 		}
 	}
 
-	private async safeRequest(
-		request: MetadataHandlerContext["request"],
-		params: { url: URL; method: string },
-	): Promise<RequestUrlResponse | null> {
+	private async safeRequest(context: MetadataHandlerContext, url: URL): Promise<RequestUrlResponse | null> {
 		try {
-			return await request({
-				url: params.url.href,
-				method: params.method,
-			});
+			return await context.request({ url: url.href, method: "GET" });
 		} catch {
 			return null;
 		}
-	}
-
-	private createJsonUrl(url: URL): URL {
-		// Try old.reddit.com first for richer JSON post metadata.
-		// If JSON is unavailable, the caller falls back to Reddit's oEmbed endpoint.
-		const jsonUrl = new URL(url.pathname.replace(/\/?$/, "/") + ".json", `${url.protocol}//old.reddit.com`);
-		if (url.search) {
-			jsonUrl.search = url.search;
-		}
-		return jsonUrl;
 	}
 }

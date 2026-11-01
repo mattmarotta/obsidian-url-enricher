@@ -538,50 +538,6 @@ describe('LinkPreviewService', () => {
 			service = new LinkPreviewService({ requestTimeoutMs: 5000 }, settings, []);
 		});
 
-		describe('Reddit Soft 404s', () => {
-			it('should detect Reddit "page not found" in title', async () => {
-				const html = `
-					<html>
-						<head>
-							<title>Page not found</title>
-						</head>
-					</html>
-				`;
-
-				// reddit.com is rewritten to old.reddit.com for fetching
-				// (see rewriteUrlForFetch), so the mock targets the fetched host.
-				mockRequestUrlBuilder.mockResponse('https://old.reddit.com/notfound', {
-					status: 200,
-					text: html,
-					headers: { 'content-type': 'text/html' },
-				});
-
-				const result = await service.getMetadata('https://reddit.com/notfound');
-
-				expect(result.error).toContain('http:Soft 404');
-			});
-
-			it('should detect Reddit "this community doesn\'t exist"', async () => {
-				const html = `
-					<html>
-						<head>
-							<title>This community doesn't exist</title>
-						</head>
-					</html>
-				`;
-
-				mockRequestUrlBuilder.mockResponse('https://old.reddit.com/r/fake', {
-					status: 200,
-					text: html,
-					headers: { 'content-type': 'text/html' },
-				});
-
-				const result = await service.getMetadata('https://reddit.com/r/fake');
-
-				expect(result.error).toContain('http:Soft 404');
-			});
-		});
-
 		describe('YouTube Soft 404s', () => {
 			it('should detect YouTube "video unavailable"', async () => {
 				const html = `
@@ -816,6 +772,29 @@ describe('LinkPreviewService', () => {
 			expect(mockHandler.matches).toHaveBeenCalled();
 			expect(mockHandler.enrich).toHaveBeenCalled();
 			expect(result.siteName).toBe('Custom Site');
+		});
+
+		it('should not fetch the page when a handler replaces the page fetch', async () => {
+			const mockHandler: MetadataHandler = {
+				matches: vi.fn(() => true),
+				replacesPageFetch: vi.fn(() => true),
+				enrich: vi.fn(async (context) => {
+					context.metadata.title = 'From handler';
+				}),
+			};
+
+			service = new LinkPreviewService(
+				{ requestTimeoutMs: 5000 },
+				settings,
+				[mockHandler]
+			);
+
+			const result = await service.getMetadata('https://example.com/page');
+
+			expect(mockRequestUrlBuilder.getCallCount('https://example.com/page')).toBe(0);
+			expect(mockHandler.enrich).toHaveBeenCalled();
+			expect(result.title).toBe('From handler');
+			expect(result.error).toBeUndefined();
 		});
 
 		it('should skip non-matching handlers', async () => {

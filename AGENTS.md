@@ -28,8 +28,8 @@ Key requirements for this plugin:
 
 **Network requests made by the plugin** (keep README.md in sync when this changes):
 
-- The URLs in the user's notes (HTML metadata). `www`/`new`/`np.reddit.com` links are fetched from `old.reddit.com` instead.
-- Reddit posts: `old.reddit.com/…/.json`, then `www.reddit.com/oembed` as a fallback; share links (`/r/<sub>/s/<id>`) are resolved through `www.reddit.com`.
+- The URLs in the user's notes (HTML metadata), except Reddit pages, which are never fetched (`old.reddit.com` redirects to a login page, `www.reddit.com` serves a bot challenge).
+- Reddit posts: `www.reddit.com/oembed` (title only); share links (`/r/<sub>/s/<id>`) are resolved through `www.reddit.com`. Other Reddit links are labeled from the URL with no request.
 - Wikipedia: the article's own host, `/w/api.php` (intro extract).
 - Twitter/X: `publish.twitter.com/oembed`.
 - Favicons: `www.google.com/s2/favicons`, loaded as an image by the preview.
@@ -82,7 +82,6 @@ src/
   utils/
     LRUCache.ts                # Size-bounded cache with hit/miss stats
     text.ts                    # HTML entity decoding, tag stripping, whitespace
-    url.ts                     # rewriteUrlForFetch (Reddit → old.reddit.com)
 tests/                         # Vitest; `obsidian` is aliased to tests/mocks/obsidian.ts
 ```
 
@@ -92,6 +91,7 @@ tests/                         # Vitest; `obsidian` is aliased to tests/mocks/ob
 - **Visible ranges only.** Each rebuild scans `view.visibleRanges` (expanded to whole lines), so only on-screen links are matched and fetched. Scrolling triggers a rebuild that fetches newly visible links.
 - **Rebuild triggers.** Doc changes, viewport changes, Live Preview toggles, and the refresh effect. A cursor move rebuilds only in inline mode, and only when the cursor enters or leaves a URL (the URL under the cursor shows as raw text).
 - **Truncation happens once,** in `DecorationBuilder.processMetadata`. Widgets render what they are given.
+- **Skipping the page fetch.** A handler can implement `replacesPageFetch(url)`; the service then skips the HTML fetch and the handler fills in metadata from scratch (Reddit does this).
 - **`LinkMetadata.context`** is an optional leading label (Reddit sets `r/<sub>`). Inline renders `<context> — <title>`; cards put the context in the header, then the title and description.
 - **Caching.** Metadata is cached in memory only (LRU, `METADATA_CACHE_MAX_SIZE`), so it is lost when Obsidian restarts. Favicon URLs are computed from the hostname, not cached.
 - **Concurrency.** At most `MAX_CONCURRENT_REQUESTS` fetches run at once; duplicate requests for a URL share one promise.

@@ -7,7 +7,6 @@ export class MetadataValidator {
 	/**
 	 * Detects "soft 404s" - pages that return 200 OK but show error content
 	 * Common patterns:
-	 * - Reddit: "page not found", "this community doesn't exist"
 	 * - YouTube: "video unavailable", "this video isn't available"
 	 * - Generic: "404", "not found", "page not found", etc.
 	 */
@@ -15,16 +14,6 @@ export class MetadataValidator {
 		const lowerHtml = html.toLowerCase();
 		const title = (metadata.title || "").toLowerCase();
 		const description = (metadata.description || "").toLowerCase();
-
-		// Reddit-specific patterns
-		if (url.includes("reddit.com")) {
-			if (title.includes("page not found") ||
-				title.includes("this community doesn't exist") ||
-				description.includes("page not found") ||
-				lowerHtml.includes("sorry, nobody on reddit goes by that name")) {
-				return true;
-			}
-		}
 
 		// YouTube-specific patterns
 		if (url.includes("youtube.com") || url.includes("youtu.be")) {
