@@ -5,7 +5,7 @@ All notable changes to URL Enricher will be documented in this file.
 ## [Unreleased]
 
 ### Changed
-- The dimmed URL under card previews no longer uses `!important` in its styles, so themes and CSS snippets can restyle it.
+- The dimmed URL under card previews now keeps Obsidian's link underline, and its styles no longer use `!important`, so themes and CSS snippets can restyle it.
 - Reddit previews no longer download Reddit's pages, which now require a login. Post previews show the subreddit and title from Reddit's embed service, without the post text. Subreddit and user links show a label such as `r/learnpython` or `u/spez`. Each Reddit link now makes at most two small requests instead of downloading up to 700 KB.
 - Removed the on-disk favicon cache. Favicon addresses are derived from the domain, so caching them saved nothing. The settings panel now shows how many previews are cached.
 
